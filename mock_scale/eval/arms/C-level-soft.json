@@ -1,0 +1,8 @@
+{
+  "name": "C-level-soft",
+  "workers": 8,
+  "seed": 20261010,
+  "cache": "cold",
+  "plan_flags": ["--level-pair-soft"],
+  "run_flags": []
+}

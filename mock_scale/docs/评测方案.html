@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mock_scale 评测方案</title>
+<style>
+  :root{
+    --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+    --blue:#2a78d6; --orange:#eb6834; --aqua:#1baf7a;
+    --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+    --page:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --blue:#3987e5; --orange:#d95926; --aqua:#199e70;
+    --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  }}
+  :root[data-theme="dark"]{
+    --page:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --blue:#3987e5; --orange:#d95926; --aqua:#199e70;
+    --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);
+       font:15px/1.75 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+       padding:48px 16px 96px}
+  main{max-width:920px;margin:0 auto}
+  h1{font-size:26px;line-height:1.35;margin:0 0 6px}
+  h2{font-size:19px;margin:56px 0 14px;padding-top:14px;border-top:1px solid var(--border)}
+  h3{font-size:16px;margin:28px 0 10px}
+  p{margin:10px 0}
+  .sub{color:var(--ink2);font-size:14px;margin:0 0 4px}
+  .meta{color:var(--muted);font-size:13px;margin:0 0 24px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:20px 0}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+  .tile .v{font-size:26px;font-weight:650;line-height:1.2;font-variant-numeric:tabular-nums}
+  .tile .l{color:var(--ink2);font-size:13px;margin-top:4px}
+  .tile .s{color:var(--muted);font-size:12px;margin-top:2px}
+  table{border-collapse:collapse;width:100%;min-width:600px;font-size:14px;margin:0}
+  .tw{overflow-x:auto;margin:12px 0}
+  .tw.wide table{min-width:780px}
+  th,td{border:1px solid var(--grid);padding:7px 10px;text-align:left;vertical-align:top}
+  th{background:var(--surface);font-weight:600}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .src{color:var(--muted);font-size:12.5px}
+  .fig{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+       padding:18px 12px 8px;margin:16px 0;overflow-x:auto}
+  .fig h4{margin:0 8px 4px;font-size:15px}
+  .fig svg{min-width:620px}
+  .fig .cap{color:var(--muted);font-size:12.5px;margin:2px 8px 10px}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--ink2);margin:6px 8px 4px}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  svg text{font-family:inherit}
+  .tick{font-size:11.5px;fill:var(--muted)}
+  .lab{font-size:12.5px;fill:var(--ink2)}
+  .val{font-size:12.5px;fill:var(--ink);font-weight:600}
+  .risk{border-left:4px solid var(--critical);background:var(--surface);
+        border-radius:0 10px 10px 0;padding:12px 16px;margin:12px 0}
+  .risk.warn{border-left-color:var(--warn)}
+  .risk.ok{border-left-color:var(--aqua)}
+  .tag{display:inline-block;font-size:12px;border:1px solid var(--border);border-radius:999px;
+       padding:1px 10px;color:var(--ink2);margin-right:6px}
+  code{background:var(--page);border:1px solid var(--border);border-radius:5px;
+       padding:1px 6px;font-size:13px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  pre{background:var(--page);border:1px solid var(--border);border-radius:8px;
+      padding:12px 14px;overflow-x:auto;font-size:12.5px;line-height:1.65;margin:12px 0;
+      font-family:ui-monospace,Menlo,Consolas,monospace}
+  pre .c{color:var(--muted)}
+  ol,ul{padding-left:22px}
+  li{margin:5px 0}
+</style>
+</head>
+<body>
+<main>
+
+<h1>mock_scale 评测方案 · 怎么证明每一步真的省了</h1>
+<p class="sub">一次评测 = 一份语料快照 × 同一 seed × 开/关各 3 遍；指标预注册，收益分栏记，<b>低于噪声一律叫「无差异」</b>。</p>
+<p class="meta">分母：一次 plan + 一次 run（实测 <b>2,178</b> 次量测 / <b>590</b> 个出片 job，素材 1,478 张）· seed <b>20261010</b> · workers 8 · 平台口径 ratio 1.6 / min_images 5 / base_cap 3 / per_target_per_base 2 · 本页只定协议，不改代码。</p>
+
+<div class="tiles">
+  <div class="tile"><div class="v">3 次</div><div class="l">每臂重复，取中位数</div><div class="s">交错跑，压热漂移</div></div>
+  <div class="tile"><div class="v">2,178 / 590</div><div class="l">量测次数 / 出片 job</div><div class="s">任何百分比先说清分母</div></div>
+  <div class="tile"><div class="v">0</div><div class="l">C 的像素收益</div><div class="s">只能记语义栏，不许记时间栏</div></div>
+</div>
+
+<h2>1 · 评测台：快照 → 两臂 → 指标 → 判定</h2>
+<p>评测不是「跑一遍看看快了多少」，而是<b>对照实验</b>：同一份快照上开/关各跑 3 遍，<b>先量出这台机器的噪声底</b>，再判断差值是不是真的。任何一步换了分母（快照、参数、缓存状态、机器），两边的数就不可比，报告整份作废。</p>
+
+<div class="fig">
+  <h4>一次评测的四个动作（左右两臂只差一个开关）</h4>
+  <svg viewBox="0 0 880 240" width="100%" role="img" aria-label="评测流水线：快照、两臂、指标、判定">
+    <rect x="16" y="18" width="178" height="62" rx="10" fill="var(--page)" stroke="var(--border)"/>
+    <text x="32" y="44" class="val">① 语料快照</text>
+    <text x="32" y="66" class="tick">rsync 副本 · 原件只读</text>
+
+    <line x1="105" y1="80" x2="105" y2="102" stroke="var(--axis)" stroke-width="1.5"/>
+    <path d="M105,108 l-4,-7 h8 z" fill="var(--axis)"/>
+
+    <rect x="16" y="108" width="178" height="62" rx="10" fill="var(--page)" stroke="var(--border)"/>
+    <text x="32" y="134" class="val">② 四指纹</text>
+    <text x="32" y="156" class="tick">语料 / plan / 代码 / 环境</text>
+
+    <path d="M194,124 L232,72" stroke="var(--axis)" stroke-width="1.5" fill="none"/>
+    <path d="M194,152 L232,188" stroke="var(--axis)" stroke-width="1.5" fill="none"/>
+
+    <rect x="232" y="30" width="232" height="84" rx="10" fill="var(--page)" stroke="var(--axis)"/>
+    <text x="248" y="54" class="val">臂 A · 基线（全关）</text>
+    <text x="248" y="76" class="tick">plan → run · 3 遍</text>
+    <text x="248" y="96" class="tick">A/B/A/B/A/B 交错跑</text>
+
+    <rect x="232" y="146" width="232" height="84" rx="10" fill="var(--page)" stroke="var(--blue)"/>
+    <text x="248" y="170" class="val">臂 B · 单步开</text>
+    <text x="248" y="192" class="tick">plan → run · 3 遍</text>
+    <text x="248" y="212" class="tick">一次只开一个开关</text>
+
+    <rect x="496" y="30" width="150" height="84" rx="10" fill="var(--page)" stroke="var(--border)"/>
+    <text x="512" y="54" class="val">Δ = B − A</text>
+    <text x="512" y="76" class="tick">墙钟 / 计数 / md5</text>
+    <text x="512" y="96" class="tick">同分母，直接减</text>
+
+    <rect x="496" y="146" width="150" height="84" rx="10" fill="var(--page)" stroke="var(--warn)"/>
+    <text x="512" y="170" class="val">噪声底</text>
+    <text x="512" y="192" class="tick">同配置 ×3 的 p95</text>
+    <text x="512" y="212" class="tick">带内 = 无差异</text>
+
+    <rect x="678" y="30" width="186" height="200" rx="10" fill="var(--page)" stroke="var(--border)"/>
+    <text x="696" y="56" class="val">③ 判定</text>
+    <text x="696" y="86" class="tick">Δ 超出带底 ⇒ 记收益</text>
+    <text x="696" y="108" class="tick">带内 ⇒ 写「无差异」</text>
+    <line x1="696" y1="126" x2="846" y2="126" stroke="var(--border)"/>
+    <text x="696" y="150" class="tick">任一通过线不过</text>
+    <text x="696" y="172" class="tick">⇒ 停下，不改口径</text>
+    <text x="696" y="200" class="tick">报告缺指纹</text>
+    <text x="696" y="222" class="tick">⇒ 整份作废</text>
+
+    <path d="M646,72 L672,72" stroke="var(--axis)" stroke-width="1.5"/>
+    <path d="M678,72 l-6,-4 v8 z" fill="var(--axis)"/>
+    <path d="M646,188 L672,188" stroke="var(--axis)" stroke-width="1.5"/>
+    <path d="M678,188 l-6,-4 v8 z" fill="var(--axis)"/>
+  </svg>
+  <p class="cap">左边两臂必须来自<b>同一份快照</b>；右边判定只认预注册的指标。噪声底不是可选项 —— 没有它，任何 3% 的差都可以被说成「提升」。</p>
+</div>
+
+<h3>1.1 怎么跑</h3>
+<pre><span class="c"># 0) 快照：评测只在副本上跑，原件一个字节都不动</span>
+EVAL=~/eval/2026-10-28-baseline
+SNAP=$EVAL/corpus
+rsync -a --exclude '扩展*' "$SRC/" "$SNAP/"
+find "$SNAP" \( -name '*.jpg' -o -name '*.png' \) -print0 | sort -z | xargs -0 md5sum &gt; "$EVAL/corpus.md5"
+
+<span class="c"># 1) 两臂交错跑；每臂 3 遍；run 一律 --out（绝不给 --yes）</span>
+for i in 1 2 3; do
+  rm -f expand/measure_cache.json            <span class="c"># 冷缓存：两臂同一起点</span>
+  /usr/bin/time -f "A$i plan %e s" python3 expand/expand_produce.py \
+      --mode plan --source "$SNAP" --seed 20261010 --workers 8
+  /usr/bin/time -f "A$i run  %e s" python3 expand/expand_produce.py \
+      --mode run  --source "$SNAP" --out "$EVAL/A$i"
+done</pre>
+<p class="src">臂 B 只把 <code>--mode run</code> 换成开开关的版本（如 <code>--cache</code>），其余参数逐字相同；两臂的输出目录分开，产物对拍时才有得比。</p>
+
+<div class="risk">
+  <b>安全红线：</b>评测永远不给 <code>--yes</code>、永远带 <code>--out</code>。语料是真实用户截图，就地写回会<b>覆写</b>语料；快照用 <code>rsync</code> 复制，连 <code>expand_plan.json</code> 也只写进快照。评测前后对原件跑一次 md5 清单，<b>必须逐条相同</b>。
+</div>
+
+<h2>2 · 指标字典（先定义，再跑）</h2>
+<p>指标分两类：<b>时间栏</b>（墙钟、分项、命中）与<b>语义栏</b>（配空率、等级一致率、产物差异）。两栏分开记，任何一步都不许把语义收益折成秒。</p>
+
+<div class="tw"><table>
+  <tr><th style="width:128px">指标</th><th>定义 / 公式</th><th style="width:210px">取数</th><th style="width:64px">方向</th></tr>
+  <tr><td><code>T_plan</code> / <code>T_run</code></td><td>一次完整运行的墙钟（含进程启动、读图 IO、落盘）；每臂 3 次取<b>中位数</b>，同时记 p95</td><td><code>/usr/bin/time -f %e</code> 或外层 <code>perf_counter</code></td><td class="num">↓</td></tr>
+  <tr><td><code>T_stage</code></td><td>单图分项：量测 <code>decode / locate / badge</code>；出片 <code>render / check / save</code>。求和 + 分位</td><td>0 步打点，逐图写进 plan meta 与 run report</td><td class="num">↓</td></tr>
+  <tr><td><code>N_measure</code></td><td>提交给 <code>measure_all</code> 的图数（真值 = <code>len(items)</code>，含 ASCII 补量）</td><td>plan 打印「量了 N 张」→ 落 meta</td><td class="num">=</td></tr>
+  <tr><td><code>N_jobs</code> / <code>N_out</code></td><td>计划 job 数 / <code>status=="ok"</code> 数</td><td><code>expand_run_report.json</code></td><td class="num">≥</td></tr>
+  <tr><td><code>E_out</code></td><td>全部 <code>扩展*.jpg</code> 的 <code>(rel, md5)</code> 集合差异数</td><td>评测脚本对拍两臂输出树</td><td class="num">0</td></tr>
+  <tr><td><code>H_cache</code></td><td>命中次数 ÷ 需要量测的次数（<b>底图量测 + 字号拟合扫描</b>；plan + run 的重复定位 + 重跑）</td><td>缓存计数器（B 步加）</td><td class="num">↑</td></tr>
+  <tr><td><code>R_blank</code></td><td>0 候选的目标数 ÷ 需补图的目标数</td><td>plan <code>users[].short_reason</code> / <code>short[]</code>（0 步已落地）</td><td class="num">≤ 基线 +1pp</td></tr>
+  <tr><td><code>R_lvl</code></td><td>双方已知且等级相同的配对 ÷ 双方已知的配对</td><td><code>expand_pairs.jsonl</code>（0 步已落地；等级字段 C 之前为 <code>null</code>）</td><td class="num">≥ 70%</td></tr>
+  <tr><td><code>F</code></td><td>四指纹：语料 md5 清单、plan 指纹、<code>git rev-parse HEAD</code>（含 dirty）、环境（workers / 缓存状态 / CPU）</td><td>评测脚本</td><td class="num">=</td></tr>
+</table></div>
+<p class="src">16.7 ms 的单图分项（decode 7.3 / locate 7.2 / badge 2.2）来自 <b>73 张样本</b>，只用于讲机制；真实语料上的分项由 0 步量出来。<b>判定一律用墙钟</b>，分项只用来定位是哪一段变了。</p>
+
+<h2>3 · 每一步证明什么</h2>
+<div class="tw wide"><table>
+  <tr><th style="width:88px">步</th><th style="width:236px">要证明的事</th><th style="width:226px">主指标</th><th style="width:206px">通过线</th><th>记在哪</th></tr>
+  <tr>
+    <td><b>0 · 打点</b></td>
+    <td>分项可信、开销可忽略；给后面所有收益当分母</td>
+    <td>打点覆盖率 / 开销</td>
+    <td>100% 图有分项；≤1% 墙钟</td>
+    <td>plan <code>meta.timings</code> · report <code>rows[].ms</code></td>
+  </tr>
+  <tr>
+    <td><b>A · 对账表</b></td>
+    <td>join 不用猜；row 与 comments 两条路给同一个答案</td>
+    <td>join 覆盖率 / 冲突数</td>
+    <td>100% · 冲突 0</td>
+    <td><code>livepipe_join.json</code></td>
+  </tr>
+  <tr>
+    <td><b>B · 缓存</b></td>
+    <td>命中省下的是<b>整次量测</b>，且产物一个字节不变</td>
+    <td><code>H_cache</code> · 冷/热 <code>T_total</code> · <code>E_out</code></td>
+    <td>热 &lt; 冷且超出噪声；<code>E_out</code>=0</td>
+    <td>report <code>cache</code> 段</td>
+  </tr>
+  <tr>
+    <td><b>C · 等级</b></td>
+    <td>不亏产量、配对可控；改动只落在配对字段</td>
+    <td><code>R_blank</code> · <code>R_lvl</code> · <code>N_out</code> · plan 差异面</td>
+    <td>≤基线+1pp · ≥70% · ≥基线 · 仅配对</td>
+    <td><code>expand_pairs.jsonl</code></td>
+  </tr>
+  <tr>
+    <td><b>D · 两遍</b></td>
+    <td>落选图不再白量徽章；成品逐字段不变</td>
+    <td><code>N_badge</code> · <code>N_scan_px</code> · 逐字段差异</td>
+    <td>下降且超出噪声；差异 0</td>
+    <td>plan meta · report rows</td>
+  </tr>
+  <tr>
+    <td><b>E · 续跑</b></td>
+    <td>崩溃后只补缺的；指纹不同绝不复用</td>
+    <td><code>T_resume/T_full</code> · 误复用数</td>
+    <td>复用 &gt;0 · 误复用 0</td>
+    <td>report <code>resume</code> 段</td>
+  </tr>
+</table></div>
+
+<h3>3.1 B：命中率的分母要先说死</h3>
+<p>同一个 <code>H_cache</code>，分母取「只算 plan 的 2,178 次」还是「plan + run 的 590 次重复定位 + 重跑」，能差出一倍。<b>分母定成「所有需要量测的次数」</b>，并在报告里写清：</p>
+<pre><span class="c"># 分母（一次完整评测）</span>
+N_need = N_measure(plan, 2,178) + N_fit(字号拟合扫描) + N_relocate(run, 590) + N_rerun(重跑时需要量的)
+H_cache = (cache_hit + fit_hit) / N_need</pre>
+<p><b>为什么把字号拟合算进量测</b>：`fit_font_size_for` 是「二分字号 → 真画一遍字 → 量墨高」，
+每次选材对<b>每个（目标名字 × 底图字高）</b>都做一次 —— sample-73 上 1064 次调用 / 7039 次
+<code>measure_ink</code>，占 plan 墙钟的大头（~3.6s/4.4s）。它同样是<b>只由像素决定的纯函数</b>
+（文字 + 字高 + 字体文件），不含量级/配对，正是 B 要缓存的东西。不把它算进去，B 的「机制」
+与「时间」会脱节：底图量测全命中、plan 墙钟却几乎不动。</p>
+<p>另一个自欺点：热缓存那一臂如果再跑一遍，命中率天然更高。<b>两臂都必须从空缓存起步</b>，热臂只允许在同一轮内复用自己写下的缓存（评测台的做法：删缓存 → 不计时地完整跑一遍预热 → 计时跑第二遍）。收益算法：</p>
+<pre>ΔT_B = T_cold − T_warm          <span class="c"># 中位数之差，必须 &gt; 噪声底</span>
+省时上界 = 命中次数 × 单次量测（底图 decode+locate+badge / 一次字号二分扫描）</pre>
+<p class="src">单图量测 ≈ 16.7 ms（样本）；真实值以 0 步分项为准。命中一次省的是<b>整条</b>量测，不是只省解码。</p>
+
+<h3>3.2 C：先把账补齐，再谈 A/B</h3>
+<p>这段是 C 的<b>前置条件</b>，已在 0 步（2026-10-27）补齐。之前「0 候选」的名单 <code>short</code> <b>只打印、不落盘</b>（<code>expand_produce.py</code> 里构造完 <code>short</code> 就丢了），plan 的 <code>users[]</code> 也没有候选池大小 —— 那样跑 C 的 A/B，<code>R_blank</code> 与三层命中数<b>都算不出来</b>。补的就是这两样：</p>
+<div class="tw"><table>
+  <tr><th style="width:210px">要补的账</th><th>写什么</th><th style="width:240px">为什么必须</th></tr>
+  <tr>
+    <td>plan <code>users[]</code> 加 <code>pool</code> / <code>short</code></td>
+    <td>每个目标：过完全部闸后的候选数；配不够的原因（无候选 / 无贴图源 / 结构坏）</td>
+    <td>配空率的分母与分子都在这；只从 <code>expand_reconcile.csv</code> 的「缺口」反推会把「没候选」与「出片失败」混成一种</td>
+  </tr>
+  <tr>
+    <td>新增 <code>expand_pairs.jsonl</code></td>
+    <td>每次配对一行：<code>dir / base / base_user / tier / t_level / b_level / w_t</code>；被第 3 层排除的也记一行 <code>tier="excluded"</code></td>
+    <td><code>R_lvl</code>、三层命中数、审计「为什么换了这张底图」都靠它；事后从产物反推不回来</td>
+  </tr>
+</table></div>
+<div class="risk warn">
+  <b>通过线的写法要小心：</b>「<code>R_blank</code> ≤ 基线 +1pp，且 ≤2%」。如果基线本身已经 &gt;1%，第二条会自相矛盾（必失败）。所以先量基线；<b>若基线 &gt;1%，绝对上限要重新拍板，不能静默放宽</b>。
+</div>
+
+<h3>3.3 D 的收益必须等 C 的候选池</h3>
+<p>D 省的是「落选图」的徽章量测与列扫描，而<b>落选面由配对规则决定</b>。C 把候选池从「宽度同档」换成三级链之后，落选图的数量与分布都会变 —— 先跑 C 的 A/B 拿到 <code>R_blank</code> 与各层命中数，再估 D。顺序反了，就是拿旧分母报收益。</p>
+<p>D 的两个计数器：<code>N_badge</code>（调 <code>badge_rect_of</code> 的次数）<b>已随 0 步落地</b>（plan <code>meta.counters.badge_calls</code>）；<code>N_scan_px</code>（列扫描的像素列数）要改共享的 <code>core/inkmask.py</code>，等 D 开工再加 —— 现在 report 里先写 0，表示「字段在、还没接」，不是「扫了 0 列」。</p>
+
+<h3>3.4 E：崩溃测试要真的崩</h3>
+<ol>
+  <li>在 <code>K=200</code> 个 job 处 <code>kill -9</code>（不是正常退出）；</li>
+  <li>重跑同一命令，读 report 的 <code>resume</code> 段：复用数 &gt; 0、重做的 job 只应是「未完成的尾部」；</li>
+  <li>对拍产物：复用路径与全量路径的 md5 <b>逐张相同</b>；</li>
+  <li>改一个 plan 指纹字段（如 <code>seed</code>）再续跑：必须<b>全量重跑</b>，复用数 = 0。</li>
+</ol>
+
+<h3>3.5 A / E / B / C / D 的实测（2026-10-27 ~ 10-28，sample-73）</h3>
+<div class="tw wide"><table>
+  <tr><th style="width:60px">步</th><th>怎么测</th><th>结果</th><th style="width:190px">判定</th></tr>
+  <tr>
+    <td><b>A</b></td>
+    <td>基线臂 vs <code>--livepipe-join</code> 臂交错 6 轮；判 <code>J_join</code> / <code>J_conflict</code> / <code>E_out</code> / <code>T_total</code></td>
+    <td>comments 73/73、rows 73/73（100%，多行 8 张）· 冲突 0 · <code>E_out</code> 0 · Δ +0.1%（带内）</td>
+    <td><b>通过</b>：只读旁挂，产物一字节未变</td>
+  </tr>
+  <tr>
+    <td><b>E</b></td>
+    <td>第 22 张完成后 <code>SIGKILL</code> 整个进程组 → 同 out <code>--resume</code> → 换 seed 再续跑</td>
+    <td>复用 22 / 重出 31 · 成品 md5 差 0 · 换 seed 复用 0（<code>stale_fingerprint</code> 53）</td>
+    <td><b>通过</b></td>
+  </tr>
+  <tr>
+    <td><b>B</b></td>
+    <td>冷臂（无缓存）vs 热臂（同轮预热后计时）交错 6 轮；判 <code>T_total</code> / <code>H_cache</code> / <code>E_out</code></td>
+    <td><code>T_total</code> 8.54s → <b>4.30s</b>（Δ +49.6%，带 ±6.72%）· <code>T_plan</code> 4.4s → 0.25s · 预热 1.04s · <code>H_cache</code> 1.0（底图 73/73 · 拟合 1060/1060）· <code>E_out</code> 0</td>
+    <td><b>通过</b>：机制 / 时间 / 产物三项全过</td>
+  </tr>
+  <tr>
+    <td><b>C</b></td>
+    <td>关/开<b>各跑一遍</b>（C 不看时间）；判 <code>R_blank</code> / <code>R_lvl</code> / <code>N_out</code> + <code>plandiff</code> 的「只改配对字段」</td>
+    <td>严（<code>--level-pair</code>）：<code>R_blank</code> 0% · <code>R_lvl</code> <b>1.0</b>（23/23）· <code>N_out</code> <b>53→38</b><br>软（<code>--level-pair-soft</code>，事后）：<code>N_out</code> 53 · <code>R_lvl</code> <b>0.605</b>（23/38）</td>
+    <td><b>未通过</b>：两条口径各栽一条线 ⇒ 停在上线决策点，默认关</td>
+  </tr>
+  <tr>
+    <td><b>D</b></td>
+    <td>关/开各跑一遍；判 <code>N_badge</code>（只许不升）/ <code>N_scan_px</code>（≥10%）/ <code>E_out</code> / <code>plandiff</code> 0 字段差异</td>
+    <td><code>N_badge</code> 57→57（<code>badge_deferred</code> 0）· <code>N_scan_px</code> 1,230,338 → <b>125,538</b>（−89.8%）· <code>E_out</code> 0 · 0 字段差异 / 0 张 md5 变化</td>
+    <td><b>通过</b>：工作量只降不升、结论逐字段不变</td>
+  </tr>
+</table></div>
+<p class="src">噪声带：A/E 用 <code>eval/baseline-sample73-p3.json</code>（6 遍，<code>CV</code> 3.30% ⇒ ±6.60%）；B 在跑之前按同一协议重冻了 <code>eval/baseline-sample73-p3b.json</code>（6 遍，<code>CV</code> 3.36% ⇒ ±6.72%）。两份的语料指纹都与 P2 相同（<code>a941ea3f…</code>）。<code>R_lvl</code> 仍是 <code>null</code>，所以 <code>compare</code> 整体退出 6 —— 那是「有指标未测」，不是失败。rows 侧要先按 y 拼接多行、再剥掉首行的等级数字前缀（<code>3够***</code> → <code>够***</code>），否则 8 张多行图会被误报成冲突。</p>
+<p class="src"><b>C 为什么过不了</b>：不是实现，是语料结构 —— <b>有徽章 ⇔ 等级可读</b>（9 户等级为空的就是没有徽章的户），所以对「有徽章的目标」第 2 层（底图等级未知 ⇒ 退回宽度）<b>天然为空</b>；而等级 1/11/12/14/16/17/19 各只有 <b>1 户</b>，同等级底图只能来自别人（②号口径不许借自己）⇒ 6 户直接配空、2 户被 C5 上限卡死。<code>plandiff</code> 已证量测字段 0 差异、38 张产物变化逐张可归因到底图更换 ⇒ 实现是对的，是口径过不了线。按 §3.2「超标就停下来重新拍板，不静默放宽」，C 保持默认关，等用户在三选一里拍板（回滚 / 加第 4 层 / 只做同等级升序的软排序）。</p>
+<p class="src"><b>B 的账怎么读</b>：收益全在 plan（run 仍然要逐张重画，不受缓存影响）。热臂计时那一遍 100% 命中，所以 4.30s = 4.06s（run）+ 0.25s（plan）；冷臂 8.54s = 4.06s + 4.4s。预热 1.04s 不计入 <code>T</code>，只用来估算「首次填缓存」的摊销：同一份语料第二次起才省 4.1s。缓存里存的是<b>像素量测</b>（<code>Base</code> 字段 + 字号拟合结果），不存等级/配对；代码（<code>expand_produce.py</code> + <code>core/draw_text.py</code>）或字体文件指纹一变，整份缓存作废。</p>
+
+<h2>4 · 噪声底与判定</h2>
+<div class="fig">
+  <h4>先有带子，才有「提升」</h4>
+  <svg viewBox="0 0 880 190" width="100%" role="img" aria-label="噪声带示意：带内的差值不记收益">
+    <text x="16" y="20" class="tick">墙钟（越低越好）</text>
+
+    <rect x="120" y="88" width="700" height="44" fill="var(--grid)" opacity="0.55"/>
+    <line x1="120" y1="110" x2="820" y2="110" stroke="var(--axis)" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <text x="128" y="82" class="tick">噪声带：同配置 ×3 的 p95</text>
+    <text x="812" y="102" class="tick" text-anchor="end">基线中位数</text>
+
+    <circle cx="200" cy="110" r="5" fill="var(--axis)"/>
+    <text x="200" y="132" class="tick" text-anchor="middle">A 中位数</text>
+
+    <circle cx="430" cy="100" r="6" fill="var(--muted)"/>
+    <text x="446" y="104" class="lab">Δ 在带内 → 写「无差异」</text>
+
+    <circle cx="660" cy="56" r="6" fill="var(--blue)"/>
+    <text x="676" y="60" class="lab">Δ 低于带底 → 记收益</text>
+    <line x1="660" y1="64" x2="660" y2="106" stroke="var(--blue)" stroke-width="1.5" stroke-dasharray="4 4"/>
+    <text x="668" y="88" class="tick">ΔT</text>
+  </svg>
+  <p class="cap">带子由 placebo 跑出来（同配置两次的差）。<b>带内的 3% 不是提升，是抖动</b>；把它写成收益，下一步就会按错的方向继续优化。</p>
+</div>
+
+<div class="tw"><table>
+  <tr><th style="width:190px">规则</th><th>怎么做</th><th style="width:220px">为什么</th></tr>
+  <tr><td>先跑 placebo</td><td>同配置连跑 3 次，取 <code>CV = (max−min) / median</code>；<code>CV &gt; 5%</code> 先降噪（固定 workers、别的同时任务停掉）</td><td>没有带子，任何差值都能自圆其说</td></tr>
+  <tr><td>交错跑</td><td>A/B/A/B/A/B，不是 A×3 再 B×3</td><td>热漂移、系统缓存会让后跑的占便宜</td></tr>
+  <tr><td>判定式</td><td><code>ΔT &gt; 2 × CV × median</code>（或 &gt; placebo 的 p95）才算收益</td><td>阈值预注册，跑完不许改</td></tr>
+  <tr><td>报比值</td><td>报告里同时给 <code>Δ</code>（秒）与 <code>Δ%</code>；换机器只看 <code>Δ%</code></td><td>绝对秒数不可跨机器比较</td></tr>
+</table></div>
+
+<p class="src">落地时：<code>bench baseline</code> 把同配置的多遍合成 <code>eval/baseline.json</code>（中位数 / p95 / <code>CV</code> / 噪声带），<code>bench compare --baseline</code> 用它的 <code>band_pct</code> 当门槛，并要求两臂语料指纹与基线一致；没给基线才退回本臂 <code>CV</code>。仓库里当前那份是 <code>scope: sample-73</code>（12 遍交错，<code>CV</code> 3.73% ⇒ 带 ±7.47%），<b>不是生产噪声带</b>。</p>
+
+<h2>5 · 报告长什么样</h2>
+<p>每次运行落一份 <code>eval/&lt;date&gt;-&lt;tag&gt;.json</code>（在语料之外），字段固定；缺指纹的报告<b>不参与比较</b>。</p>
+<pre>{
+  "schema_version": 1,
+  "tag": "B-warm-3",
+  "fingerprint": {
+    "corpus_sha256": "…",          <span class="c">← corpus.md5 排序后再 sha256</span>
+    "plan_sha256": "…",            <span class="c">← 与 E 的 plan 指纹同一算法</span>
+    "code": "…",                   <span class="c">← git rev-parse HEAD + dirty</span>
+    "env": "workers=8 · cache=warm · run=3 · cpu=…"
+  },
+  "wall_s":  { "plan": …, "run": …, "total": … },
+  "stage_ms":{ "decode": …, "locate": …, "badge": …,
+               "render": …, "check": …, "save": … },
+  "counts":  { "measure": 2178, "jobs": 590, "out": …,
+               "cache_hit": …, "blank_targets": … },
+  "quality": { "blank_rate": …, "level_consistent": …,
+               "out_md5_diff": 0 },
+  "verdict": { "metric": "T_total", "delta_pct": …, "noise_pct": …,
+               "pass": true }
+}</pre>
+<p class="src">示意的是<b>字段结构</b>，<code>…</code> 由每次运行写入实测值。<code>counts.measure</code> 与 <code>counts.jobs</code> 写的是本轮真值，不是常量 —— 口径改了它们就该变。</p>
+
+<h2>6 · 反模式（照到一个，这份评测就不算数）</h2>
+<ul>
+  <li><b>拿旧分母报 D</b>：C 已经改过候选池，D 还用 C 之前的落选图数。</li>
+  <li><b>一臂冷、一臂热</b>：B 的两臂缓存状态不同，命中率是假的。</li>
+  <li><b>只报总时长</b>：分不清是哪一段变了，也没法排除「IO 抖动」。分项和墙钟必须同时有。</li>
+  <li><b>用样本推全量</b>：拿 73 张样本的 16.7 ms 去乘 2,178，报「省了 36 秒」—— 样本只用来讲机制。</li>
+  <li><b>把语义收益折成秒</b>：C 的像素收益是 0，它买的是「配对可控、可审计」。</li>
+  <li><b>在原件上跑</b>：没有快照、没有 <code>--out</code>，一次误操作就把语料改了。</li>
+</ul>
+
+<h2>7 · 与另两页的关系</h2>
+<div class="tw"><table>
+  <tr><th style="width:220px">文档</th><th>回答的问题</th></tr>
+  <tr><td><code>docs/量测优化方案.html</code></td><td>做什么、按什么顺序做、验收线在哪（§3 执行顺序与 §5 验收）</td></tr>
+  <tr><td><code>docs/决策说明-档C与manifest.html</code></td><td>为什么这么定（C 为什么必须三级链、livepipe 为什么值得改）</td></tr>
+  <tr><td><b>本页</b></td><td>怎么证明每一步真的做到了（指标、协议、判定、报告）</td></tr>
+  <tr><td><code>docs/评测落地计划.html</code></td><td>改哪里、按什么顺序改、评测台怎么验收（埋点地图 + <code>eval/bench.py</code> 设计）</td></tr>
+</table></div>
+
+<h3>7.1 落地顺序（评测侧）</h3>
+<ol>
+  <li><code>eval/bench.py</code> + <code>eval/README.md</code>：快照、跑臂（<code>run</code> / <code>pair</code> 交错）、对拍 md5、落 <code>eval_metrics.json</code>（0.5 d）。<b>已落地</b>。</li>
+  <li>0 步打点（0.5 h）：<code>measure_base</code> / <code>render_job</code> 记分项，plan meta 与 run report 各加一段。<b>已落地</b>（plan schema 7 / report schema 3）。</li>
+  <li>跑基线 3 遍 + placebo → <code>eval/baseline.json</code>（里面就有噪声底）。用 <code>bench baseline</code> 合成；两臂先用 <code>bench pair</code> 交错。<b>已在 73 张样本上跑完</b>（12 遍交错，<code>CV</code> 3.73%；<code>scope: sample-73</code>，全量语料到位后重跑覆盖）。</li>
+  <li>之后每步按 §3 逐个评；<b>C 之前先补 §3.2 的两笔账</b>，D 等 C 的 <code>R_blank</code>。</li>
+  <li>A / E 落地与验收（0.5 d）：plan 加 <code>--livepipe-join</code>（只读对账表），run 加 <code>--resume</code>（journal 逐张 flush）；bench 加 <code>crash</code> 子命令。<b>已落地并在 sample-73 上通过</b>（A：100% · 冲突 0 · <code>E_out</code> 0；E：复用 22 张 · md5 差 0 · 换 seed 复用 0），见 §3.5。</li>
+</ol>
+<p class="src">评测台自身也要验收：同配置两次差异 ≤ 噪声底；关缓存两次产物 md5 完全一致；评测前后原件 md5 清单逐条相同；报告四指纹齐全。</p>
+
+</main>
+</body>
+</html>

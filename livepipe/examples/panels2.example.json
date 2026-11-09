@@ -1,0 +1,53 @@
+{
+  "_note": [
+    "★ 人工填写每个面板的 platform ★",
+    "可用平台：douyin、wechat（各自的处理方式见配置里的 platforms 段）。",
+    "微博的档案在 livepipe/weibo.json（手机 App 竖屏：行距 74 / 相位 45 / x_text 38）；本文件里没有微博面板，想点微博表只能用：--emoji-table <面板>=weibo。",
+    "平台决定行距与表情表，填错整片认不出，所以不自动猜。",
+    "填完直接重跑管线即可：本文件不会被覆盖（panels.overwrite=false）。"
+  ],
+  "panels": {
+    "left": {
+      "rect": [
+        0,
+        722,
+        583,
+        1368
+      ],
+      "platform": "douyin"
+    }
+  },
+  "_source": {
+    "video": "/home/puyu/work/data/3-2026-07-09风云A9预售/抖音-风云新能源/6：55-8：28.mp4",
+    "at": 0.0,
+    "method": "hybrid",
+    "model": "nvidia/LocateAnything-3B",
+    "split_x": 1150,
+    "span": 4.0
+  },
+  "_locate_meta": {
+    "left": {
+      "method": "hybrid",
+      "window": [
+        0,
+        0,
+        720,
+        1600
+      ],
+      "model_box": [
+        0,
+        731,
+        720,
+        1515
+      ],
+      "content": [
+        38.0,
+        802.0,
+        403.0,
+        1352.0
+      ],
+      "n_rows": 30,
+      "t": 3.68
+    }
+  }
+}

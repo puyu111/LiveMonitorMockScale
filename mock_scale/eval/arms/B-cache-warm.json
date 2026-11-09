@@ -1,0 +1,8 @@
+{
+  "name": "B-cache-warm",
+  "workers": 8,
+  "seed": 20261010,
+  "cache": "warm",
+  "plan_flags": [],
+  "run_flags": []
+}

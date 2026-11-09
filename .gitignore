@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# 虚拟环境（.venv-ab 是本机实际用来跑 AB 档的环境，别提交）
+.venv/
+.venv*/
+venv/
+
+# 模型权重 / YOLO 训练产物
+weights/
+*.pt
+runs/
+
+# 产物 / 语料输出
+mock_scale/outputs/*
+!mock_scale/outputs/.gitkeep
+mock_scale/out/
+out/
+livepipe/out/
+
+# 活动方名单（xlsx 里是真实姓名/账号）⇒ 个人信息，不进 git、不进交付包
+撞库名单/
+
+# 运行配置里可能落的本机路径清单 / 临时报告
+mock_scale/**/*_plan.json
+mock_scale/**/*_reconcile.csv
+# 评测旁挂账：expand_pairs.jsonl 逐行含用户目录名 ⇒ 不进 git、不进交付包
+mock_scale/**/expand_pairs.jsonl
+mock_scale/**/expand_measure_timings.jsonl
+# A 档对账表含昵称/正文，E 档 journal 含用户目录名 ⇒ 同上
+mock_scale/**/livepipe_join.json
+mock_scale/**/expand_run_progress.jsonl
+# B 档量测缓存：值里含语料路径/用户名 ⇒ 不进 git、不进交付包
+mock_scale/**/measure_cache.json
+mock_scale/**/measure_cache.json.tmp
+# 正文量测（逐张）：rel 是语料目录名（= 用户昵称）⇒ 不进 git、不进交付包
+# （同目录的 bodies_need.json 是纯聚合、不含昵称，可以进）
+mock_scale/**/body_measure.json
+*.log
+
+# 编辑器 / 工具
+.idea/
+.vscode/
+.codegraph/
+.DS_Store
+# 无用文档
+docs/save-login-state.html
+docs/sohu-identity-capture-fix.html
+

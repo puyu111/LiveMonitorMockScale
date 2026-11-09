@@ -1,0 +1,1075 @@
+<title>livepipe 平台档案</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+
+<style>
+/* 版式：测量记录表。左标签右内容的栅格，细线分隔，像素数字用等宽字。 */
+:root{
+  --bg:#eef0ec;
+  --surface:#fafbf8;
+  --surface-2:#e6eae3;
+  --ink:#151a17;
+  --muted:#5b6560;
+  --line:#d1d7cf;
+  --accent:#0d6857;
+  --accent-ink:#084a3e;
+  --accent-soft:#dcebe5;
+  --warn:#964c18;
+  --warn-ink:#7a3c11;
+  --warn-soft:#f4e3d4;
+  --font-body:"IBM Plex Sans","Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1412;
+    --surface:#171d1a;
+    --surface-2:#1f2723;
+    --ink:#e7ece8;
+    --muted:#98a49e;
+    --line:#2a332e;
+    --accent:#5fc9b0;
+    --accent-ink:#9ae5d3;
+    --accent-soft:#14332b;
+    --warn:#dfa274;
+    --warn-ink:#f0c49d;
+    --warn-soft:#2c2018;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1412;
+  --surface:#171d1a;
+  --surface-2:#1f2723;
+  --ink:#e7ece8;
+  --muted:#98a49e;
+  --line:#2a332e;
+  --accent:#5fc9b0;
+  --accent-ink:#9ae5d3;
+  --accent-soft:#14332b;
+  --warn:#dfa274;
+  --warn-ink:#f0c49d;
+  --warn-soft:#2c2018;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:.95rem;
+  line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1040px;margin-inline:auto}
+
+.mono,code{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+code{
+  font-size:.84em;
+  background:var(--surface-2);
+  padding:.08em .36em;
+  border-radius:3px;
+  color:var(--ink);
+}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- 页头 ---------- */
+.masthead{padding-block:64px 0}
+.eyebrow{
+  font-family:var(--font-mono);
+  font-size:.7rem;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--accent);
+}
+h1{
+  font-size:clamp(2.1rem,5.2vw,3.05rem);
+  line-height:1.06;
+  letter-spacing:-.025em;
+  font-weight:600;
+  margin:.4rem 0 .7rem;
+  text-wrap:balance;
+}
+.lede{max-width:63ch;color:var(--muted);font-size:1.02rem;margin:0}
+.facts{
+  display:flex;flex-wrap:wrap;gap:0;
+  margin-top:34px;
+  border-top:1px solid var(--line);
+}
+.facts div{
+  padding:14px 26px 14px 0;
+  margin-right:26px;
+  border-right:1px solid var(--line);
+}
+.facts div:last-child{border-right:0;margin-right:0;padding-right:0}
+.facts .k{
+  display:block;
+  font-family:var(--font-mono);
+  font-size:.66rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.facts .v{font-size:1.25rem;font-weight:600;letter-spacing:-.01em}
+.facts .v small{font-size:.7rem;font-weight:400;color:var(--muted);letter-spacing:0;margin-left:.3em}
+.ruler{
+  height:9px;
+  margin-top:30px;
+  background:repeating-linear-gradient(90deg,var(--line) 0 1px,transparent 1px 14px);
+  border-bottom:1px solid var(--line);
+  opacity:.85;
+}
+
+/* ---------- 区块 ---------- */
+section{padding-block:46px;border-bottom:1px solid var(--line)}
+section:last-of-type{border-bottom:0}
+.sec-head{display:grid;grid-template-columns:118px minmax(0,1fr);gap:26px;margin-bottom:26px}
+.kicker{
+  font-family:var(--font-mono);
+  font-size:.7rem;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--muted);
+  padding-top:.5rem;
+}
+h2{
+  font-size:clamp(1.32rem,2.6vw,1.7rem);
+  line-height:1.24;
+  letter-spacing:-.015em;
+  font-weight:600;
+  margin:0 0 .45rem;
+  text-wrap:balance;
+}
+.sec-head p{margin:0;color:var(--muted);max-width:66ch;font-size:.93rem}
+h3{font-size:1rem;font-weight:600;margin:0 0 .3rem;letter-spacing:-.005em}
+
+/* ---------- 表格 ---------- */
+.table-scroll{
+  overflow-x:auto;
+  border:1px solid var(--line);
+  border-radius:5px;
+  background:var(--surface);
+}
+table{border-collapse:collapse;width:100%;font-size:.83rem;min-width:660px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.55}
+thead th{
+  font-family:var(--font-mono);
+  font-size:.66rem;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+  color:var(--muted);
+  font-weight:500;
+  background:var(--surface-2);
+  white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:0}
+td .sub{display:block;color:var(--muted);font-size:.9em;margin-top:2px}
+.wide table{min-width:900px}
+.wide th:first-child,.wide td:first-child{
+  position:sticky;left:0;
+  background:var(--surface);
+  border-right:1px solid var(--line);
+  min-width:118px;
+}
+.wide thead th:first-child{background:var(--surface-2)}
+.tnum{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:.93em}
+.scroll-hint{display:none;margin:7px 0 0;font-family:var(--font-mono);font-size:.68rem;letter-spacing:.04em;color:var(--muted)}
+
+/* ---------- 流水线 ---------- */
+.lanes{display:grid;gap:14px;margin-top:4px}
+.lane{display:grid;grid-template-columns:64px minmax(0,1fr);gap:14px;align-items:center}
+.lane-label{
+  font-family:var(--font-mono);font-size:.7rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);text-align:right;
+}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+.step{
+  font-family:var(--font-mono);font-size:.75rem;
+  border:1px solid var(--line);background:var(--surface);
+  padding:5px 11px;border-radius:4px;color:var(--muted);
+}
+.step.on{
+  border-color:var(--accent);background:var(--accent-soft);
+  color:var(--accent-ink);font-weight:500;
+}
+.arrow{color:var(--muted);font-family:var(--font-mono);font-size:.8rem}
+.knobs{display:flex;flex-wrap:wrap;gap:6px;margin-top:18px}
+.knob{
+  font-family:var(--font-mono);font-size:.72rem;
+  border:1px dashed var(--line);padding:3px 9px;border-radius:3px;color:var(--muted);
+}
+.knob b{color:var(--ink);font-weight:500}
+.side-note{margin-top:16px;color:var(--muted);font-size:.87rem;max-width:68ch}
+
+/* ---------- 版式示意图 ---------- */
+.mocks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.mock{
+  border:1px solid var(--line);border-radius:5px;background:var(--surface);
+  padding:15px 15px 14px;display:flex;flex-direction:column;gap:10px;
+}
+.mock-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.mock-title{font-weight:600;font-size:.97rem}
+.tag{
+  font-family:var(--font-mono);font-size:.65rem;letter-spacing:.06em;
+  border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--muted);
+  white-space:nowrap;
+}
+.mock-nums{
+  font-family:var(--font-mono);font-size:.72rem;color:var(--muted);
+  font-variant-numeric:tabular-nums;letter-spacing:.01em;
+  margin-top:-4px;
+}
+.mock svg{width:100%;height:auto;display:block;margin-top:2px}
+.mock-facts{list-style:none;margin:0;padding:0;display:grid;gap:5px;font-size:.81rem;color:var(--muted);line-height:1.55}
+.mock-facts li{padding-left:13px;position:relative}
+.mock-facts li::before{
+  content:"";position:absolute;left:0;top:.62em;width:5px;height:1px;background:var(--accent);
+}
+.mock-facts b{color:var(--ink);font-weight:600}
+.mock-facts .mono{font-size:.95em;color:var(--ink)}
+
+/* SVG 图的样式 */
+.m-frame{fill:var(--surface-2);stroke:var(--line);stroke-width:1}
+.m-guide{stroke:var(--accent);stroke-width:1;stroke-dasharray:3 3;opacity:.75;fill:none}
+.m-crop{stroke:var(--ink);stroke-width:1.2}
+.m-crop-dash{stroke:var(--ink);stroke-width:1.2;stroke-dasharray:4 3;opacity:.75;fill:none}
+.m-gate{stroke:var(--warn);stroke-width:1.2;stroke-dasharray:4 3;fill:none}
+.m-overlay{fill:var(--warn-soft);stroke:var(--warn);stroke-width:1;stroke-dasharray:4 3}
+.m-pill{fill:var(--accent-soft);stroke:var(--accent);stroke-width:.8}
+.m-pill-text{fill:var(--accent-ink);font-family:var(--font-body);font-weight:500}
+.m-text{fill:var(--ink);font-family:var(--font-body)}
+.m-muted{fill:var(--muted);font-family:var(--font-body)}
+.m-label{fill:var(--muted);font-family:var(--font-mono);font-size:7.2px;letter-spacing:.01em}
+.m-accent{fill:var(--accent)}
+.m-warn-label{fill:var(--warn-ink);font-family:var(--font-mono);font-size:7.2px}
+.m-strike{text-decoration:line-through;opacity:.65}
+.band-accent{fill:var(--accent-soft);stroke:var(--accent);stroke-width:.7}
+.band-gap{fill:var(--surface-2);stroke:var(--line);stroke-width:.7;stroke-dasharray:3 3}
+.band-warn{fill:var(--warn-soft);stroke:var(--warn);stroke-width:.7}
+.axis{stroke:var(--line);stroke-width:1}
+.tick{stroke:var(--line);stroke-width:1}
+.axis-label{fill:var(--muted);font-family:var(--font-mono);font-size:12px}
+.fig-label{fill:var(--ink);font-family:var(--font-mono);font-size:14px}
+.fig-warn{fill:var(--warn-ink);font-family:var(--font-mono);font-size:14px}
+
+/* ---------- 说明块 ---------- */
+.note{
+  border-left:3px solid var(--warn);
+  background:var(--warn-soft);
+  padding:13px 16px;
+  border-radius:0 4px 4px 0;
+  font-size:.86rem;
+  line-height:1.65;
+}
+.note strong{color:var(--warn-ink)}
+.note.calm{border-left-color:var(--accent);background:var(--accent-soft)}
+.note.calm strong{color:var(--accent-ink)}
+.note + .note{margin-top:10px}
+.stack{display:grid;gap:12px;margin-top:20px}
+
+.figures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.figure{
+  border:1px solid var(--line);border-radius:5px;background:var(--surface);
+  padding:16px 16px 12px;overflow-x:auto;
+}
+.figure svg{width:100%;min-width:460px;height:auto;display:block}
+figcaption{color:var(--muted);font-size:.8rem;line-height:1.55;margin-top:8px}
+
+/* ---------- 认人 ---------- */
+.accounts{display:grid;gap:10px;margin-top:6px}
+.acc-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-family:var(--font-mono);font-size:.8rem}
+.acc{
+  border:1px solid var(--line);background:var(--surface);border-radius:4px;
+  padding:3px 9px;white-space:nowrap;
+}
+.acc b{color:var(--accent);font-weight:500}
+.acc-arrow{color:var(--muted);font-size:.8rem}
+.acc-out{border-style:dashed;color:var(--muted)}
+
+/* ---------- 交付映射 ---------- */
+.deliver{display:grid;gap:0;border-top:1px solid var(--line)}
+.deliver-row{
+  display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;
+  padding:11px 0;border-bottom:1px solid var(--line);align-items:baseline;
+}
+.deliver-row .to{font-weight:600}
+.deliver-row .from{font-family:var(--font-mono);font-size:.8rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px}
+.chip{
+  border:1px solid var(--line);border-radius:3px;padding:1px 7px;background:var(--surface);
+}
+.chip.reserved{border-style:dashed;opacity:.75}
+
+/* ---------- 清单 ---------- */
+ol.steps{list-style:none;counter-reset:s;padding:0;margin:0;display:grid;gap:15px}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:30px minmax(0,1fr);gap:14px}
+ol.steps li::before{
+  content:counter(s,decimal-leading-zero);
+  font-family:var(--font-mono);font-size:.76rem;color:var(--accent);padding-top:.16rem;
+}
+ol.steps p{margin:.15rem 0 0;color:var(--muted);font-size:.88rem}
+
+footer{padding-block:38px 46px;color:var(--muted);font-size:.8rem;line-height:1.7}
+footer .mono{font-size:.74rem;letter-spacing:.04em}
+
+@media (max-width:820px){
+  .mocks,.figures{grid-template-columns:minmax(0,1fr)}
+  .sec-head{grid-template-columns:minmax(0,1fr);gap:6px}
+  .kicker{padding-top:0}
+  .facts div{padding-right:18px;margin-right:18px}
+  .lane{grid-template-columns:minmax(0,1fr);gap:6px}
+  .lane-label{text-align:left}
+  .masthead{padding-block:40px 0}
+  .scroll-hint{display:block}
+}
+@media (max-width:420px){
+  .facts{gap:14px 0}
+  .facts div{border-right:0;margin-right:0;padding-right:0;width:50%}
+  .deliver-row{grid-template-columns:minmax(0,1fr);gap:4px}
+}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">livepipe / platform profiles</div>
+    <h1>一套流水线，五份版式档案</h1>
+    <p class="lede">
+      livepipe 现在能跑抖音、视频号、微博三个平台的直播录屏。同一平台的桌面网页版和手机 App
+      是两份档案：行网格、徽章位置、折行判断都不一样，数字不能互相照抄。
+    </p>
+    <div class="facts">
+      <div><span class="k">平台</span><span class="v">3</span></div>
+      <div><span class="k">版式档案</span><span class="v">5</span></div>
+      <div><span class="k">表情表</span><span class="v">3</span></div>
+      <div><span class="k">交付目录</span><span class="v">3</span></div>
+    </div>
+    <div class="ruler" aria-hidden="true"></div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section>
+    <div class="sec-head">
+      <div class="kicker">支持范围</div>
+      <div>
+        <h2>哪些录屏能直接跑</h2>
+        <p>
+          档案名写在面板文件里（<code>platforms.&lt;名字&gt;</code>），决定这个面板怎么切行、怎么认徽章。
+          表里的行距、相位、正文起 x 是兜底值，解析时还会从采样帧自标定。
+        </p>
+      </div>
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>平台 · 端</th>
+            <th>档案</th>
+            <th>行距 / 相位 / 正文起</th>
+            <th>裁切右沿</th>
+            <th>面板矩形（实测）</th>
+            <th>示例配置</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>抖音 · 桌面网页版</td>
+            <td><code>douyin</code></td>
+            <td class="tnum">68 / 17 / 70</td>
+            <td><code>content</code></td>
+            <td class="tnum">512×766<span class="sub">窗口 2560×1520</span></td>
+            <td>内置默认 · <code>csj.json</code></td>
+          </tr>
+          <tr>
+            <td>抖音 · 手机 App</td>
+            <td><code>douyin_app</code></td>
+            <td class="tnum">53.5 / 10 / 96</td>
+            <td><code>content</code></td>
+            <td class="tnum">690×700<span class="sub">720×1600 竖屏</span></td>
+            <td><code>风云T7.json</code></td>
+          </tr>
+          <tr>
+            <td>视频号 · 桌面网页版</td>
+            <td><code>wechat</code></td>
+            <td class="tnum">61 / 21 / 60</td>
+            <td><code>window</code><span class="sub">csj.json 覆盖为 content</span></td>
+            <td class="tnum">898×287<span class="sub">窗口 2560×1520</span></td>
+            <td>内置默认 · <code>csj.json</code></td>
+          </tr>
+          <tr>
+            <td>视频号 · 手机 App</td>
+            <td><code>wechat_app</code></td>
+            <td class="tnum">50.6 / 25 / 30</td>
+            <td><code>window</code></td>
+            <td class="tnum">720×475～640<span class="sub">720×1600 竖屏</span></td>
+            <td><code>ctcc</code> · <code>8PRO</code> · <code>exeed</code></td>
+          </tr>
+          <tr>
+            <td>微博 · 手机 App</td>
+            <td><code>weibo</code></td>
+            <td class="tnum">74 / 45 / 38</td>
+            <td><code>content</code></td>
+            <td class="tnum">965×922<span class="sub">978×2176 竖屏</span></td>
+            <td><code>weibo.json</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="scroll-hint">表格可横向滑动</p>
+
+    <div class="note calm" style="margin-top:16px">
+      <strong>快手、小红书、B站</strong>目前只出现在交付目录映射（<code>PLATFORM_CN</code>）里，没有量过档案，
+      不能直接跑片。加平台 = 量一份新档案，见文末清单。
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="kicker">流水线</div>
+      <div>
+        <h2>差异只在一处生效</h2>
+        <p>
+          步骤对所有平台相同。档案在 <code>panels</code> 阶段随面板带进来，<code>parse</code> 里生效；
+          交付目录名则在 <code>export</code> 里查表决定。
+        </p>
+      </div>
+    </div>
+
+    <div class="lanes">
+      <div class="lane">
+        <div class="lane-label">每段</div>
+        <div class="flow">
+          <span class="step">emoji_tables</span><span class="arrow">→</span>
+          <span class="step">panels</span><span class="arrow">→</span>
+          <span class="step on">parse</span><span class="arrow">→</span>
+          <span class="step">draw</span>
+        </div>
+      </div>
+      <div class="lane">
+        <div class="lane-label">全片</div>
+        <div class="flow">
+          <span class="step">filter</span><span class="arrow">→</span>
+          <span class="step">qualify</span><span class="arrow">→</span>
+          <span class="step on">export</span><span class="arrow">→</span>
+          <span class="step">collect</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="knobs">
+      <span class="knob"><b>row_pitch / y_phase / x_text</b> 行网格</span>
+      <span class="knob"><b>x2_from</b> 裁切右沿</span>
+      <span class="knob"><b>rank_pill</b> 右侧药丸</span>
+      <span class="knob"><b>fan_badge_x_max / badge_alias</b> 左侧药丸</span>
+      <span class="knob"><b>wrap_at_text_left</b> 折行</span>
+      <span class="knob"><b>overlay_cards / x_ignore_from</b> 浮层</span>
+      <span class="knob"><b>account_key</b> 认人</span>
+      <span class="knob"><b>emoji</b> 表情表</span>
+    </div>
+    <p class="side-note">
+      换平台不改代码。同一个平台换端（网页 ↔ App）等于换档案：视频号 App 的行距是 50.6，网页版是 61，
+      照抄会让整片认不出。
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="kicker">行版式</div>
+      <div>
+        <h2>五种版面，五种切法</h2>
+        <p>
+          示意图按面板宽度归一，标注的数字是实测像素；青色虚线是正文起始列，右侧实线是内容右沿，
+          虚线是窗口右沿，橙色区域是非评论内容。
+        </p>
+      </div>
+    </div>
+
+    <div class="mocks">
+      <article class="mock">
+        <div class="mock-head">
+          <span class="mock-title">抖音 · 桌面网页版</span>
+          <span class="tag">douyin</span>
+        </div>
+        <div class="mock-nums">68 / 17 / 70 · content</div>
+        <div data-mock="douyin" role="img" aria-label="抖音网页版行版式：左侧等级标徽章列，正文从 x=70 起，续行贴面板左沿"></div>
+        <ul class="mock-facts">
+          <li>左侧徽章列 <b>◆N</b>，正文从 <span class="mono">x=70</span> 起；续行贴面板左沿，形状就能认折行。</li>
+          <li>右沿跟内容走：面板固定宽，<code>content</code> 裁得紧，OCR 最省。</li>
+          <li>桌面整列滚动，相位固定；逐帧估相位对它是空操作。</li>
+        </ul>
+      </article>
+
+      <article class="mock">
+        <div class="mock-head">
+          <span class="mock-title">抖音 · 手机 App</span>
+          <span class="tag">douyin_app</span>
+        </div>
+        <div class="mock-nums">53.5 / 10 / 96 · content</div>
+        <div data-mock="douyin_app" role="img" aria-label="抖音手机 App 行版式：左侧粉丝团药丸，正文从 x=96 起，续行缩进，右侧商品讲解卡被 x_ignore_from 切掉"></div>
+        <ul class="mock-facts">
+          <li>昵称被打码（<span class="mono">1___</span>），左侧 <b>◆N</b> 粉丝团药丸；正文起 <span class="mono">x=96</span>。</li>
+          <li>续行缩进到 <span class="mono">x≈37–45</span>，落进药丸带 ⇒ <code>x_text</code> 取药丸列右沿，让它归到「整行正文」。</li>
+          <li>右侧商品讲解卡：<code>x_ignore_from 400</code>；seg7 是 0.82× 的另一台设备，面板级覆盖 <span class="mono">360</span>。</li>
+        </ul>
+      </article>
+
+      <article class="mock">
+        <div class="mock-head">
+          <span class="mock-title">视频号 · 桌面网页版</span>
+          <span class="tag">wechat</span>
+        </div>
+        <div class="mock-nums">61 / 21 / 60 · window</div>
+        <div data-mock="wechat" role="img" aria-label="视频号网页版行版式：左侧等级标徽章列，正文从 x=60 起，右沿取窗口"></div>
+        <ul class="mock-facts">
+          <li>左侧 <b>✦N</b>，正文 <span class="mono">x=60</span>。</li>
+          <li>面板右边随内容伸缩（实测内容右沿跨 686px），内容定死的右沿会裁掉更宽的评论，所以取 <code>window</code>。</li>
+          <li>代价：裁切面积 ×2.8、全片 OCR 约 +38%；面板固定宽的素材（<code>csj.json</code>）覆盖回 <code>content</code>。</li>
+        </ul>
+      </article>
+
+      <article class="mock">
+        <div class="mock-head">
+          <span class="mock-title">视频号 · 手机 App</span>
+          <span class="tag">wechat_app</span>
+        </div>
+        <div class="mock-nums">50.6 / 25 / 30 · window</div>
+        <div data-mock="wechat_app" role="img" aria-label="视频号手机 App 行版式：行首有等级标和粉丝两枚药丸，药丸压进正文列，列表上压着通知卡与广告卡"></div>
+        <ul class="mock-facts">
+          <li>行首两枚药丸：<b>✦N</b> 等级标 + 可选「粉丝」。正文起 <span class="mono">x=30</span>，药丸就在正文列里。</li>
+          <li><code>fan_badge_x_max 37</code> 用几何闸剥「粉丝」，<code>badge_alias</code> 把并进昵称的药丸数字归一。</li>
+          <li>评论矩形里压着通知卡、主题卡、广告气泡：<code>overlay_cards</code> 短语表 + 「列表滚了它没动」判据。</li>
+        </ul>
+      </article>
+
+      <article class="mock">
+        <div class="mock-head">
+          <span class="mock-title">微博 · 手机 App</span>
+          <span class="tag">weibo</span>
+        </div>
+        <div class="mock-nums">74 / 45 / 38 · content</div>
+        <div data-mock="weibo" role="img" aria-label="微博手机 App 行版式：等级标榜N药丸在昵称右边，没有左侧徽章列，续行与首行同左沿，列表混着无冒号系统行"></div>
+        <ul class="mock-facts">
+          <li>等级标是 <b>[榜N]</b> 药丸，跟在昵称右边；<code>rank_pill</code> 按药丸切一刀，药丸本身不记录。</li>
+          <li>没有左侧徽章列，续行与首行同左沿 ⇒ <code>wrap_at_text_left</code> 改按与上一行的间距认折行。</li>
+          <li>列表里混着横幅、进房通知、开播公告：先按无冒号系统行剔掉。</li>
+        </ul>
+      </article>
+
+      <article class="mock" style="align-self:start">
+        <h3>读图三条规则</h3>
+        <ul class="mock-facts">
+          <li><b>徽章在左还是在右</b>，决定折行能不能靠形状认：左边有徽章列，续行必然更靠左。</li>
+          <li><b>右沿跟内容还是跟窗口</b>，决定会不会裁内容：面板宽度会变，就只能取窗口。</li>
+          <li><b>正文起 x 取哪条边</b>，决定药丸是被丢掉还是被并进昵称：取药丸右沿，续行才会归到正文。</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="kicker">差异对照</div>
+      <div>
+        <h2>一张表看完</h2>
+        <p>横向按档案对比。只有抖音 App 需要等级标认人；只有微博的等级标在昵称右边。</p>
+      </div>
+    </div>
+
+    <div class="table-scroll wide">
+      <table>
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th>douyin</th>
+            <th>douyin_app</th>
+            <th>wechat</th>
+            <th>wechat_app</th>
+            <th>weibo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>端 / 素材</td>
+            <td>桌面网页版<br><span class="sub tnum">2560×1520 窗口</span></td>
+            <td>手机 App<br><span class="sub tnum">720×1600</span></td>
+            <td>桌面网页版<br><span class="sub tnum">2560×1520 窗口</span></td>
+            <td>手机 App<br><span class="sub tnum">720×1600</span></td>
+            <td>手机 App<br><span class="sub tnum">978×2176</span></td>
+          </tr>
+          <tr>
+            <td>行网格</td>
+            <td class="tnum">68 / 17 / 70</td>
+            <td class="tnum">53.5 / 10 / 96</td>
+            <td class="tnum">61 / 21 / 60</td>
+            <td class="tnum">50.6 / 25 / 30</td>
+            <td class="tnum">74 / 45 / 38</td>
+          </tr>
+          <tr>
+            <td>裁切右沿</td>
+            <td><code>content</code></td>
+            <td><code>content</code></td>
+            <td><code>window</code></td>
+            <td><code>window</code></td>
+            <td><code>content</code></td>
+          </tr>
+          <tr>
+            <td>左侧徽章</td>
+            <td>◆N 独立徽章列</td>
+            <td>◆N 粉丝团药丸</td>
+            <td>✦N 独立徽章列</td>
+            <td>✦N + 「粉丝」药丸</td>
+            <td>无</td>
+          </tr>
+          <tr>
+            <td>昵称右侧</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>[榜N] 药丸</td>
+          </tr>
+          <tr>
+            <td>折行识别</td>
+            <td>形状（续行贴左沿）</td>
+            <td>形状（续行缩进进药丸带）</td>
+            <td>形状（续行贴左沿）</td>
+            <td>形状 + 缩进自标定</td>
+            <td>间距（<code>wrap_at_text_left</code>）</td>
+          </tr>
+          <tr>
+            <td>行上浮层</td>
+            <td>无</td>
+            <td>右侧讲解卡<br><span class="sub"><code>x_ignore_from 400</code> + 短语表</span></td>
+            <td>无</td>
+            <td>通知 / 主题 / 广告卡<br><span class="sub">短语表 + 冻结判据</span></td>
+            <td>无冒号系统行</td>
+          </tr>
+          <tr>
+            <td>相位估计</td>
+            <td>固定</td>
+            <td>逐帧（2s 可移 2.8 行距）</td>
+            <td>固定</td>
+            <td>逐帧</td>
+            <td>逐帧</td>
+          </tr>
+          <tr>
+            <td>认人键</td>
+            <td><code>username</code></td>
+            <td><code>nickname_level</code></td>
+            <td><code>username</code></td>
+            <td><code>username</code></td>
+            <td><code>username</code></td>
+          </tr>
+          <tr>
+            <td>表情表</td>
+            <td><code>douyin</code></td>
+            <td><code>douyin</code></td>
+            <td><code>wechat</code></td>
+            <td><code>wechat</code></td>
+            <td><code>weibo</code></td>
+          </tr>
+          <tr>
+            <td>交付目录</td>
+            <td>抖音</td>
+            <td>抖音</td>
+            <td>视频号</td>
+            <td>视频号</td>
+            <td>微博</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="scroll-hint">表格可横向滑动，或按上面的单卡对照</p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="kicker">几何闸</div>
+      <div>
+        <h2>两个阈值决定干净与否</h2>
+        <p>
+          这两个数都是版式事实，只能写在档案里。自标定会留一行日志当证据，但不覆盖手写值。
+        </p>
+      </div>
+    </div>
+
+    <div class="figures">
+      <figure class="figure" style="margin:0">
+        <svg viewBox="0 0 640 140" role="img" aria-label="抖音手机 App 裁切宽度 690 像素内的文字块分布：评论侧最右 325，空带 153 像素，商品卡最左 478，闸门取 400">
+          <rect class="band-accent" x="30" y="66" width="268.5" height="30" rx="2"></rect>
+          <rect class="band-gap" x="298.5" y="66" width="126.4" height="30"></rect>
+          <rect class="band-warn" x="424.9" y="66" width="96.6" height="30" rx="2"></rect>
+          <text class="fig-label" x="164" y="60" text-anchor="middle">评论与表情块 ≤325</text>
+          <text class="fig-label" x="473" y="60" text-anchor="middle">商品卡 ≥478</text>
+          <line class="m-gate" x1="360.4" y1="42" x2="360.4" y2="112"></line>
+          <text class="fig-warn" x="360.4" y="34" text-anchor="middle">闸门 400 · 空带 153px</text>
+          <line class="axis" x1="30" y1="112" x2="600" y2="112"></line>
+          <line class="tick" x1="30" y1="108" x2="30" y2="120"></line>
+          <line class="tick" x1="195.2" y1="108" x2="195.2" y2="120"></line>
+          <line class="tick" x1="360.4" y1="108" x2="360.4" y2="120"></line>
+          <line class="tick" x1="525.7" y1="108" x2="525.7" y2="120"></line>
+          <text class="axis-label" x="30" y="132" text-anchor="middle">0</text>
+          <text class="axis-label" x="195.2" y="132" text-anchor="middle">200</text>
+          <text class="axis-label" x="360.4" y="132" text-anchor="middle">400</text>
+          <text class="axis-label" x="525.7" y="132" text-anchor="middle">600</text>
+        </svg>
+        <figcaption>
+          <code>x_ignore_from</code>：690 宽的裁切里，评论侧最右 325、商品讲解卡最左 478，闸门取空带中间的
+          400。<code>seg7</code> 换了一台 0.82× 的设备，两簇变成 316 / 394，面板级覆盖成 360。
+        </figcaption>
+        <p class="scroll-hint">图可横向滑动</p>
+      </figure>
+
+      <figure class="figure" style="margin:0">
+        <svg viewBox="0 0 640 140" role="img" aria-label="微博续行与独立评论到上一行的间距比：折行 0.59 到 0.64 个行距，独立评论 0.97 到 1.01，闸门 0.73">
+          <rect class="band-accent" x="124" y="66" width="46.7" height="30" rx="2"></rect>
+          <rect class="band-gap" x="478.7" y="66" width="37.3" height="30" rx="2"></rect>
+          <text class="fig-label" x="147" y="60" text-anchor="middle">折行 0.59–0.64</text>
+          <text class="fig-label" x="497" y="60" text-anchor="middle">独立评论 0.97–1.01</text>
+          <line class="m-gate" x1="254.7" y1="42" x2="254.7" y2="112"></line>
+          <text class="fig-warn" x="254.7" y="34" text-anchor="middle">闸门 0.73</text>
+          <line class="axis" x1="40" y1="112" x2="600" y2="112"></line>
+          <line class="tick" x1="40" y1="108" x2="40" y2="120"></line>
+          <line class="tick" x1="226.7" y1="108" x2="226.7" y2="120"></line>
+          <line class="tick" x1="413.3" y1="108" x2="413.3" y2="120"></line>
+          <line class="tick" x1="600" y1="108" x2="600" y2="120"></line>
+          <text class="axis-label" x="40" y="132" text-anchor="middle">0.5</text>
+          <text class="axis-label" x="226.7" y="132" text-anchor="middle">0.7</text>
+          <text class="axis-label" x="413.3" y="132" text-anchor="middle">0.9</text>
+          <text class="axis-label" x="600" y="132" text-anchor="middle">1.1</text>
+        </svg>
+        <figcaption>
+          <code>wrap_gap_ratio</code>：微博的折行与独立评论在形状上完全重叠（首块 x1 都在 38–45），
+          只能按「与上一行的间距」分。折行 0.59–0.64 个行距，独立评论 0.97–1.01，闸门夹在 0.73。
+        </figcaption>
+        <p class="scroll-hint">图可横向滑动</p>
+      </figure>
+    </div>
+
+    <div class="stack">
+      <div class="note">
+        <strong>浮层只在一部分时间出现。</strong>分段 1 的商品卡 t≈314–370 才出现，而自标定只 OCR 开头 4 帧；
+        浮层最左那块还会飘 1px（标到 479、实测 478，1px 之差决定 4 条评论干不干净）。所以这个数写死，不交给自标定。
+      </div>
+      <div class="note calm">
+        <strong><code>overlay_cards</code> 的两种写法：</strong><code>true</code> 只用内置短语表；
+        写成字符串 = 内置表 + 本素材才有的词（品牌名只能写在这里，放进内置表就是拿品牌名赌内容）。
+        开它还会带上跨帧判据「列表滚了它没动」；跟着列表一起滚的横幅认不出，只能写短语。
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="kicker">认人</div>
+      <div>
+        <h2>打码昵称只能靠等级标分开</h2>
+        <p>
+          <code>account_key</code> 只在交付这一层生效：<code>username</code> 只看昵称，
+          <code>nickname_level</code> 按（昵称、等级标）认人。抖音 App 昵称打码成 <span class="mono">1___</span>、
+          <span class="mono">好___</span>，五个人可能同名。
+        </p>
+      </div>
+    </div>
+
+    <div class="accounts">
+      <div class="acc-row">
+        <span class="acc">读作 <b>1___</b> + <b>◆12</b></span>
+        <span class="acc-arrow">→</span>
+        <span class="acc acc-out">1___◆12-3</span>
+      </div>
+      <div class="acc-row">
+        <span class="acc">读作 <b>1___</b>，没读到等级</span>
+        <span class="acc-arrow">→</span>
+        <span class="acc acc-out">1___-9</span>
+      </div>
+      <div class="acc-row">
+        <span class="acc">读作 <b>8___</b> + <b>◆2</b></span>
+        <span class="acc-arrow">→</span>
+        <span class="acc acc-out">8___◆2-5</span>
+      </div>
+    </div>
+
+    <div class="stack">
+      <div class="note calm">
+        目录名里 <code>*</code> 换成 <code>_</code>，末尾 <code>-N</code> 是去重序号。等级标没读到的那些单独成组，
+        不会再被并进同名账号。身份只有一处实现：<code>livepipe/account_id.py</code>；其余平台用
+        <code>username</code>，不受影响。
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="kicker">表情表</div>
+      <div>
+        <h2>三张表，互不通用</h2>
+        <p>
+          身份键和阈值都随表走。拿错表不是「分数低一点」，是一个都认不出来：这一屏全是 <code>?</code>。
+        </p>
+      </div>
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>表</th>
+            <th>条目</th>
+            <th>身份键</th>
+            <th>阈值（高度比 / <code>looks_like</code> / <code>min_score</code>）</th>
+            <th>标定</th>
+            <th>用于</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>douyin</code></td>
+            <td class="tnum">214</td>
+            <td><code>byHash</code><span class="sub">32 位图床 hash</span></td>
+            <td class="tnum">0.56 / 0.78 / 0.85</td>
+            <td>已标定</td>
+            <td>抖音网页版、抖音 App</td>
+          </tr>
+          <tr>
+            <td><code>wechat</code></td>
+            <td class="tnum">109</td>
+            <td><code>byId</code><span class="sub">001–109</span></td>
+            <td class="tnum">0.50 / 0.80 / 0.85</td>
+            <td>已标定</td>
+            <td>视频号网页版、视频号 App</td>
+          </tr>
+          <tr>
+            <td><code>weibo</code></td>
+            <td class="tnum">280<span class="sub">索引 262</span></td>
+            <td><code>byId</code> + <code>byCdn</code><span class="sub">PC 面板 key，524 条图址</span></td>
+            <td class="tnum">0.43 / 0.75 / 0.80</td>
+            <td>部分标定<span class="sub">高度比实量，其余照视频号起点</span></td>
+            <td>微博</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="kicker">交付</div>
+      <div>
+        <h2>档案名落到哪个目录</h2>
+        <p>多个档案名对应同一个中文目录。新加档案名必须往 <code>PLATFORM_CN</code> 加一行，否则会多出一个以档案名命名的目录。</p>
+      </div>
+    </div>
+
+    <div class="deliver">
+      <div class="deliver-row">
+        <div class="to">抖音</div>
+        <div class="from"><span class="chip">douyin</span><span class="chip">douyin_app</span></div>
+      </div>
+      <div class="deliver-row">
+        <div class="to">视频号</div>
+        <div class="from"><span class="chip">wechat</span><span class="chip">wechat_app</span><span class="chip">weixin</span></div>
+      </div>
+      <div class="deliver-row">
+        <div class="to">微博</div>
+        <div class="from"><span class="chip">weibo</span></div>
+      </div>
+      <div class="deliver-row">
+        <div class="to">预留</div>
+        <div class="from">
+          <span class="chip reserved">kuaishou → 快手</span>
+          <span class="chip reserved">xiaohongshu → 小红书</span>
+          <span class="chip reserved">bilibili → B站</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="kicker">接入</div>
+      <div>
+        <h2>加一个平台要量什么</h2>
+        <p>顺序不能省：先量网格，再判版式事实，最后才配浮层和表情。</p>
+      </div>
+    </div>
+
+    <ol class="steps">
+      <li>
+        <div>
+          <h3>量行网格</h3>
+          <p>在录屏里量行距、首行相位、正文起始 x。先用兜底值跑一段，再看 <code>parse.calibrate</code> 的日志复核。</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>判三个版式事实</h3>
+          <p>徽章在左还是在右、折行贴左沿还是缩进、正文 x 该取药丸左沿还是右沿。它们决定 <code>rank_pill</code>、
+          <code>wrap_at_text_left</code>、<code>x_text</code>，猜错整片认不出。</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>判浮层</h3>
+          <p>跟着列表滚的写短语（<code>overlay_cards</code>），不跟着滚的靠冻结判据；压在评论列右边的量空带，写 <code>x_ignore_from</code>。</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>选表情表、量阈值</h3>
+          <p>表情是哪个源就用哪张表；换源要重量高度比与 <code>looks_like</code>，不能照抄。</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>写档案、接引用</h3>
+          <p><code>platforms</code> 加一条，面板文件填这个档案名，<code>PLATFORM_CN</code> 加一行。</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h3>先切片，再全量</h3>
+          <p>挑 90 秒有浮层、有折行的片段跑一遍对图；确认没有卡行、没有截断，再跑全片。</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="mono">依据 livepipe/CONFIG.md 与各配置里的实测注释整理 · 2026-10-24</div>
+    <div>素材来自 2026-08 / 09 的抖音、视频号、微博直播录屏；示意图按面板宽度归一，标注数字为实测像素。</div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var P = { x: 30, y: 26, w: 256, h: 140 };
+  var X = function (v, panelW) { return P.x + (v / panelW) * P.w; };
+
+  function panel() {
+    return '<rect class="m-frame" x="' + P.x + '" y="' + P.y + '" width="' + P.w +
+           '" height="' + P.h + '" rx="4"/>';
+  }
+  function guide(x, label) {
+    var xr = x.toFixed(1);
+    return '<line class="m-guide" x1="' + xr + '" y1="26" x2="' + xr + '" y2="166"/>' +
+           '<text class="m-label m-accent" x="' + (x + 4).toFixed(1) + '" y="21">' + label + '</text>';
+  }
+  function edge(mode, label) {
+    var cls = mode === 'window' ? 'm-crop-dash' : 'm-crop';
+    return '<line class="' + cls + '" x1="286" y1="22" x2="286" y2="168"/>' +
+           '<text class="m-label" x="286" y="178" text-anchor="end">' + label + '</text>';
+  }
+  function pill(x, y, w, label) {
+    return '<rect class="m-pill" x="' + x + '" y="' + (y - 9) + '" width="' + w +
+           '" height="12.5" rx="6.25"/>' +
+           '<text class="m-pill-text" x="' + (x + w / 2) + '" y="' + y +
+           '" text-anchor="middle" font-size="6.8">' + label + '</text>';
+  }
+  function row(x, y, str, cls) {
+    return '<text class="' + (cls || 'm-text') + '" x="' + x + '" y="' + y +
+           '" font-size="9.4">' + str + '</text>';
+  }
+  function ann(x, y, str, anchor) {
+    return '<text class="m-label" x="' + x + '" y="' + y + '" text-anchor="' +
+           (anchor || 'start') + '">' + str + '</text>';
+  }
+  function overlay(x, y, w, h) {
+    return '<rect class="m-overlay" x="' + x + '" y="' + y + '" width="' + w +
+           '" height="' + h + '" rx="3"/>';
+  }
+
+  var mocks = {};
+
+  mocks.douyin = function () {
+    var s = panel();
+    s += guide(X(70, 512), 'x_text 70');
+    s += edge('content', 'content');
+    s += pill(34, 52, 24, '◆12');
+    s += row(65, 52, '踏雪归来：底盘真稳');
+    s += row(34, 70, '过减速带不飘', 'm-muted');
+    s += ann(152, 74, '续行贴左沿');
+    s += pill(34, 104, 24, '◆8');
+    s += row(65, 104, '奇瑞老品牌，值得信赖');
+    return s;
+  };
+
+  mocks.douyin_app = function () {
+    var gate = X(400, 690);
+    var s = panel();
+    s += guide(X(96, 690), 'x_text 96');
+    s += edge('content', 'content');
+    s += pill(36, 52, 26, '◆7');
+    s += row(66, 52, '好___：多少钱？');
+    s += row(45, 70, '风云T7 600km', 'm-muted');
+    s += ann(150, 74, '续行缩进 37–45');
+    s += overlay(gate, 92, 286 - gate, 74);
+    s += ann(gate + 4, 104, '商品讲解卡');
+    s += ann(gate + 4, 116, '立即预约');
+    s += row(gate - 112, 138, '平___：电池安全有保障');
+    s += '<line class="m-gate" x1="' + gate.toFixed(1) + '" y1="88" x2="' + gate.toFixed(1) + '" y2="166"/>';
+    s += ann(gate, 178, 'x_ignore_from 400', 'middle');
+    return s;
+  };
+
+  mocks.wechat = function () {
+    var s = panel();
+    s += guide(X(60, 898), 'x_text 60');
+    s += edge('window', 'window 2560');
+    s += pill(31, 52, 15, '✦5');
+    s += row(50, 52, '踏雪归来：用料实在');
+    s += row(33, 70, '五年没出过毛病', 'm-muted');
+    s += ann(140, 74, '续行贴左沿');
+    s += pill(31, 104, 15, '✦3');
+    s += row(50, 104, '这品牌就是太实诚了');
+    return s;
+  };
+
+  mocks.wechat_app = function () {
+    var s = panel();
+    s += guide(X(30, 720), 'x_text 30');
+    s += edge('window', 'window 720');
+    s += pill(42, 52, 14, '✦5');
+    s += pill(58, 52, 22, '粉丝');
+    s += row(84, 52, '踏雪归来：底盘稳');
+    s += ann(84, 38, '药丸压进正文列');
+    s += overlay(34, 90, 252, 30);
+    s += '<text class="m-warn-label" x="160" y="109" text-anchor="middle">通知 · 主题 · 广告卡</text>';
+    s += row(34, 144, '阿___：这车性价比高');
+    return s;
+  };
+
+  mocks.weibo = function () {
+    var s = panel();
+    s += guide(X(38, 965), 'x_text 38');
+    s += edge('content', 'content');
+    s += '<text class="m-muted m-strike" x="40" y="46" font-size="8.6">恭喜 甜甜蜜995 在助力榜飙升到第9名</text>';
+    s += ann(286, 21, '系统行：丢弃', 'end');
+    s += row(40, 80, '甜甜蜜995');
+    s += pill(98, 80, 23, '榜九');
+    s += row(125, 80, '这车这么稳');
+    s += row(40, 98, '过减速带不飘', 'm-muted');
+    s += ann(150, 102, '续行同左沿');
+    s += row(40, 138, '用户52：电池安全有保障');
+    return s;
+  };
+
+  var nodes = document.querySelectorAll('[data-mock]');
+  for (var i = 0; i < nodes.length; i++) {
+    var key = nodes[i].getAttribute('data-mock');
+    if (!mocks[key]) continue;
+    nodes[i].innerHTML = '<svg viewBox="0 0 300 190" aria-hidden="true">' + mocks[key]() + '</svg>';
+  }
+})();
+</script>

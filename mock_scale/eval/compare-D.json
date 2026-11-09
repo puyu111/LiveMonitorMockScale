@@ -1,0 +1,93 @@
+{
+ "a": {
+  "tag": "D-off",
+  "median_s": 8.194,
+  "cv": null,
+  "rc": {
+   "plan": [
+    0
+   ],
+   "run": [
+    3
+   ]
+  },
+  "cache": {
+   "hit": 0,
+   "miss": 73,
+   "fit_hit": 0,
+   "fit_miss": 0,
+   "h": 0.0,
+   "enabled": false
+  }
+ },
+ "b": {
+  "tag": "D-on",
+  "median_s": 8.247,
+  "cv": null,
+  "rc": {
+   "plan": [
+    0
+   ],
+   "run": [
+    3
+   ]
+  },
+  "cache": {
+   "hit": 0,
+   "miss": 73,
+   "fit_hit": 0,
+   "fit_miss": 0,
+   "h": 0.0,
+   "enabled": false
+  },
+  "warmup_s": null
+ },
+ "noise_pct": null,
+ "band_pct": null,
+ "gate_pct": null,
+ "noise_source": "none",
+ "delta_pct": -0.65,
+ "fingerprint_ok": true,
+ "same_corpus": true,
+ "same_code": true,
+ "same_env": true,
+ "join": null,
+ "verdicts": [
+  {
+   "metric": "T_total",
+   "status": "inconclusive",
+   "note": "缺噪声底",
+   "noise_pct": null,
+   "band_pct": null,
+   "gate_pct": null,
+   "noise_source": "none"
+  },
+  {
+   "metric": "N_out",
+   "status": "pass",
+   "a": 53,
+   "b": 53
+  },
+  {
+   "metric": "N_badge",
+   "status": "pass",
+   "a": 57,
+   "b": 57,
+   "deferred_b": 0,
+   "note": "工作量只许下降；deferred=0 说明这份语料没有可延后的图（目标自己的图必须每张都量，bug-284）"
+  },
+  {
+   "metric": "N_scan_px",
+   "status": "pass",
+   "a": 1230338,
+   "b": 125538,
+   "reduction_pct": 89.8
+  },
+  {
+   "metric": "E_out",
+   "status": "pass",
+   "diff": 0
+  }
+ ],
+ "exit": 6
+}

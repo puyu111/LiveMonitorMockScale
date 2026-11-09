@@ -1,0 +1,10 @@
+{
+  "T_total": { "kind": "time", "min_delta_over_noise": 2 },
+  "R_blank": { "kind": "blank", "max_over_baseline_pp": 1, "abs_max": 2 },
+  "R_lvl": { "kind": "ratio", "min": 0.7 },
+  "N_out": { "kind": "count", "min": "baseline" },
+  "E_out": { "kind": "count", "max": 0 },
+  "J_join": { "kind": "ratio", "min": 1.0 },
+  "J_conflict": { "kind": "count", "max": 0 },
+  "H_cache": { "kind": "ratio", "min": 1.0 }
+}

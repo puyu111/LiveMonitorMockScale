@@ -1,0 +1,73 @@
+{
+ "a": {
+  "tag": "A",
+  "median_s": 8.5885,
+  "cv": 0.03178669150608368,
+  "rc": {
+   "plan": [
+    0
+   ],
+   "run": [
+    3
+   ]
+  }
+ },
+ "b": {
+  "tag": "A2",
+  "median_s": 8.598500000000001,
+  "cv": 0.03314531604349597,
+  "rc": {
+   "plan": [
+    0
+   ],
+   "run": [
+    3
+   ]
+  }
+ },
+ "noise_pct": 3.73,
+ "band_pct": 7.47,
+ "gate_pct": 7.47,
+ "noise_source": "baseline",
+ "delta_pct": -0.12,
+ "fingerprint_ok": true,
+ "same_corpus": true,
+ "same_code": true,
+ "same_env": true,
+ "verdicts": [
+  {
+   "metric": "T_total",
+   "status": "no_difference",
+   "value_pct": -0.12,
+   "note": "带内 ⇒ 不记收益",
+   "noise_pct": 3.73,
+   "band_pct": 7.47,
+   "gate_pct": 7.47,
+   "noise_source": "baseline"
+  },
+  {
+   "metric": "N_out",
+   "status": "pass",
+   "a": 53.0,
+   "b": 53.0
+  },
+  {
+   "metric": "R_blank",
+   "status": "pass",
+   "a_pct": 0.0,
+   "b_pct": 0.0,
+   "over_baseline_pp": 0.0
+  },
+  {
+   "metric": "R_lvl",
+   "status": "inconclusive",
+   "note": "等级还没接"
+  },
+  {
+   "metric": "E_out",
+   "status": "pass",
+   "diff": 0
+  }
+ ],
+ "exit": 6
+}

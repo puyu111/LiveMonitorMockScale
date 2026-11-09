@@ -1,0 +1,601 @@
+[
+  {
+    "date": "2026-10-31",
+    "error_message": "out/风云T7_20260826_11_02/seg7/frames：标注图上的「分隔冒号」青框大量标错 —— 抖音手机版（douyin_app）实测约 75% 的行，框整体右偏 10~25px、圈在正文首字上（用户报「冒号识别错误，且是大量错误」）。",
+    "root_cause": "两条叠加：① colon_box_by_pixels 的「孤立」判据要求冒号左右 3px 内没有其它文字块，而抖音打码昵称 `恬***` 的半角星号右沿正好离冒号 3px ⇒ 整类真冒号被判成噪声，pixel 返回 None；② 退回 colon_box_in_row 按**字数等分**插值，块内 `***` 是半角（8px）、汉字是全角（17px），把冒号系统性往右推（实测中位 +21px）。",
+    "fix": "livepipe/parsing/ocr/colon.py：① 插值改按字符宽度加权（全角 1 / 半角 0.55，_char_weight），中位误差 21px→8px；② colon_box_by_pixels 新增 hint 参数，给了插值位置就先在 ±40px 内挑最近的点对（贴着字的真冒号也认），没给 hint 时保持旧的「只认孤立点对」行为；③ 被字贴着的点对仍记为 loose，等距时优先孤立的。video_rows.py 把插值当 hint 传下去。render.py 新增 refresh_colon_box：重画时用当帧像素重算已有冒号框（只修不新增），--rows 复算旧产物也能修对，且画的和 comments.jsonl 落盘的一致。回归断言见 selftest/roi_colon.py（132 项通过）。",
+    "tags": [
+      "colon",
+      "ocr",
+      "annotation",
+      "douyin_app",
+      "frames",
+      "colon_box"
+    ],
+    "verified": {
+      "date": "2026-10-31",
+      "how": "用修好的代码以 --rows 复算 seg7 并重画：python3 livepipe/parse_live_comments.py --rows out/风云T7_20260826_11_02/seg7/rows.jsonl --panels-file out/风云T7_20260826_11_02/seg7/panels.resolved.json --badge-reread --video <17：20-18：19.mp4> --out out/风云T7_20260826_11_02/seg7（OCR 环境：/home/puyu/anaconda3/envs/vlx/bin/python）。",
+      "result": "4216 张标注图重画；5598 条唯一评论与旧产物逐条一致（除 colon_box 外无任何字段差异），等级标读数仍是 4160 条。4633 个冒号框里 4461 个左移，中位 -17px；抽样 6 张标注图逐张核对，青框都压在「昵称|正文」的分隔冒号上。"
+    }
+  },
+  {
+    "date": "2026-10-31",
+    "error_message": "out/8pro_20260810_01/seg2/frames/00025.0_roi.jpg：柠檬*、苗苗* 两行的分隔冒号青框偏右且过高（用户报「冒号识别有问题」）。整段 146 个冒号框全是按字数插值的全高框，像素法一个都没成功。",
+    "root_cause": "两层：① 这批产物是 2026-10-29 的，早于今天的冒号修复；视频号手机端的冒号是灰色（V≈130~145），旧亮度下限 150 把点对整对滤掉 ⇒ 全部退回字数插值（框高=行高 25~29px、宽 23~25px、偏右 8~17px）。② 用新代码重画后仍有 6 行落到插值：灰点只有 2×2，抗锯齿缺一个角时面积=3，而面积闸写的是 <4。",
+    "fix": "用当前代码对 seg2 复算重画（--rows + --panels-file，vlx）：livepipe/parsing/ocr/colon.py 面积闸 4→3（点对几何仍要求同列 ±2px、同宽高、竖向间隙 3~14px），selftest/roi_colon.py 增加「2×2 缺角灰点」断言（133 项通过）。结果：146 个框里 142 个变成像素框（高 12~13px）；柠檬*/苗苗* 由 [115,1047,138,1074] → [105,1057,113,1069]，紧贴冒号。剩 4 个是滚动中近不可见的灰点（V≈110、面积 1~2），保留插值。149 条唯一评论除 colon_box 外零字段差异。",
+    "tags": [
+      "colon",
+      "ocr",
+      "wechat_app",
+      "annotation",
+      "area_threshold",
+      "8pro",
+      "seg2",
+      "frames"
+    ]
+  },
+  {
+    "date": "2026-10-31",
+    "error_message": "用户改了 08-09CTCC.json 里 panels.manual 的 rect（seg1 [0,900,720,1220]、seg2 [100,900,720,1220]），重跑 python livepipe/draw_boxes.py --config ./08-09CTCC.json，panels/*.jpg 里的框没变，仍是旧 rect [0,850,720,1320]。",
+    "root_cause": "不是 bug：--config 模式的面板框来源是磁盘上的面板文件，不是配置里的 panels.manual。draw_boxes._panel_source 的优先级是 <out>/<段名>/panels.json → seg.panels_file（= <output.dir>/<段名>/panels.json）→ <段目录>/panels.resolved.json → panels.manual；而三个 segN/panels.json 已存在且是旧值。pipeline._step_panels 在 mode=manual 下又因 panels.overwrite=false 拒绝覆盖已存在文件，所以配置改动既不进面板文件也不进图。",
+    "fix": "让配置成为唯一来源：把三个 segN/panels.json 备份到 <output.dir>/_panels_backup_pre_manual/ 后删除，再跑 /home/puyu/anaconda3/envs/vlx/bin/python -m livepipe run 08-09CTCC.json --only panels（mode=manual 把配置 rect 落盘），最后重跑 draw_boxes --config。验证：新 panels.json 的 rect 与配置逐项一致；重画的图上红框实测 seg1 y=900/1220、seg2 x1=100、seg3 y=850/1320，均与配置吻合。",
+    "tags": [
+      "draw_boxes",
+      "config",
+      "panels",
+      "manual",
+      "overwrite",
+      "ctcc",
+      "workflow"
+    ]
+  },
+  {
+    "date": "2026-10-31",
+    "error_message": "按上一轮建议删掉 segN/panels.json 并用 --only panels 从配置重建后，用户又改了配置（seg2 rect → [0,880,740,1220]）直接跑 python livepipe/draw_boxes.py --config ./08-09CTCC.json，图里的框仍是旧的 —— 用户报「还是没有动态更新」。",
+    "root_cause": "流程要经两次手动同步：draw_boxes --config 只有 panels.manual 兜底，实际优先画磁盘面板文件；pipeline._step_panels 在 mode=manual 且 panels.overwrite=false 时也不刷新已存在的文件。于是「配置是唯一来源」并没有落到代码里，改配置后不删文件/重跑面板步就不生效。",
+    "fix": "让 manual 模式真正以配置为准：① draw_boxes.run_config 在 panels.mode=manual 且 panels.manual 非空时直接画配置 rect（来源标 panels.manual（配置）），面板文件落后时打警告；其他 mode 仍按面板文件优先级。② pipeline._step_panels 在 manual 下用新增的 config.manifest_drift 比对配置与面板文件，不一致就按配置重写（overwrite=true 无条件重写；locate 行为不变）。③ manifest_drift 只比配置里写了的键，文件里多出的覆盖键不算差异。④ 更新 CONFIG.md 与 4 个配置里 overwrite 注释、write_manifest 的 _note 文案。验证：seg2 配置 [0,880,740,1220] 直接 draw，实测红框 y=880/1220、x1=0（旧值 100 消失），无同步步骤；--only panels 只重写 seg2、seg1/seg3 报一致；reuse 模式仍读面板文件；内置自检 37+133+12+17+44+13 项与示例全过。",
+    "tags": [
+      "draw_boxes",
+      "config",
+      "panels",
+      "manual",
+      "single-source",
+      "pipeline",
+      "manifest_drift",
+      "ctcc"
+    ]
+  },
+  {
+    "date": "2026-11-01",
+    "error_message": "为「10-2026-08-07风云A9L年型车上市直播维护/抖音」新建配置后做 60s 试跑：58 条唯一评论里 34 条 username 为空（53~59%），正文里带着昵称（`简***坐等后面的干货`）—— 用户名被 OCR 吞进正文。",
+    "root_cause": "本素材的评论气泡是**浅灰**（直播画面亮、气泡半透明，实测背景 V≈146~189）。冒号像素检测的默认假设是暗底白字：`colon_box_by_pixels` 在背景中位 V>110 时直接返回 None，且要求点比背景亮 60；而冒号是两个 2px 的彩色小点（上点 V≈205、下点≈165）。于是像素法整类失效，只剩 RapidOCR 认冒号 —— 本素材 24~26% 的行 OCR 不输出冒号（风云T7 同类行 0~6%）。另外用户名/正文切分只看**文本里的冒号**（classify_line 的 _COLON_RE），光有 colon_box 只画准了标注框，救不回用户名。",
+    "fix": "① colon_box_by_pixels 的掩码阈值改成可选参数 v_min/v_delta（默认 100/60，与旧行为逐字节相同），video_rows 从面板读 colon_bg_max_v / colon_v_min / colon_v_delta；② 新增 insert_colon_by_pixels：像素找到冒号而文本没有时，把「：」补回文本（优先用打码昵称的星号串右沿，否则按字宽插值），由面板键 colon_text_fix 显式开启；③ normalize_panels 的档案拷贝列表加入这四个键；④ 新配置 风云A9L.json 用 colon_bg_max_v=255 / colon_v_delta=30 / colon_text_fix=true；⑤ CONFIG.md 补 colon_* 小节。验证：60s 切片（两段）用户名未识别 24/45+34/58 → 10/34+19/41；selftest 137→138 项全过（新增浅灰底、星号右沿、已有冒号不重复插入 4 条断言）；不写这些键的平台输出不变。",
+    "tags": [
+      "config",
+      "douyin_app",
+      "a9l",
+      "colon",
+      "light_background",
+      "colon_text_fix",
+      "username",
+      "ocr"
+    ]
+  },
+  {
+    "date": "2026-11-01",
+    "error_message": "为「10-2026-08-07风云A9L年型车上市直播维护/视频号」三个账号写配置时，60s 试跑的用户名里出现 `粉丝晚叙z` / `+6粉丝若云` 这类带着药丸文案的账号名（交付名单会错）。",
+    "root_cause": "这批视频号账号的行首是「✦N 等级药丸 + 粉丝药丸」两枚：OCR 把粉丝药丸并进正文时，文字块左沿落在 85~90（CTCC 那套是 33~37），旧的 fan_badge_x_max=37 拦不住；还有一批行是等级药丸也一起并进来，文本变成 `+6粉丝若云：…`，`_FAN_BADGE_RE`（^粉丝）根本不匹配。",
+    "fix": "① 平台档案新增 opt-in 键 `fan_badge_with_level`（normalize_panels 拷贝 + overrides._fan_badge_level_panels + comments_from_rows/parse_live_rows 透传），开启时用 `_FAN_BADGE_LEVEL_RE`，允许「可选等级前缀 + 粉丝」；默认关 ⇒ 既有语料逐字节不变（8PRO 的 260 行 `+N粉丝…` 保持原样）。② 三个配置 fan_badge_x_max=100（覆盖 33~37 与 85~90 两簇）、fan_badge_with_level=true。验证：QQ 60s 重解析（--only parse，9s、零 OCR）后含「粉丝」的用户名 0 个；风云新能原 60s 全跑通（16+61 条，多行合并 2 条）；自检 140 项全过（新增 2 条断言）。已知残留：顶部 UI 通知可能与最上面一行粘连成用户名（`非主驾开播请注意驾驶安全1粉丝和和睦睦`）。",
+    "tags": [
+      "config",
+      "wechat_app",
+      "a9l",
+      "fan_badge",
+      "badge_alias",
+      "username",
+      "video_account"
+    ]
+  },
+  {
+    "date": "2026-11-01",
+    "error_message": "视频号三账号全量跑完、审计交付树：出现两类假账号 —— ① `非主驾开播请注意驾驶安全xxx`（顶部 UI 通知与列表第一行评论被 OCR 并成一块）；② `+.13粉丝灿烂` / `+6粉丝若云`（等级药丸 + 粉丝药丸与正文一起并进文本块，旧的 `^粉丝` 判据和几何闸 37 都拦不住）。",
+    "root_cause": "都是**文本块层面的粘连**：通知/药丸与昵称被 OCR 合成一个块，用户名切分前没有机会剥掉。旧 `fan_badge_x_max=37` 是按 CTCC 版式量的（药丸块 x1 33~37），这批视频号账号是「✦N 在左、粉丝在右」，并块 x1 落在 85~90；且文本以 `+N` / `+.13` / `18+6` 等前缀开头，`_FAN_BADGE_RE`（^粉丝）不匹配。通知粘连则根本没有剥离机制（overlay_cards 只丢无冒号行）。",
+    "fix": "opt-in 平台键两个：`fan_badge_with_level`（`_FAN_BADGE_LEVEL_RE`，允许 0~3 个等级 token 前缀，含 '+.13' / '18+6' 变体；默认关）与 `notice_prefix_strip`（平台档案给正则，`_strip_notice_prefix` 剥行首 12 字符内的通知，要求剥完仍有分隔冒号；默认关）。透传链：normalize_panels → overrides._fan_badge_level_panels/_notice_prefix_panels → comments_from_rows → parse_live_rows。三份配置 fan_badge_x_max=100 + 两个键开启，通知正则用 `开播请注意驾驶安[全金]`（安全→安金 的 OCR 变体）。顺带修了一个顺序 bug：`_strip_fan_badge` 原来重新读 `row['text']`，会覆盖刚剥完通知的文本，改成接受清洗后的 text。验证：QQ seg1 复算（--rows 零 OCR）通知粘连 46→8、含粉丝用户名 15→8；自检 144 项全过（新增 4 条断言）。剩余 8 条是 OCR 把上一行正文尾 + 下一行昵称并成**单块**的融合行，几何拆分无解，属已知残留。",
+    "tags": [
+      "wechat_app",
+      "a9l",
+      "fan_badge",
+      "notice_prefix",
+      "username",
+      "ocr",
+      "video_account"
+    ]
+  },
+  {
+    "date": "2026-11-01",
+    "error_message": "用户报 out/.../抖音/seg1/frames/00191.2_roi.jpg 里冒号没识别到：`12 小***：家用代步适合吗`、`17 石***：预售价格区间是多少` 等行的分隔冒号没有青色小框，且用户名缺失。",
+    "root_cause": "该帧 OCR 把「✦N 等级药丸 + 昵称」并成一个**不含冒号**的块（如 `121***`，块左沿 x1=35），按徽章列丢掉了；正文块从冒号右边才开始（x1=188），冒号落在 163~173 的两块之间。而像素找冒号的搜索框只把右沿放宽 48px、左沿从正文块起（`probe=[lbox[0], ...]`），冒号在框外 ⇒ colon_box=None。另外用户把 rect x1 从 0 改成了 15，但 x_text 仍是 96（裁剪内坐标应减 15 ⇒ 81），让更多「无冒号的昵称块」落进徽章列。",
+    "fix": "① colon.py 新增 `_COLON_PROBE_LEFT=48`；② video_rows 抽行时，若药丸块 badge_text 带掩码昵称（`*`）且文本无冒号，搜索框向左扩 48px、用正文左沿当 hint 找点对（`insert_colon_by_pixels` 此时只画框不插字，避免把正文首字切成用户名）；③ render.refresh_colon_box 增加「补框」路径（只在平台档案显式写了 colon_* 的面板生效）：同样证据下给旧产物补冒号框，并经 draw_frames/_draw 把面板的 colon_bg_max_v/colon_v_min/colon_v_delta 传进去（浅灰底默认阈值会直接放弃）；④ 配置 x_text 96→81（rect x1=15 的裁剪内坐标）。验证：抖音 seg1 284 条「无名+掩码药丸」里 258 条补到冒号框、seg2 242 里 203 条；用户报的 00191.2_roi.jpg 重画后这些行的冒号都有青色小框；自检 147 项全过（新增 3 条：补框、无掩码不补、没开 colon_* 不补）。残留：昵称并进药丸块的行用户名仍空（等级数字与打码昵称的切分有歧义，不猜）；未来重抽行（rows 移走/关 resume）会按 x_text=81 保留独立的无冒号昵称块。",
+    "tags": [
+      "colon",
+      "annotation",
+      "frames",
+      "douyin_app",
+      "a9l",
+      "colon_probe_left",
+      "refresh_colon_box",
+      "x_text"
+    ]
+  },
+  {
+    "date": "2026-11-01",
+    "error_message": "用户报 out/10-2026-08-07…/视频号/风云新能原/seg1/frames/00057.0_roi.jpg：第 2 条把两条评论识别成一条 —— `恋恋：关注很久了，今天特地过来看看` 与 `和和睦睦：等这款车好久了，今天` 被拼成单行，下游当一条评论。",
+    "root_cause": "平滑滚动帧的逐帧相位估偏了半个行距 ⇒ group_rows 把「恋恋」与「和睦睦」两行吸进同一个槽位（box 高 73px ≈1.45 行距）。split_fused_rows 本应拆回两行，但下簇要去的槽 k+1 坐着下一条的折行续行 `来蹲守`（y 差 0.64 个行距）；旧闸「yc 差 > 0.4 行距 ⇒ 整槽不拆」把续行当成了另一条评论 ⇒ 放弃拆分，两条评论粘成 `恋恋：…粉丝和和睦睦：…`。",
+    "fix": "parsing/ocr/fused.py 新增 _is_wrap_occupant：目标槽被占、y 差落在折行间距闸（wrap_min_gap_ratio~wrap_gap_ratio 个行距）、块无冒号、最左块形状过 _is_wrapped_shape ⇒ 判定为下簇这一行的续行，顺延到小数槽 k+i+0.5 后照拆；其余情形维持旧「不拆」。selftest/roi_grouping.py 加 2 条断言（续行顺延拆开 / 带冒号不拆）。验证：从 0 起复跑 seg1 前 60s（--only panels,parse，/tmp/a9l_fusedcheck3），旧 rows 该窗口 6 条高块（含 3 条 恋恋+和睦睦 融合行）全部消失，t=57.0 变成 socket 2=恋恋、3=和睦睦、3.5=来蹲守；重画 00057.0_roi.jpg 两条评论各自成框（7 条评论）；自检 149 项全过。注意 existing rows.jsonl 是修复前产物，交付需重抽行（移走 rows.jsonl 再跑 parse）。 生产落地：风云新能原 seg1 已移走 rows.jsonl 重抽（当前合并代码，含同仓冒号像素法修复；_logs/fusedfix2_parse_*.log），再跑 filter,qualify,export,collect（fusedfix2_deliver_*.log）：交付 109 账号/1339 图（修复前 110/1349；减少的是并块噪声名「是靠组装+1扬帆起航」）。seg1 高块 318→231、两昵称融合 91→54、恋恋+和睦睦 3→0；空用户名率仍 34.9%。备份在 视频号/风云新能原/_backup_pre_fusedfix/ 与 _backup_fusedfix_only/。seg2/奇瑞QQ/奇瑞汽车 尚未重抽。",
+    "tags": [
+      "fused_rows",
+      "socket",
+      "wrap_continuation",
+      "split_fused_rows",
+      "wechat_app",
+      "a9l",
+      "视频号"
+    ],
+    "verified": true
+  },
+  {
+    "date": "2026-11-01",
+    "error_message": "用户反馈抖音产出「用户名仍然是空」：seg1 918 条唯一评论里 420 条 username=None（seg2 426/1274）。",
+    "root_cause": "OCR 把「等级药丸 + 掩码昵称」并成一个块（`12小***` / `6许***`），按徽章列丢掉，正文块只剩内容、没有冒号 ⇒ classify_line 切不出用户名；徽章块里的昵称本来还在 badge_text 里，但没有任何一步把它拼回文本。另有部分情形是同一行在不同帧被读成带名字/不带名字两种，滚动对齐把它们分到不同 rid，去重时 txt 键含用户名 ⇒ 空名那条不会和干净读法合并。",
+    "fix": "新增 opt-in 平台键 `badge_name_recover`（normalize_panels → overrides._badge_name_recover_panels → comments_from_rows → parse_live_rows）：行无冒号且 badge_box 存在时，用 `_RECOVER_BADGE_NAME_RE` 从 badge_text 里取**形状明确**的掩码昵称（可选 1~2 位等级 + 无数字昵称 + ≥2 星，允许尾部 `.`/`·`/`：` 残迹），拼成 `昵称：正文`。**歧义形状不猜**（`121***` 可能是 12+1*** 或 1+21***）。抖音配置开启。验证（rows 复算，零 OCR）：seg1 918→809 条、空名 420→223（46%→28%）；seg2 1274→1180、426→262（33%→22%）；t≈191.2 的 `接缝和用料上，都能看` 恢复成 `许***`，歧义的 `121***` 仍留空；自检 154 项全过（新增 5 条断言）。不写该键的平台（视频号/既有语料）逐字节不变。",
+    "tags": [
+      "username",
+      "badge_text",
+      "douyin_app",
+      "a9l",
+      "badge_name_recover",
+      "dedup",
+      "annotation"
+    ]
+  },
+  {
+    "date": "2026-11-01",
+    "error_message": "视频号（wechat_app）A9L 素材 seg1 t=106.4 标注图：第 4/5/6 行（`6**：…` / `苗苗*：…` / `铠子*：…`）没有冒号青框，用户名也丢了（`苗苗*同价位很能打` 变成匿名评论）。用户报「4,5,6没识别到冒，遇到*容易有问题」。",
+    "root_cause": "① 评论气泡半透明浮在直播画面上，背景亮度中位数实测 V≈115~165，而 colon_box_by_pixels 默认 bg_max_v=110 直接短路返回 None ⇒ 这三个视频号配置的像素冒号检测一次都没跑过，冒号框只能靠 OCR 文本插值；② RapidOCR 对打码昵称 `苗苗*` / `6**` 后的 2px 冒号经常整块不读，文本里没有「：」⇒ 插值无从下手、classify_line 切不出用户名；③ 昵称块整块被 OCR 丢掉时（`6**：` 未检出，正文块左沿 106 vs 正常 42~46）冒号落在正文框左侧，搜索框根本不覆盖。",
+    "fix": "① 三个视频号配置（风云A9L_奇瑞QQ/奇瑞汽车/风云新能原.json）加 colon_bg_max_v=255、colon_v_delta=30；② colon.py 新增 _MASKED_TAIL_LOOSE_RE（单星号）与 insert_colon_by_pixels(masked_only=)：视频号昵称后紧跟的标点常被 OCR 一起吃掉，按字宽等分补会偏一格（`梁，：内饰…`→`梁内饰：…`、`平安：边吃饭边看`→`平安边：…`），masked_only 只认星号右沿；③ video_rows.py / render.refresh_colon_box：文本无冒号、无任何徽章文本、正文块距 x_text ≥40px（_COLON_DROPPED_NICK_GAP）⇒ 左探补冒号框（只补框不补字）；④ 文本无冒号且无左探证据时关掉右探 48px（否则背景点对被当成冒号）；⑤ config/panels.py 允许键 colon_text_fix_masked_only。默认值不变，既有语料逐字节相同。",
+    "tags": [
+      "colon",
+      "ocr",
+      "annotation",
+      "wechat_app",
+      "masked_nickname",
+      "colon_box",
+      "视频号"
+    ],
+    "verified": {
+      "date": "2026-11-01",
+      "how": "0–115s 窗口重跑（/tmp/a9l_colonfix4）：3 处补字全部正确（苗苗*/铠子*/6**），此前的 4 处错误切分（梁内饰/平安边/梁，后/“梁，。）全部消失；新增 25 个冒号框，只有 1 个落在文字框外——正是 6** 那行的左探目标；t=106.4 标注图第 4/5/6 行都画出青框。自检 159 项全过（含新增 5 项）。抖音配置 20s 冒烟 rc=0。",
+      "result": "通过"
+    }
+  },
+  {
+    "date": "2026-11-01",
+    "error_message": "抖音 A9L seg1 t=80.1 标注图第 2/3/4 行（`冰***` / `哭***` / `顺***`）没有冒号青框，用户报「特别是冒号」。",
+    "root_cause": "这三行是「◆N 等级药丸 + 打码昵称 + 冒号」被 OCR 并进徽章块（badge_text=`4冰***` 等），正文块从冒号右边开始（x1≈188，正常行 100~105），rows.jsonl 的 colon_box=None。render.refresh_colon_box 有一条守卫「已经有用户名 ⇒ 不补框」，而 badge_name_recover 会先把徽章块里的掩码昵称拼成用户名 ⇒ 用户名有值、冒号框被挡掉。抽行那趟（video_rows 的 nick_in_badge 左探）在当前代码下能找回冒号（同帧实测 [163,1168,173,1180]），用户看的是旧 rows 零 OCR 复算重画的图。",
+    "fix": "livepipe/parsing/render.py refresh_colon_box：守卫改成「已有用户名且**不是**掩码徽章才不补」；badge_text 含 `*` 的行照旧左探补框。selftest/roi_colon.py +2 项。随后用 `parse_live_comments.py --rows <rows> --panels-file <resolved> --video <mp4> --out <段目录>` 就地重画抖音两段（零 OCR）。",
+    "tags": [
+      "colon",
+      "annotation",
+      "douyin_app",
+      "badge_name_recover",
+      "refresh_colon_box",
+      "colon_box"
+    ],
+    "verified": {
+      "date": "2026-11-01",
+      "how": "重画后 seg1 809 条中 703 条有冒号框（87%）、seg2 1180 条中 1031 条（87%）；00080.1 第 2/3/4 行均出现青框；自检 161 项全过。",
+      "result": "通过"
+    }
+  },
+  {
+    "date": "2026-11-02",
+    "error_message": "抖音 A9L seg1 全量抽行/标注图/导出都停在 t≈955s（rows 3112 行 / 27%）；续跑同一命令也不往前走。",
+    "root_cause": "素材文件本身在帧 42912（t≈957s）起有损坏的 h264 段（ffmpeg 报 Invalid NAL unit size / missing picture），顺序解码 cap.read() 到这里返回 False。所有顺序解码路径（adaptive 抽帧、draw_frames、export FrameReader）都把「读到坏帧」当成「视频结束」直接收工。另有两点叠加：① U 盘 /run/media/puyu/A1B7-2982 在 11-02 约 10:16 掉线一次；② 配置管线见 segN/rows.jsonl 存在就切「零 OCR 复算」（config/paths.py:100），input.resume 不生效，所以重跑同一条命令不会补 OCR。",
+    "fix": "新增 livepipe/parsing/ocr/decode.py（skip_bad / read_recovering）：读失败时按 1→4→16→64→256→1024→4096 帧递增跳过坏段再读；接入 ocr/sampling.py（adaptive/interval/backoff）、parsing/render.py（draw_frames）、tools/export_user_images/frames.py（FrameReader）。健康文件 no-op，真片尾仍正常结束。续跑用 /tmp/resume_seg1.py（build_parse_args 后 a.rows=None、a.resume=True）绕开复算分支。",
+    "tags": [
+      "decode",
+      "video",
+      "corrupt_h264",
+      "resume",
+      "douyin_app",
+      "export",
+      "frames"
+    ],
+    "verified": {
+      "date": "2026-11-02",
+      "how": "seg1 续跑穿过了 4 处坏段（帧 42912/43654/43699→43955/43977），rows 13892 行覆盖到 t=3510s/3522s；3707 条唯一评论。下游 filter/qualify/export/collect 全部 rc=0，交付树 160 账号 / 1475 图（manifest mismatch 0）。自检 161 项全过。",
+      "result": "通过"
+    }
+  },
+  {
+    "date": "2026-11-02",
+    "error_message": "用户报 out/11-2026-08-08抖音CTCC职业联赛（8.8）/抖音/seg1/frames/00160.1_roi.jpg：第 3 条应该是第 2 条的第二行；第 8 条第二行没有识别到；第 9 条带着商品卡的 `16人已预约`。并要求「在配置文件中可以配置每场直播的专用词，这些是不识别的」。",
+    "root_cause": "① 商品卡文字（`16人已预约`/`艾瑞泽8PRO`）被 OCR 接在评论行尾，且并块从评论 x 起头 ⇒ x_ignore_from 的几何闸挡不住（卡块在裁切内 x≈459，配置 460，差 1px）；② 抖音长表情评论折行后第二行是空文本行，被当成独立匿名评论；而 `彭奶奶：` 这类「昵称 + 表情」行因冒号后没字被 classify 判成续行，会把不同人的评论粘成一条；③ 表情扫描以行文字框中心、半行距为半径，折行第二行落在两行之间的空档里 ⇒ 扫不到（`囍财` 表情评论只记了 2 颗 [比心]）。",
+    "fix": "新增三个 opt-in 平台键并透传（normalize_panels → overrides → comments_from_rows → parse_live_rows）：`strip_phrases`（按**行尾**剥本场专用词，整行都是它时当作该行不存在且不打断续接链；正文中间的真提及不动）、`merge_emoji_continuation`（空文本表情行并进上一条；`昵称：` 与「正文列起头的短昵称+表情」改判为纯表情评论）、`emoji_gap_sweep`（抽行时在相邻两行的纵向空档补扫表情，只收中心落在空档内、与上下行不重叠的）。顺带修了 `_strip_suffix_phrases` 的 bug：没命中短语时也会 rstrip 冒号，导致 `彭奶奶：` 被削成 `彭奶奶` 判成续行。验证：seg1 快速复算 t=155.1 由一条 `彭奶奶 铿锵玫瑰 毒舌猫猫头` 变回 彭奶奶 独立评论 + 铿锵玫瑰 lines=3（表情续行并入）；seg1/2/3 评论里残留专用词 0/0/1（seg3 那条是正文中间的真提及）；自检 169 项全过。",
+    "tags": [
+      "strip_phrases",
+      "emoji_continuation",
+      "emoji_gap_sweep",
+      "douyin_app",
+      "ctcc8",
+      "annotation"
+    ],
+    "verified": {
+      "date": "2026-11-02",
+      "how": "① 正式三段 `--only panels,parse` 复算（rc=0）：重画的 00160.1_roi.jpg 里表情续行已并入第 2 条（铿锵玫瑰 lines=3）、第 9 条只剩 `孙正`；seg1/2/3 评论残留专用词 0/0/1。② 200s 切片重新抽行（带 `emoji_gap_sweep`，x 从面板左沿扫）：t=160.141 的 `囍财` 行表情从 2 颗变 4 颗，框 [[344,1213,407,1249],[49,1257,112,1292]]，第二行两颗（x=49~112，缩进在徽章列左边）已补上。③ 自检 169 项全过。",
+      "result": "通过（切片）；正式 seg1/2/3 的 rows 仍是修复前产物，要让标注图补上第二行表情需重抽行"
+    }
+  },
+  {
+    "date": "2026-11-02",
+    "error_message": "用户要求「代码得加入快手app平台」。快手交付树（56 账户 / 750 图）在 mock_scale 的 batch_run / batch_produce / expand_produce 上整批定位失败；路径自动判平台还会被活动目录名「抖音」抢成 douyin。",
+    "root_cause": "① 快手 App 的彩色交付框是 comments ROI 的**多行融合框**（常装 2~6 行），目标用户所在行不一定是第一行（750 张里 91 张不是）；旧冒号锚点对整框做列投影，相邻行的墨迹把名字/冒号/正文并成一段 ⇒ 候选为 0。② 评论底是叠在视频上的深色半透明层，`estimate_background` 的**精确众数**被白字抢走（白字 100 个同色 vs 暗底每种 ~90 个）⇒ 背景估成白色、墨迹占比 0.90，列段全糊。③ `PLATFORM_ALIASES` 没有快手，`detect_platform_from_path` 往上找到活动名里的「抖音」。",
+    "fix": "`core/platforms.py` 新增 `kuaishou_app` 档 + 三个 opt-in 字段：`needs_geom`（自动从交付树重建 manifest+comments 的 geom）、`geom_row_from_colon`（窗口纵向收到 colon_box 行，±min(12, 0.8×冒号高)，带外 badge/表情丢弃）、`bg_quantize=32`（量化众数）。`inkmask.py` 把这两个选项传进 `_geom_clean` / `estimate_background`；`batch_run` / `batch_produce` 自动重建 geom；`expand_produce` 的 plan job 存 `base_geom` 并在出片透传；`platform_probe` 同口径；补别名与 `expand_produce.快手.config.json`。默认 0/False ⇒ 其它平台逐字节不变。",
+    "tags": [
+      "kuaishou_app",
+      "platforms",
+      "geom",
+      "bg_quantize",
+      "fused_roi",
+      "mock_scale"
+    ],
+    "verified": {
+      "date": "2026-11-02",
+      "how": "750 张快手交付图：`find_erase_region(profile=kuaishou_app, geom=...)` 750/750 成功，冒号位置与上游 colon_box 750/750 对位。mock 线 make_spec 自动认 kuaishou_app、batch_produce 6/6 出片。扩展线在交付树副本上：plan 750 定位/658 可用、need 465/planned 435；sample 4/4、run --limit 2 14/14、原图 md5 0 变、tail_exact/tail_clean/gap_ok/box_ok/diff_in_box 全绿。platform_probe 8/8、判定「可以跑」。视频号 6 张冒烟走原档（无 geom/量化），报错原因与改动前同类。",
+      "result": "通过（小批 + 全量定位）；正式扩展写回尚未执行"
+    }
+  },
+  {
+    "date": "2026-11-03",
+    "error_message": "用户报 out/11-2026-08-08抖音CTCC职业联赛（8.8）/视频号/seg1/frames/00020.1_roi.jpg 第 1 条（红框 `? : 奇瑞汽车>`）应该不能识别；要求「配置里配置跳过词」。",
+    "root_cause": "这一行是**公众号浮层卡**：OCR 只读到 `奇瑞汽车>`（`公众号` 标签被吃掉），没有冒号，旧 parser 把它当匿名评论收进来；主题卡第二行 `CTCC中国汽车场地职业联赛` 同理。内置 `overlay_cards` 只锚 `^公众号`，对只剩品牌名的读法无效；跨帧「列表滚了它没动」判据在 t=0 附近帧对不足。",
+    "fix": "新增 opt-in 平台键 `skip_phrases`：整行（忽略空白）等于配置里任一词才丢这一行；不按后缀剥，所以正文提到品牌名的真评论不受影响。实现 `paragraphs._is_skip_line` + `parse_live_rows(skip_phrases=)`，经 `overrides._skip_phrases_panels` → `comments/input.py` → `comments/build.py` 透传；`config/panels.py` 合法键 + `CONFIG.md`。`08-08CTCC_视频号.json` 的 `wechat_app` 收 `奇瑞汽车>` / `奇瑞汽车` / `公众号奇瑞汽车>` / `CTCC中国汽车场地职业联赛` / `2026CTCC中国汽车场地职业联赛`。不写键的面板逐字节不变。",
+    "tags": [
+      "skip_phrases",
+      "overlay_card",
+      "wechat_app",
+      "ctcc8",
+      "video_frames",
+      "config"
+    ],
+    "verified": {
+      "date": "2026-11-03",
+      "how": "自检 ROI 173 项全过（+4：整行丢卡 / 忽略空白 / 正文提及保留 / 不配置旧行为）。`python3 -m livepipe run 08-08CTCC_视频号.json --only panels,parse` 零 OCR 复算 rc=0；重新生成的 `00020.1_roi.jpg` 只剩 `1 小兔子乖乖: 大家好啊`，公众号卡不再画框；seg1/2/3 comments 中 `奇瑞汽车>` / `CTCC中国汽车场地职业联赛` / 裸 `奇瑞汽车` 命中 0 条。`check` 通过，`panels.resolved.json` 已带 skip_phrases。",
+      "result": "通过；下游 filter/qualify/export/collect 未重跑"
+    }
+  },
+  {
+    "date": "2026-11-03",
+    "error_message": "快手语料没有表情表：out/ 下只有 douyin/wechat/weibo 三套，08-08CTCC_快手.json 只能 emoji.enabled=false；纯表情评论（只有表情、没有文字）产出为空。用户要求「快手的表情获取」。",
+    "root_cause": "快手的官方表情资产没有现成表；但直播 Web 首页内嵌 `pcLive.webConfig.emojiPanel`（207 个 token→yximgs PNG），此前没有采集器；且快手 App 渲染尺寸与抖音/微信不同（30px / 行距 45），不能套用现有阈值。",
+    "fix": "新增 `livepipe/tools/kuaishou_emoji/` + `livepipe/kuaishou_emoji_table.py`：抓 live.kuaishou.com 页面、解析 emojiPanel、下载 207 张图、建 byId/byToken 表并带实测阈值（height_ratio 0.667 / looks_like 0.82 / min_score 0.83 / min_margin 0.10 / coarse_min 0.55 / min_saturation 20）。接入 SOURCE_TABLES、默认 emoji.tables、emoji_tables 步、config/args、gallery 提示与文档；08-08CTCC_快手.json 开 emoji、build.enabled=true、skip 去掉 emoji_tables。",
+    "tags": [
+      "kuaishou",
+      "emoji",
+      "emoji_table",
+      "live.kuaishou.com",
+      "config"
+    ],
+    "verified": {
+      "date": "2026-11-03",
+      "how": "表：207/207 下载成功；`--only emoji_tables` rc=0（图缓存命中）。识别：seg2 前 60s 带 OCR 窗口（vlx）识别 4 条评论 / 12 个表情（[火]×7、[赞]×5），4 条纯表情评论由 emoji_text 补全；自检 173 项全过；config check 通过。",
+      "result": "通过；现有 rows.jsonl 是表情关着时抽的，需重抽行才会把表情写进现有产出"
+    }
+  },
+  {
+    "date": "2026-11-04",
+    "error_message": "用户报 out/…/快手/seg1/frames 没有识别到表情、没有过滤信息。",
+    "root_cause": "① seg1/rows.jsonl 是快手表情表建好之前抽的，emojis 全为空；② 更严重：parse.calibrate 把行距 45.0 自标成 90.8（快手评论之间夹大量系统行，「含冒号的评论首行」中心间隔正好翻倍，置信度 0.67 过闸）⇒ 相邻评论被当折行续行（用户名粘连/丢失）、表情按 0.667×90.8≈60px 扫（真表情 30px）⇒ 全认不到；③ users*/judgments/all_users 产物不在，过滤链要重跑。",
+    "fix": "08-08CTCC_快手.json 设 parse.calibrate=false（行距/相位/续行/浮层卡均已实测写死）；备份并移走 seg1 rows.jsonl 后重跑 --only panels,parse（vlx，带 kuaishou 表情表）；随后 --only filter,qualify,export,collect 重建过滤信息与交付树。",
+    "tags": [
+      "kuaishou",
+      "calibrate",
+      "row_pitch",
+      "emoji",
+      "filter",
+      "seg1"
+    ],
+    "verified": {
+      "date": "2026-11-04",
+      "how": "三段全量重抽（rc=0）：seg1 584 条 / 94 条带表情 353 个，seg2 613 / 121 / 391，seg3 286 / 70 / 243；标注图已画黄色表情框（00000.0_roi.jpg 见 [赞]×4 / [捂脸][奸笑] / [玫瑰]×2）。filter/qualify/export/collect rc=0：filter 58/58/35、qualify 41 个、交付树 41 账号 / 754 图（mismatch 0）、judgments.jsonl 390 行。",
+      "result": "通过（全量 + 交付）"
+    }
+  },
+  {
+    "date": "2026-11-04",
+    "error_message": "用户报 out/…/快手/seg1/frames 的 00307.2、00117.3、00385.1 三张标注图有问题：送礼浮层卡的 UI 文字、系统行右侧按钮（去助力/去点赞）被当成评论画了框。",
+    "root_cause": "① 送礼弹窗（送礼物卡）盖住评论列表时，卡上的 `抓住机会，和主播互动吧～`/`CHERY`/`1快币208快币`/`立刻送出（1快币）` 被当匿名评论；② `主播拍了拍我的头像：美呆了！` 带冒号，overlay_cards 只认无冒号行 ⇒ 被切成「昵称：正文」；③ 系统行 `X人在点赞主播 去点赞`、`送票助我上榜单吧 去助力` 的按钮被单独 OCR 成一行（无冒号）⇒ 当续行/匿名评论；④ 赞助商横幅/主页卡 `CHERY…` 系列（t≈964–1019）同样漏成匿名评论。跨帧冻结判据失效：弹窗/卡片文案每帧不同且列表不滚动，凑不出「真滚动」帧对。",
+    "fix": "08-08CTCC_快手.json 平台档案 overlay_cards 增补本素材实测短语（点亮粉丝团|送票助我上榜吧|去助力$|去点赞$|抓住机会|快币|免费票次日|^人气票$|^[xX×]\\d+$|成为在线|^CHERY）；新增 skip_phrases=[\"主播拍了拍我的头像：美呆了！\"]（整行匹配、忽略空白，带冒号的系统行也能拦）。--only parse 零 OCR 复算三段并重画标注图，再 --only filter,qualify,export,collect 重建交付树。",
+    "tags": [
+      "kuaishou",
+      "overlay_card",
+      "system_line",
+      "skip_phrases",
+      "gift_panel",
+      "frames",
+      "seg1"
+    ],
+    "verified": {
+      "date": "2026-11-04",
+      "how": "三段复算：逐帧评论 9695 → 9532（seg1），唯一评论 584/613/286 → 561/577/285；junk 短语（去助力/去点赞/拍了拍/快币/CHERY/点亮粉丝团…）在 comments 命中 0。00307.2 该帧 0 条有效评论、标注图不再生成；00117.3、00385.1 由 6 框变 5 框（`去助力`/`去点赞` 消失），人工看图确认。filter/export/collect rc=0：collect 41 账号 / 751 图。",
+      "result": "通过（三帧 + 三段复算；交付树随后被 16:11 用户新起的全量重跑清掉，配置已含修复，正在重建）"
+    }
+  },
+  {
+    "date": "2026-11-05",
+    "error_message": "新素材 /run/media/puyu/A1B7-2982/10.31 抖音试跑（60s 切片，t=1200s）出现 4 行并成 1 条评论：`水滴：下午好 10只做真实测评喜欢的点个关注吧？关注了主 播 13沉着：下午好呀主播` —— 系统通知碎片被当续行粘进上一条评论，紧随其后的真评论 `13沉着：下午好呀主播` 也被吞。",
+    "root_cause": "① 平台档案 calibrate=true 时 calibrate_panels 把 wrap_gap_ratio 自标定到 ~0.95（与风云T7 seg7 的「虚高」同款）：抖音缩进续行实测间距比只有 ~0.62，采样帧里混进药丸/通知块后中位数偏高，0.95 的上沿把「占满一个行距」的左对齐系统通知也放进了续行；② 内置通知短语要求整句「关注了主播」，OCR 把该行折成 `…关注了主` + `播` 两块后匹配不上，前半截成了普通行、后半截 `播` 按续行并入。",
+    "fix": "10-31_抖音.json：parse.calibrate=false（本档案续行靠「贴左沿」那一支认：x1 30~34 < 门槛 36，不依赖 wrap_indent / wrap_gap_ratio 自标定）；overlay_cards 增补折行通知碎片 `关注了主|赞了直播|加入了直播`（只作用于无冒号行）。",
+    "tags": [
+      "douyin_app",
+      "calibrate",
+      "wrap_gap_ratio",
+      "overlay_card",
+      "config",
+      "10.31",
+      "trial"
+    ],
+    "verified": {
+      "date": "2026-11-05",
+      "how": "用修好的配置对同一 60s 切片（抖音 seg1 t=1200~1260）重跑 `python -m livepipe run /tmp/trial_1031/trial_抖音.json --only panels,parse`（vlx 环境）。",
+      "result": "通过（试跑）：28 条唯一评论，四合一消失；`水滴：下午好` 与 `13沉着：下午好呀主播` 各自独立；多行合并 3 条（10.7%）、用户名未识别 1 条、表情 8 条 22 个。"
+    }
+  },
+  {
+    "date": "2026-11-05",
+    "error_message": "用户报交付图 out/10.31/视频号/all_users_正面_3张以上/符华-35/30.jpg 的绿框圈进了下一条评论（`小燕子：奇瑞造车很多年了，技术底子是有的`），并说其它账号也有同样问题。",
+    "root_cause": "视频号配置开着 parse.calibrate=true，`calibrate_panels` 按**每段开头**采 4 帧估行距。seg2/seg3 开头的评论区稀疏、首行间距混着 62/101.5/39/61.5/63/41.5（中位 62）⇒ 标定把行距从 41.0 抬到 58.6/60.4（置信度刚好过 0.6 闸）。行距大于真实行距后，相邻两条评论（实际 ~41px）落进**同一个行槽**，`assemble_row` 把两条文字拼成一句、ROI 取两行并集。反解 rows.jsonl 的槽位拟合行距：seg1 41.02（正常）/ seg2 58.63 / seg3 60.41。全量实测：seg1 并块 1.1%、seg2 18.8%、seg3 23.1%；交付 827 图里 288 张 ROI 高 >51px（34.8%），涉及 28 个账号。",
+    "fix": "10-31_视频号.json：parse.calibrate=false（行距 41.0 实测写死）；因 x_text=30 时「贴左沿」门槛是 −20，续行只能走缩进带 ⇒ 显式加 wrap_indent=true、wrap_gap_ratio=0.75（实测续行 26px=0.63 行距）。抖音/快手配置本就是 calibrate=false，未受影响（抖音当前产物并块 0.4%/0.7%）。",
+    "tags": [
+      "wechat_app",
+      "calibrate",
+      "row_pitch",
+      "socket",
+      "roi",
+      "frames",
+      "10.31",
+      "delivery"
+    ],
+    "verified": {
+      "date": "2026-11-05",
+      "how": "修好的配置对 seg2 两个 70s 切片（t=4100 与 t=0）重跑 `--only panels,parse`；并用 rows.jsonl 拟合行距 + 统计并块率。",
+      "result": "通过（试跑）：两段切片均无行槽并块（ROI 高度 22~24px 单行）；seg2 t=4100 切片 13 条评论里 `符华：保养保险都便宜…` 与 `小燕子：奇瑞造车很多年了…` 各自独立。全量需移走旧 rows.jsonl 后重抽（旧 rows 的槽位/拼句已写死，复算救不回来）。"
+    }
+  },
+  {
+    "date": "2026-11-05",
+    "error_message": "用户报 out/10.31/视频号/seg1/frames/04637.0_roi.jpg：第 5 条把两条评论圈进同一个 ROI（`+7派大星：看直播这趟泉州旅行…很用心` + `摸鱼的西红柿🍅：在泉州开车逛古城…合适`），且摸鱼的西红柿有多个错误（用户名没切出来、`合适` 被读成 `合活` 或单独成一条匿名评论）。",
+    "root_cause": "三处独立缺陷叠在同一帧：① `_indented_continuation` 用 `open_rec['text_box']`（**并集**）的左沿当缩进基准 —— 并进贴左沿折行（x1=21）后并集左沿被拉低，下一条真评论（x1=34）看起来「右移 13px」，被当成缩进续行并进来（这就是第 5 条圈住两条评论；间距 34px=0.83 行距也刚好在 _INDENT_MAX_GAP_RATIO=0.85 以内）。② 续行 `合适` 的左沿实测 33~37，与首行昵称 34~36 **重叠**，`wrap_indent` 的形状带 [x_text−50, x_text)=[−20,30) 接不住：落到下一整数槽就自成匿名评论，和首行挤进同槽时 `assemble_row` 按 x 拼成 `摸鱼的西红柿合活在泉州…`。③ 昵称与正文之间夹着表情 🍅，冒号被 OCR 吃掉：像素冒号检测因**下点只有 2×1（面积 2 < 3）**判不成点对，且 t=4630.9 帧下点 V 只有 78~86、低于 v_min=100；即便找到冒号，`colon_text_fix_masked_only=true` 也挡住未打码昵称的补字，而按字宽等分会把表情（≈2 个汉字宽）摊进字宽、把「：」推进正文一个字。",
+    "fix": "① `livepipe/parsing/layout/roi.py::_indented_continuation` 增加 `base_box`（首行文字框），缩进基准取 max(首行左沿, x_text)，`paragraphs.py` 在新建评论时记首行框、续行合并时不改它。② `10-31_视频号.json` 平台档案加 `wrap_at_text_left=true`，续行走间距软入口（与微博同一套 `_text_left_candidates`，无冒号 + x1 ≤ x_text+8 + 离上一行 0.15~0.75 行距）。③ `parsing/ocr/colon.py`：点面积闸 3→2；`insert_colon_by_pixels` 增加 `blocks` 参数，冒号落在 ≥24px 的块缝里时按**块边界**插「：」（精确落点，不看 masked_only）；配置加 `colon_v_min=80`。新增 selftest 5 条（roi_colon 3、roi_wrap 2）。",
+    "tags": [
+      "wechat_app",
+      "wrap",
+      "indented_continuation",
+      "socket",
+      "colon",
+      "emoji_gap",
+      "roi",
+      "frames",
+      "10.31",
+      "seg1"
+    ],
+    "verified": {
+      "date": "2026-11-05",
+      "how": "selftest 全过（ROI/相邻守卫 173→178 项）；对 seg1 t=4620~4645 与 t=4630.9/4631.0 切片用真实视频重抽 OCR 验证；随后重抽 seg1 全段。",
+      "result": "切片通过：t=4636 起 `+7派大星`（ROI 1016~1065）与 `摸鱼的西红柿`（ROI 1076~1126，content `在泉州开车逛古城，走走停停正 合适`）各自成条；用户名从像素冒号补出；`合适` 挂 9.5 小数槽并进正文。全段重抽结果见下一轮。"
+    }
+  },
+  {
+    "date": "2026-11-05",
+    "error_message": "修完 t=4637 的并条/用户名问题后重抽 seg1，最终 comments.jsonl 里 `摸鱼的西红柿` 仍是 `在泉州开车逛古城，走走停停正`（少了折行 `合适`）。同类截断在 seg1 还有 8 条（`…挺中`/`…挺中肯`、`…正好检`/`…正好检验车子驾驶感舒服…`、`…聪`/`…聪明` 等）。",
+    "root_cause": "去重默认留「最早 / 位移最小」的那次拍摄，而**最早拍到的那次不一定是完整的那次**：手机 App 评论列表平滑滚动，两行评论的第一行刚进可视区、折行还在屏幕下缘时就会被先拍到，那一帧正文是截断的；后面十几帧才完整。另外同一句在不同帧会被 OCR 抖一个字（`午休`/`牛休`、`开着`/`开看`、`什公`/`什么`），去重恰好留下的是抖动那一帧。",
+    "fix": "`parsing/comments/dedup.py` 新增 `_content_consensus`：同一条评论的**全部拍摄**（含因 motion 被跳过的那次）按「行数最多的一档（≥1/3 且 ≥2 次）+ 档内正文多数决（≥2 票且 ≥2/3）」选；单行评论只在**归一化等长**的正文上投票（≥3 次、≥2/3，等长闸挡住吞进系统行/下一条评论的变体）。胜出变体整条记录替换（正文/ROI/t/lines 同源，避免按旧 t 裁新框）；替换后按时间重排，并按文本键再并一次（避免 `什公`/`什么` 被归一成两条重复）。selftest +2。",
+    "tags": [
+      "dedup",
+      "content",
+      "truncated_wrap",
+      "ocr_jitter",
+      "10.31",
+      "seg1",
+      "wechat_app"
+    ],
+    "verified": {
+      "date": "2026-11-05",
+      "how": "对 seg1 现有 rows 零 OCR 复算，比较开关前后的正文差异；selftest 去重断言 44→46 全过。",
+      "result": "通过：7 条正文变化全部是改进（3 条补全折行、2 条去掉吞进来的系统行/`++`、2 条纠正 OCR 抖动）；`摸鱼的西红柿` 变为 `在泉州开车逛古城，走走停停正 合适`（lines=2，ROI 与 t=4631.06 同源）；同句重复记录 269→268。"
+    }
+  },
+  {
+    "date": "2026-11-06",
+    "error_message": "交付树 out/10.31/视频号/all_users_正面_3张以上/ 里同一个人被拆成两个账号：`W-3` 与 `W-5`（昵称 `W` / `W.`）、`期待si-3` / `期待sj-26`；相邻档还有 `李素`/`李素熵`。用户指出后者是评论未完全滑动上来时被拍的。",
+    "root_cause": "OCR 检测框切掉昵称**末尾** 1~2px 或整个末字：`W.` 末尾 2×3px 的句点落在框外；`李素熵` 的末字漏框；`期待sj` 的 `j` 降部画出框高 1px ⇒ 同一份像素在不同 y 的框里读成 `期待si`（实测 1343 vs 42，按单帧多数选代表治不了）。交付层按昵称**原文字符串**认人（account_id.account_key），两种读法各自算「≥3 条正面评论」，于是一个人两个目录。",
+    "fix": "新增 opt-in 平台键 `username_alias` + `parsing/text/badges.py::normalize_username_alias`/`_tail_variant`：同 rid 组内两种读法各 ≥2 次（同一条评论的相邻帧）+ 只差一个尾巴（多/少 1 末字、≤3 个纯标点、等长 ≥4 字换末字）+ 等级标硬闸 ⇒ 按面板内行数多数归一，整块面板统一改写；跑在 `normalize_badge_alias` 之后、`dedup_comments` 之前。接线：overrides/config/args/cli(`--username-alias`)/comments.input/parse_live_comments 导出；`10-31_视频号.json` 开 `\"username_alias\": true`；selftest 新增 12 条（roi_alias ⑥a~⑥j）。",
+    "tags": [
+      "wechat_app",
+      "username_alias",
+      "badges",
+      "account_id",
+      "dedup",
+      "delivery_tree",
+      "10.31",
+      "seg1",
+      "seg2",
+      "seg3"
+    ],
+    "verified": {
+      "date": "2026-11-06",
+      "how": "selftest 全过（ROI/相邻守卫 189 项）；seg1/seg2/seg3 零 OCR 复算（rows.jsonl 复用）：seg1 `W`→`W.` 68 vs 192；seg2 `期待si`→`期待sj` 42 vs 704、`期待s`→`期待sj` 3 vs 704、`李素`→`李素熵` 19 vs 200；seg3 `李素`→`李素熵` 34 vs 301。再跑 filter/qualify/export/collect 重建交付树。；另在 10.31 抖音/快手复算验证：抖音 seg1/2/3 共 39 组、快手 9 组（含 `15云时`/`15云`、`@晓物`/`@晓`、`淇淇她哥叫老昊`/`老吴`、`63350`/`63358`、`毛球不是球?`/`毛球不是球`），同句同时刻证据核对无误。",
+      "result": "三段 comments.jsonl 里 `W.` 8 条、`期待sj` 18 条、`李素熵` 6/7 条各成一个账号；残留：行首药丸档（`+1八重樱` 等）归 badge_alias 管，末字被切成等长另一个字且行数接近时（`宁远1869W`/`宁远18690`）名字表示仍不稳定。；10.31 抖音/快手交付树已重建（119 账号/1256 图、39 账号/665 图）。全部 14 份配置的平台档案已开 `username_alias`。"
+    }
+  },
+  {
+    "date": "2026-11-06",
+    "error_message": "撞库首版 selftest 两处失败：① row 布局样例 `[[\"抖音\",\"小明\",\"小红\"]]` 读到 0 人（`KeyError: '抖音'`）；② 未命中最近分数断言得到 0.6667、期望 2/3。",
+    "root_cause": "① `_pick_column` 的 row 分支只读表头**下面**那一列（col+1），没读表头**同一行**右边连续的人名；② 报告里的分数按 4 位小数落盘，selftest 却拿未舍入的 2/3 比。",
+    "fix": "① row 布局先取表头同一行右侧连续非空单元格，再追加下面各行 col+1；auto 判据不变（哪边非纯数字多选哪边）；② selftest 用 1e-4 容差对 0.6667。另把「有平台表头但按当前 layout 读不到人名」改成独立报错，不再退化成「名单没有平台列」。",
+    "tags": [
+      "list_match",
+      "selftest",
+      "layout",
+      "score_rounding"
+    ],
+    "verified": {
+      "date": "2026-11-06",
+      "how": "python3 -m livepipe match --selftest（60 项）；10.31 真名单三个平台实跑；export_user_images 52 项回归。",
+      "result": "通过。"
+    }
+  },
+  {
+    "date": "2026-11-06",
+    "error_message": "撞库范围扩到直播全量后出现误命中：`天后`↔`明天后天`、`一路顺风`↔`顺风`、`岁月如初1213`↔`12123` 都被判 1.0/0.8（交付树只有 119 个账号时没暴露，直播全量 1633 个就撞出来了）。",
+    "root_cause": "`_partial_norm` 对「短名是长名的前/后缀」一律给 1.0，不看多余那段是什么；2 字短名在长名里的碰巧出现概率随账号基数线性上升，汉字和数字一视同仁。",
+    "fix": "`common.py::_partial_norm`：前后缀截断时，只有短名 ≥3 字、或多余那段不含汉字（数字/符号/字母，如 `用户6758305`、`★1希儿`）才给 1.0，否则退回整体 ratio；夹在长名中间的片段只对 ≥3 字短名逐窗口比。自检补 5 项（80 项全过）。另删掉 `score_norm()` return 之后的旧窗口死代码。",
+    "tags": [
+      "list_match",
+      "matching",
+      "false_positive",
+      "partial_similarity",
+      "stream_scope"
+    ],
+    "verified": {
+      "date": "2026-11-06",
+      "how": "python3 -m livepipe match --selftest（80 项）；10.31 直播全量实跑（抖音 1633 / 视频号 67 / 快手 95 账号）。",
+      "result": "通过；仅直播命中 24 条，抽查无名单外误撞。"
+    }
+  },
+  {
+    "date": "2026-11-07",
+    "error_message": "重跑撞库后，仅直播命中账号的标记图翻倍：赵丽丽 2 张变成 4 张（`1.jpg`+`seg1_1.jpg`、`2.jpg`+`seg1_2.jpg`），HTML/CSV 的图数跟着虚高（抖音 689 → 699）。",
+    "root_cause": "`render.py::_render_seg` 用「目标文件已存在」判断要不要加段名前缀。第一次跑写 `1.jpg`；重跑时 `1.jpg` 还在，于是同一段的图被当成「另一个段」又写了一份 `seg1_1.jpg`。判断依据是文件系统状态，不是本轮归属。",
+    "fix": "改为按本轮的 `owners: dict[账号目录, 段名]` 判断：第一个写这个目录的段用原名，之后的段才加 `<段名>_` 前缀；本轮第一次写时先清掉目录里的旧图（避免上次多出来的文件残留）。`render_missing` 里按段名排序遍历，保证顺序稳定。",
+    "tags": [
+      "list_match",
+      "render",
+      "mark_images",
+      "idempotency",
+      "duplicate_files"
+    ],
+    "verified": {
+      "date": "2026-11-07",
+      "how": "重跑完整 match（含补图，386s）：标记图仍 1526 张；赵丽丽-2 恢复 2 张、在干嘛呢-1 恢复 1 张；抖音 HTML 撞库截图 689 张。",
+      "result": "通过。"
+    }
+  },
+  {
+    "date": "2026-11-07",
+    "error_message": "跨段账号归一的初版把「无数字的标点前缀」也当药丸：快手的 `-风-`(23 条) 被并进 `风-`(1 条)，`~雪`/`雪`、`？？？支`/`支` 也被直接认；同时 `）0176 -> 0176` 在日志里显示成「链式」而不是证据。",
+    "root_cause": "`_prefix_ok` 只看 `_is_badge_token`，而 `-`/`~`/`？` 这类单字符标点也返回 True —— 但快手药丸是**行内**的，真实昵称本来就可能以 `-`/`~` 开头，前缀不是药丸。证据表按字典序 `(a,b)` 存，主写法查找用 `(脏名,主写法)`，前缀类方向相反时查不到，退化成「链式」。",
+    "fix": "`align.py` 把前缀分三类：`strong`（含数字的药丸字形 + 货币符号）、`digit`（1~3 位纯数字，要共用正文或等级标佐证）、`weak`（无数字标点，**只当入围**，须叠加「只差一个字符 + 共用正文≥2」）；证据按 `(脏名, 主写法)` 存，查找两个方向都试；主写法只对 strong/digit 前缀加分。新增 `tools/merge_segments/selftest.py` 15 项断言。",
+    "tags": [
+      "merge_segments",
+      "align",
+      "account_identity",
+      "false_merge",
+      "evidence_key"
+    ],
+    "verified": {
+      "date": "2026-11-07",
+      "how": "三平台重跑 qualify/export/collect：`-风-`/`一风-` 保留为两个账号，`）0176 -> 0176`、`￥63358 -> 63358` 正常合并；视频号 `+1八重樱-10` + `八重樱-6` → `八重樱-16`；抖音 `11义节`→`义节-40`、`8一路顺风`+`路顺风`→`一路顺风-38`；快手 `163358`/`￥63358`→`63358-57`。",
+      "result": "通过。"
+    }
+  },
+  {
+    "date": "2026-11-07",
+    "error_message": "`python3 -m livepipe.dataset review --runs out/10.31 --out out/10.31/dataset` 报 `[scan][warn] out/10.31 下没有 seg*/comments.jsonl —— 跳过` / `一段素材都没扫到`。",
+    "root_cause": "scan_runs 只扫 `--runs` 目录的**直接子目录**（`run.iterdir()` 里含 comments.jsonl 的目录）。out/10.31 的组织是 `<平台>/segN/`，seg 在第二层，所以根目录下一个都匹配不到；素材本身没问题（9 段 comments.jsonl、summary.json 的 video 路径都在盘上可读）。",
+    "fix": "把每个平台目录各当一个 run 传给 --runs（支持 nargs=\"+\"）：`python3 -m livepipe.dataset review --runs out/10.31/抖音 out/10.31/视频号 out/10.31/快手 --out out/10.31/dataset`。撞库结果 目录没有 seg，别传。已用 scan_runs 验证：9 段 / 5870 条，fps 均能读出。",
+    "tags": [
+      "dataset",
+      "review",
+      "scan_runs",
+      "cli_usage",
+      "layout"
+    ]
+  },
+  {
+    "date": "2026-11-08",
+    "error_message": "交付认人逻辑不能只按昵称，也不能一律按 (昵称, 等级标)：用户要求「直播[账号]得区分匿名和非匿名，匿名的等级标得一致」。",
+    "root_cause": "`account_key` 只有两档：username（只看昵称 ⇒ 打码昵称 `爱**` 底下几十个人被并成一个账号）和 nickname_level（一律拆等级 ⇒ 不打码昵称只要 OCR 等级读错/漏读，同一个人就被拆成两个账号）。同一场直播里匿名/非匿名混着出现时两档都不对。",
+    "fix": "account_id 新增 `KEY_NICKNAME_LEVEL_IF_MASKED=\"nickname_level_if_masked\"` + `is_masked()`（末尾星号 * / ＊）：`level_of(comment, split_panels, masked_panels)` 对 masked_panels 里的**打码昵称**取等级标、对**不打码昵称**一律返回 \"\"。配置链：config/panels 新增 `masked_identity_panels()`、`identity_panels()` 同时包含两种口径；args 新增 `identity_masked`；user_filter 新增 `--identity-masked` 并传给 `group_accounts`；remedy_badges 的 check_cache/new_level_index 同步。【更正 2026-11-08】当时写成「5 份 09-05 配置已设 if_masked」，实际按素材核过：整场打码的走 `nickname_level`（风云A9L渠道_抖音 99% 行打码）、整场不打码的保持 `username`（A9L视频号 0%、猎鹰抖音 0.2%、猎鹰快手 0%）；只有匿名/非匿名**混着出现**的场次才用 `nickname_level_if_masked`。",
+    "tags": [
+      "account_id",
+      "account_key",
+      "masked",
+      "nickname_level",
+      "user_filter",
+      "qualify",
+      "config"
+    ]
+  },
+  {
+    "date": "2026-11-08",
+    "error_message": "交付树 `all_users_正面_3张以上/` 里 `小___` 目录混进别的匿名用户（`健***`/`爱***` 等都并进 `小***`）；`木___-5` 与 `木___◆15-11` 其实是同一个人却没并成一个账号。",
+    "root_cause": "两处。① 被打码昵称当普通昵称做模糊归一：`consolidate_users` 只要相似度 ≥0.7 且共用 ≥2 条正文就并 —— 打码名长度 3~4、只差第一个字时 similarity≈0.75，模板化直播里任意两号共用文案又很常见，于是 `小***`/`健***`/`爱***` 等 51 个名字被并进 `小***`（67 条 rename）。② 药丸数字被 OCR 并进昵称（`15木***`，badge_text 为空）时，改名到 `木***` 但 level 仍是 \"\"，这 5 条落进 `(木***, \"\")`，与读到等级的 `(木***,15)` 成了两个目录。",
+    "fix": "`account_id.visible_name()`（星号前那一截）。段内 `normalize_username_alias` 与跨段 `consolidate_users` 都加打码分支：可见部分逐字 100% 相同 + 两边等级标都读到且一致才并；形近/大小写/共用正文对打码名一律关闭。`consolidate_users(promote_prefix_level=)`：按等级认人时把数字药丸前缀补回 level（`15木***`→level 15），`qualify` 用 users.json 的 identity_panels 决定是否开。自检：跨段 28 项、解析 193 项（新增 4 条打码回归）、account_id 38 项。重跑 `--only qualify,export,collect`：103 个账号，`木___◆15-16`、`健___◆7-18`、`小___` 各档只剩 `小***`，rename 只剩 11 条数字药丸前缀 + 1 条 `大**→大***`。",
+    "tags": [
+      "account_id",
+      "masked",
+      "visible_name",
+      "merge_segments",
+      "align",
+      "badges",
+      "qualify",
+      "false_merge"
+    ]
+  },
+  {
+    "date": "2026-11-08",
+    "error_message": "交付树里 `咕___◆4-44` 与 `咕___-7` 被拆成两个账号，实际是同一个人（用户确认；导出图里该行明确写着 `◆4 咕***：这波宠粉必须给满分`）。",
+    "root_cause": "`咕***` 有 7 条评论的等级药丸在屏幕上清晰可见，但整屏 det+rec 漏读（badge_text=None），dedup 的跨帧补票也没补到（同一条评论的其它帧同样没读出）。交付按 (昵称, 等级标) 认人 ⇒ 这 7 条落进 `(咕***, \"\")`，与读到 ◆4 的 44 条分成两个目录。配置里 `parse.badge_reread` 是默认关闭的，所以没有任何机制回原帧按药丸带重读。",
+    "fix": "在 `09-05风云A9L渠道_抖音.json` 的 parse 段打开 `\"badge_reread\": true`，然后从 rows.jsonl 复算：`run --only parse,filter,qualify,export,collect`。二次读数（只跑识别、跳过 det、跨帧 ≥2 票）在三段共补了 82+24+19=125 条，自证一致率 98.0%/100%/98.8%。结果：`咕***◆4` = 50 条，`咕___-7` 消失；20 个无等级目录只剩 8 个（其余都能回读出等级并并入真账号）。剩余的 `N***`/`魂***`/`小***` 等无等级目录经查导出图确认**屏幕上真的没有粉丝团药丸**（不是漏读），`(昵称, \"\")` 档是正确结果。",
+    "tags": [
+      "badge_reread",
+      "badge_ocr",
+      "account_key",
+      "nickname_level",
+      "qualify",
+      "collect",
+      "false_split"
+    ]
+  },
+  {
+    "date": "2026-11-09",
+    "error_message": "09-06 猎鹰智驾快手配置里 `kuaishou_large` 档案显式写 `\"x_ignore_from\": null`，parse 一跑就崩：`TypeError: float() argument must be a string or a real number, not 'NoneType'`（livepipe/parsing/ocr/overrides.py:_apply_panel_override）。",
+    "root_cause": "`_apply_panel_override` 对 `y_phase / x_text / x_ignore_from / badge_span` 一律 `int(round(float(merged[k])))`，只判断键在不在、没判断值是不是 None；而 CONFIG.md 明确写 `x_ignore_from` 类型是 `int | null`，`null` = 关闭浮层闸，是合法值。以前没暴露是因为旧配置都用「不写这个键」而不是「显式写 null」。",
+    "fix": "改成 `if merged.get(k) is not None:`（None 保留原样，交给下游 `panel.get(...)` 判空）。同一份配置里 1968×3150 大档还踩了第二个坑：`x2_from=\"window\"` 的窗口右沿只认全局 `panels.auto.frame_width`（本配置只能是 720），会把 1968 宽的画面裁在 720 ⇒ 大档改用 `x2_from=\"content\"`（rect x2=1968 作上界）。修后解析自检 193 项全过，快手大档 60s 切片抽出 18/23 条评论、无系统行残留。",
+    "tags": [
+      "overrides",
+      "x_ignore_from",
+      "null",
+      "panel_config",
+      "crop",
+      "x2_from",
+      "frame_width"
+    ]
+  },
+  {
+    "date": "2026-11-09",
+    "error_message": "用户纠正：撞库池子只含「有正面评论」的账号 —— 只发负面/中性评论的人在直播里明明出现过却撞不出来（10.31 抖音池子 1633，实际评论账号 2204）。",
+    "root_cause": "load_stream_accounts 只读 seg*/users.jsonl（filter 产物，按 min_positive≥1 条正面筛过）；撞库的匹配本身不看评论内容，池子却继承了 filter 的情绪门槛，负面/中性评论者被静默排除。",
+    "fix": "sources.load_seg_accounts：优先读 seg*/comments.jsonl（parse 产物，全部评论），用 user_filter.group_accounts 按 (昵称, 等级标) 重建账号（排除词/identity_panels/identity_masked 从段 users.json 抄，与 filter 同口径），评论标签按平台 judgments.jsonl 回填（缺的按中性）；无 comments.jsonl 的老产物退回 users.jsonl 并告警。render 同步：零正面命中按正面/中性/负面全部标签现补图（否则 export 一张都挑不出）。另加 --video-map 前缀重映射，素材盘目录挪动后 summary.json 里的旧视频路径失效也能补图。自检 92→106 项。",
+    "tags": [
+      "list_match",
+      "match",
+      "stream_pool",
+      "comments",
+      "positive_only",
+      "render",
+      "video_map"
+    ]
+  }
+]

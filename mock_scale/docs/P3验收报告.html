@@ -1,0 +1,499 @@
+<!doctype html>
+<title>量测优化验收</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap">
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f6f8f7;
+    --surface: #ffffff;
+    --surface-2: #eef3f1;
+    --ink: #17211f;
+    --muted: #5b6b68;
+    --faint: #8a9a96;
+    --line: #d7dfdc;
+    --accent: #0f6b64;
+    --accent-ink: #08433f;
+    --accent-weak: #dcefec;
+    --slate: #8a97a0;
+    --good: #1f7a4d;
+    --good-weak: #e2f2e8;
+    --warn: #9a6410;
+    --warn-weak: #f7edd9;
+    --bad: #a5322c;
+    --bad-weak: #f8e4e1;
+    --grid: #e3e9e6;
+    --radius: 10px;
+    --font-display: "Noto Serif SC", "Songti SC", serif;
+    --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #0f1513;
+      --surface: #151d1a;
+      --surface-2: #1a2421;
+      --ink: #e6eeeb;
+      --muted: #9baca7;
+      --faint: #778883;
+      --line: #2b3935;
+      --accent: #5fc3b8;
+      --accent-ink: #b9f0e9;
+      --accent-weak: #17332f;
+      --slate: #7d8b94;
+      --good: #58c08a;
+      --good-weak: #163125;
+      --warn: #d8a44a;
+      --warn-weak: #33280f;
+      --bad: #e0847c;
+      --bad-weak: #3a1d1b;
+      --grid: #23302c;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0f1513;
+    --surface: #151d1a;
+    --surface-2: #1a2421;
+    --ink: #e6eeeb;
+    --muted: #9baca7;
+    --faint: #778883;
+    --line: #2b3935;
+    --accent: #5fc3b8;
+    --accent-ink: #b9f0e9;
+    --accent-weak: #17332f;
+    --slate: #7d8b94;
+    --good: #58c08a;
+    --good-weak: #163125;
+    --warn: #d8a44a;
+    --warn-weak: #33280f;
+    --bad: #e0847c;
+    --bad-weak: #3a1d1b;
+    --grid: #23302c;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.7;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 0 max(48px, env(safe-area-inset-bottom, 0px));
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+
+  .masthead { padding-block: 44px 28px; border-bottom: 1px solid var(--line); }
+  .eyebrow {
+    display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center;
+    font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em;
+    color: var(--muted); text-transform: uppercase;
+  }
+  .eyebrow .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--faint); }
+  h1 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(34px, 6vw, 56px); line-height: 1.15;
+    letter-spacing: .01em; margin: 14px 0 10px; text-wrap: balance;
+  }
+  .lede { max-width: 62ch; margin: 0; color: var(--muted); font-size: 16.5px; }
+  .lede strong { color: var(--ink); font-weight: 700; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 13px; font-weight: 500; padding: 4px 10px 4px 8px;
+    border: 1px solid var(--line); border-radius: 999px; background: var(--surface);
+  }
+  .chip .tick {
+    width: 16px; height: 16px; border-radius: 50%;
+    display: inline-grid; place-items: center;
+    font-size: 10px; font-weight: 700; line-height: 1;
+  }
+  .chip.ok .tick { background: var(--good-weak); color: var(--good); }
+  .chip.wait .tick { background: var(--warn-weak); color: var(--warn); }
+  .chip.bad .tick { background: var(--bad-weak); color: var(--bad); }
+
+  section { padding-block: 36px 0; }
+  .section-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+  h2 {
+    font-family: var(--font-display); font-size: 24px; font-weight: 700;
+    margin: 0; letter-spacing: .01em;
+  }
+  .section-head p { margin: 0; color: var(--muted); font-size: 14px; }
+  h3 {
+    font-size: 15px; font-weight: 700; margin: 0 0 6px;
+  }
+
+  .tiles {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  }
+  .tile {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 16px 18px 14px;
+  }
+  .tile .k { color: var(--muted); font-size: 12.5px; }
+  .tile .v {
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+    font-size: 30px; font-weight: 500; letter-spacing: -.02em; line-height: 1.2;
+    margin-top: 4px;
+  }
+  .tile .v small { font-size: 14px; color: var(--muted); font-weight: 400; margin-left: 2px; }
+  .tile .n { color: var(--faint); font-size: 12px; margin-top: 2px; }
+  .tile.accent { border-color: color-mix(in srgb, var(--accent) 38%, var(--line)); background: var(--accent-weak); }
+  .tile.accent .v { color: var(--accent-ink); }
+
+  .panel {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 20px 20px 14px;
+  }
+  .panel + .panel { margin-top: 12px; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .sw.plan { background: var(--accent); }
+  .sw.run { background: var(--slate); }
+  .chart { width: 100%; height: auto; display: block; overflow: visible; }
+  .chart-scroll { overflow-x: auto; padding-bottom: 2px; }
+  .mobile-only { display: none; }
+  .mbar + .mbar { margin-top: 16px; }
+  .mbar-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 13.5px; }
+  .mbar-head b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 500; font-size: 16px; }
+  .mtrack { height: 26px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; overflow: hidden; margin-top: 6px; }
+  .mfill { height: 100%; display: flex; overflow: hidden; border-radius: 4px; }
+  .mseg { display: block; height: 100%; }
+  .mseg.plan { background: var(--accent); }
+  .mseg.run { background: var(--slate); }
+  .mseg.base { background: var(--slate); }
+  .mbar-sub { color: var(--muted); font-size: 12px; margin-top: 4px; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  @media (max-width: 640px) {
+    .chart { min-width: 600px; }
+    .chart-scroll { display: none; }
+    .mobile-only { display: block; }
+  }
+  .chart text { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .chart .axis { fill: var(--faint); font-size: 11px; }
+  .chart .rowlab { fill: var(--ink); font-size: 13px; font-family: var(--font-body); font-weight: 500; }
+  .chart .vgrid { stroke: var(--grid); stroke-width: 1; }
+  .chart .seglab { font-size: 11.5px; font-weight: 500; }
+  .chart .seglab.plan { fill: #ffffff; }
+  .chart .seglab.run { fill: #17211f; }
+  .chart .total { fill: var(--ink); font-size: 13px; font-weight: 500; }
+  .chart .note { fill: var(--muted); font-size: 11px; font-family: var(--font-body); }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .chart .seglab.plan { fill: #0c1210; }
+  }
+  :root[data-theme="dark"] .chart .seglab.plan { fill: #0c1210; }
+
+  .caption { color: var(--faint); font-size: 12px; margin: 8px 0 0; }
+
+  .steps { display: grid; gap: 0; }
+  .step {
+    display: grid; grid-template-columns: 76px 1fr auto; gap: 14px;
+    padding: 14px 0; border-top: 1px solid var(--line); align-items: start;
+  }
+  .step:first-child { border-top: 0; }
+  .step .id { font-family: var(--font-mono); font-size: 12px; color: var(--muted); padding-top: 2px; }
+  .step .body p { margin: 3px 0 0; color: var(--muted); font-size: 13.5px; }
+  .step .body p b { color: var(--ink); font-weight: 500; }
+  .state {
+    font-size: 12px; font-weight: 500; white-space: nowrap;
+    padding: 2px 9px; border-radius: 999px; margin-top: 2px;
+  }
+  .state.ok { background: var(--good-weak); color: var(--good); }
+  .state.wait { background: var(--warn-weak); color: var(--warn); }
+  .state.bad { background: var(--bad-weak); color: var(--bad); }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; letter-spacing: .02em; white-space: nowrap; }
+  td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+
+  .callout {
+    display: grid; grid-template-columns: 4px 1fr; gap: 14px;
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px 16px; margin-top: 12px;
+  }
+  .callout .bar { background: var(--accent); border-radius: 2px; }
+  .callout p { margin: 0; font-size: 13.5px; color: var(--muted); }
+  .callout p strong { color: var(--ink); }
+
+  .two { display: grid; gap: 12px; grid-template-columns: 1.05fr .95fr; }
+  @media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+
+  code, .mono { font-family: var(--font-mono); font-size: .92em; }
+  code { background: var(--surface-2); border: 1px solid var(--line); border-radius: 4px; padding: 1px 4px; }
+
+  footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--faint); font-size: 12.5px; }
+  footer p { margin: 0 0 4px; }
+  @media (max-width: 520px) {
+    .step { grid-template-columns: 1fr auto; }
+    .step .id { grid-column: 1 / -1; }
+    body { font-size: 14.5px; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="eyebrow">
+      <span>mock_scale · 评测</span><span class="dot"></span>
+      <span>sample-73</span><span class="dot"></span>
+      <span>2026-10-28</span>
+    </div>
+    <h1>量测优化验收</h1>
+    <p class="lede">P0–P3 方案完成情况：<strong>A、E、B、D 四项通过，C 未过它自己的产量线</strong>。B 把量测缓存变成 4.2s 的收益；D 把徽章列扫描砍掉 89.8%，产物一字节未变；C 的等级链把 53 张成品压到 38 张 —— 按预注册协议停在决策点。</p>
+    <div class="chips">
+      <span class="chip ok"><span class="tick">✓</span>A · 对账表</span>
+      <span class="chip ok"><span class="tick">✓</span>E · 崩溃续跑</span>
+      <span class="chip ok"><span class="tick">✓</span>B · 量测缓存</span>
+      <span class="chip bad"><span class="tick">!</span>C · 等级配对</span>
+      <span class="chip ok"><span class="tick">✓</span>D · 两遍量测</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="h-metrics">
+    <div class="section-head"><h2 id="h-metrics">结论先看</h2><p>73 张真实截图 · 27 户 · 53 张成品</p></div>
+    <div class="tiles">
+      <div class="tile accent">
+        <div class="k">B · 总墙钟</div>
+        <div class="v">−49.6<small>%</small></div>
+        <div class="n">8.54s → 4.30s（±6.72% 噪声带）</div>
+      </div>
+      <div class="tile">
+        <div class="k">B · 命中率</div>
+        <div class="v">1.000</div>
+        <div class="n">1,133 / 1,133 次量测零漏</div>
+      </div>
+      <div class="tile">
+        <div class="k">三项产物差异</div>
+        <div class="v">0</div>
+        <div class="n">A/B 两臂逐图 md5 相同</div>
+      </div>
+      <div class="tile">
+        <div class="k">原件校验</div>
+        <div class="v">0<small> 变</small></div>
+        <div class="n">74 个文件 md5 逐条一致</div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-chart">
+    <div class="section-head"><h2 id="h-chart">B 的收益落在 plan</h2><p>run 仍要逐张重画，缓存只省量测与选材</p></div>
+    <div class="panel">
+      <div class="legend">
+        <span><i class="sw plan"></i>plan（量测 + 选材）</span>
+        <span><i class="sw run"></i>run（出片）</span>
+      </div>
+      <div class="chart-scroll">
+      <svg class="chart" viewBox="0 0 760 224" role="img" aria-label="冷臂与热臂的总墙钟堆叠条形图：冷臂 plan 4.53 秒加 run 4.01 秒；热臂 plan 0.25 秒加 run 4.05 秒">
+        <g>
+          <line class="vgrid" x1="100" y1="38" x2="100" y2="184"/>
+          <line class="vgrid" x1="238" y1="38" x2="238" y2="184"/>
+          <line class="vgrid" x1="376" y1="38" x2="376" y2="184"/>
+          <line class="vgrid" x1="514" y1="38" x2="514" y2="184"/>
+          <line class="vgrid" x1="651" y1="38" x2="651" y2="184"/>
+          <text class="axis" x="100" y="202" text-anchor="middle">0</text>
+          <text class="axis" x="238" y="202" text-anchor="middle">2s</text>
+          <text class="axis" x="376" y="202" text-anchor="middle">4s</text>
+          <text class="axis" x="514" y="202" text-anchor="middle">6s</text>
+          <text class="axis" x="651" y="202" text-anchor="middle">8s</text>
+        </g>
+
+        <text class="rowlab" x="0" y="72">冷臂</text>
+        <text class="axis" x="0" y="88">无缓存</text>
+        <rect x="100" y="56" width="312" height="34" fill="var(--accent)"/>
+        <rect x="412" y="56" width="276" height="34" fill="var(--slate)"/>
+        <text class="seglab plan" x="110" y="78">plan 4.53s</text>
+        <text class="seglab run" x="422" y="78">run 4.01s</text>
+        <text class="total" x="696" y="78">8.54s</text>
+
+        <text class="rowlab" x="0" y="142">热臂</text>
+        <text class="axis" x="0" y="158">100% 命中</text>
+        <rect x="100" y="126" width="17" height="34" fill="var(--accent)"/>
+        <rect x="117" y="126" width="279" height="34" fill="var(--slate)"/>
+        <line x1="108" y1="120" x2="108" y2="126" stroke="var(--accent)" stroke-width="1"/>
+        <text class="note" x="104" y="116" fill="var(--accent)">plan 0.25s</text>
+        <text class="seglab run" x="128" y="148">run 4.05s</text>
+        <text class="total" x="406" y="148">4.30s</text>
+      </svg>
+      </div>
+      <div class="mobile-only" aria-hidden="true">
+        <div class="mbar">
+          <div class="mbar-head"><span>冷臂 · 无缓存</span><b>8.54s</b></div>
+          <div class="mtrack"><div class="mfill" style="width:100%"><i class="mseg plan" style="width:53%"></i><i class="mseg run" style="width:47%"></i></div></div>
+          <div class="mbar-sub">plan 4.53s · run 4.01s</div>
+        </div>
+        <div class="mbar">
+          <div class="mbar-head"><span>热臂 · 100% 命中</span><b>4.30s</b></div>
+          <div class="mtrack"><div class="mfill" style="width:50.4%"><i class="mseg plan" style="width:5.9%"></i><i class="mseg run" style="width:94.1%"></i></div></div>
+          <div class="mbar-sub">plan 0.25s · run 4.05s</div>
+        </div>
+      </div>
+      <p class="caption">交错 6 轮的中位数。热臂在同一轮内先跑一遍预热（1.04s，不计入总墙钟），计时的是第二遍全命中的 plan。</p>
+    </div>
+
+    <div class="two" style="margin-top:12px">
+      <div class="panel">
+        <h3>缓存的两类像素测量</h3>
+        <div class="chart-scroll">
+        <svg class="chart" viewBox="0 0 520 118" role="img" aria-label="量测次数构成：底图量测 73 次，字号拟合 1060 次">
+          <rect x="0" y="18" width="34" height="30" fill="var(--slate)"/>
+          <rect x="34" y="18" width="486" height="30" fill="var(--accent)"/>
+          <text class="total" x="42" y="76">底图量测 73</text>
+          <text class="total" x="188" y="76">字号拟合 1,060</text>
+          <text class="axis" x="0" y="100">逐图读图 / 定位 / 徽章</text>
+          <text class="axis" x="188" y="100">每个（名字 × 底图字高）二分扫描</text>
+        </svg>
+        </div>
+        <div class="mobile-only" aria-hidden="true">
+          <div class="mtrack"><div class="mfill" style="width:100%"><i class="mseg base" style="width:6.4%"></i><i class="mseg plan" style="width:93.6%"></i></div></div>
+          <div class="mbar-sub">底图量测 73 · 字号拟合 1,060 · 合计 1,133</div>
+        </div>
+        <p class="caption">共 1,133 次量测机会。字号拟合占 94%，正是 plan 的主开销。</p>
+      </div>
+      <div class="panel">
+        <h3>为什么缓存字号拟合</h3>
+        <p style="margin:0;color:var(--muted);font-size:13.5px">归因前，底图量测全命中只让 plan 少约 0.4s。cProfile 显示 4.2s 里有 <b style="color:var(--ink)">3.86s</b> 花在 <code>fit_font_size_for → measure_ink</code>：1,064 次拟合、7,039 次真实渲染。它是纯像素函数，只由文字、字高、字体文件决定，并入 B 后命中 1,060 / 1,060。</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-cd">
+    <div class="section-head"><h2 id="h-cd">C 与 D：一个没过线，一个不留痕</h2><p>同语料 · 同 seed · 关/开各一遍</p></div>
+    <div class="two">
+      <div class="panel">
+        <h3>C · 等级配对</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>指标</th><th>C 关</th><th>C 严</th><th>C′ 软</th></tr></thead>
+            <tbody>
+              <tr><td><code>N_out</code> 成品</td><td class="num">53</td><td class="num"><b style="color:var(--bad)">38</b></td><td class="num">53</td></tr>
+              <tr><td><code>R_lvl</code> 等级一致</td><td class="num">—</td><td class="num">1.00</td><td class="num"><b style="color:var(--bad)">0.605</b></td></tr>
+              <tr><td><code>R_blank</code> 配空率</td><td class="num">0%</td><td class="num">0%</td><td class="num">0%</td></tr>
+              <tr><td>层级 同级/未知/降级/排除</td><td class="num">—</td><td class="num">23 / 9 / 6 / 594</td><td class="num">23 / 9 / 6 / 15</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="caption">目标等级已知 18/27、图已知 52/73；<code>rid</code> 与账号级冲突 0。C′ 的最后一列是「明确不同但排后」，仍是真实配对。</p>
+      </div>
+      <div class="panel">
+        <h3>D · 徽章列扫描</h3>
+        <div class="mbar">
+          <div class="mbar-head"><span>D 关 · 整块 ROI</span><b>1,230,338 px</b></div>
+          <div class="mtrack"><div class="mfill" style="width:100%"><i class="mseg run" style="width:100%"></i></div></div>
+          <div class="mbar-sub">57 次徽章量测，每次扫整块标注框</div>
+        </div>
+        <div class="mbar">
+          <div class="mbar-head"><span>D 开 · 槽位左侧</span><b>125,538 px</b></div>
+          <div class="mtrack"><div class="mfill" style="width:10.2%"><i class="mseg plan" style="width:100%"></i></div></div>
+          <div class="mbar-sub">−89.8% · N_badge 57 → 57（这份语料没有可延后的图）</div>
+        </div>
+        <p class="caption">药丸必须在名字槽位左边（判据④）⇒ 槽位之后只多扫一个缝宽。成品逐图 md5 相同，plan 0 字段差异。</p>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:12px">
+      <div class="bar" style="background:var(--bad)"></div>
+      <p><strong>C 的硬排除亏 15 张，不是实现问题。</strong>这份语料里「有徽章 ⇔ 等级可读」：9 户无等级就是无徽章，而带徽章的目标本来就要求底图也有徽章 ⇒ 第 2 层（底图等级未知）<b>天然为空</b>；等级 1/11/12/14/16/17/19 又各只有 1 户，同等级底图只能来自别人。按协议不静默放宽，决策留给用户：回滚（默认关）、加第 4 层（同级 › 未知 › 明确不同，按缺口回填）、或只保留排序（C′，<code>R_lvl</code> 60.5%）。</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-steps">
+    <div class="section-head"><h2 id="h-steps">五步的现状</h2><p>P3 逐个 A/B，先冻噪声带再跑</p></div>
+    <div class="panel steps">
+      <div class="step">
+        <div class="id">A</div>
+        <div class="body">
+          <h3>对账表（只读）</h3>
+          <p>每张导出图 join 回 <code>comments.jsonl</code> / <code>rows.jsonl</code>。comments 73/73、rows 73/73（多行 8），冲突 0，产物 md5 0 变，Δ +0.1% 在带内。</p>
+        </div>
+        <div class="state ok">通过</div>
+      </div>
+      <div class="step">
+        <div class="id">E</div>
+        <div class="body">
+          <h3>崩溃续跑</h3>
+          <p>第 22 张后 SIGKILL 整个进程组。同目录 <code>--resume</code> 复用 22、重出 31，成品 md5 差 0；换 seed 后复用 0（<code>stale_fingerprint</code> 53）。</p>
+        </div>
+        <div class="state ok">通过</div>
+      </div>
+      <div class="step">
+        <div class="id">B</div>
+        <div class="body">
+          <h3>量测缓存</h3>
+          <p>底图量测 + 字号拟合进 <code>measure_cache.json</code>。冷 8.54s → 热 4.30s，<code>H_cache</code> 1.0，53 张成品逐图 md5 相同。</p>
+        </div>
+        <div class="state ok">通过</div>
+      </div>
+      <div class="step">
+        <div class="id">C</div>
+        <div class="body">
+          <h3>等级配对</h3>
+          <p>等级从 <code>comments.jsonl</code> 的 <code>badge_text</code> + 账号级 <code>level</code> 取，三道脏值闸后目标已知 18/27、图已知 52/73。严格链 <code>R_lvl</code> 1.00，但 <code>N_out</code> 53 → 38；软链保住 53 张，<code>R_lvl</code> 只有 60.5%。</p>
+        </div>
+        <div class="state bad">没过产量线</div>
+      </div>
+      <div class="step">
+        <div class="id">D</div>
+        <div class="body">
+          <h3>两遍量测</h3>
+          <p>徽章列扫描收窄到名字槽位左侧，结构闸不过的非目标图延后量徽章（目标自己的图仍每张都量）。<code>N_scan_px</code> 1.23M → 126K，plan 0 字段差异，成品 0 变。</p>
+        </div>
+        <div class="state ok">通过</div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-protocol">
+    <div class="section-head"><h2 id="h-protocol">判定不是拍脑袋</h2><p>预注册 · 交错 · 产物硬线</p></div>
+    <div class="table-wrap panel">
+      <table>
+        <thead><tr><th>约束</th><th>做法</th><th>本次读数</th></tr></thead>
+        <tbody>
+          <tr><td>噪声带先冻</td><td>B 代码上 6 遍冷臂，<code>CV=(max−min)/median</code></td><td class="num">CV 3.36% → ±6.72%</td></tr>
+          <tr><td>两臂交错</td><td>奇数轮冷→热，偶数轮热→冷，各 6 轮</td><td class="num">Δ +49.6%</td></tr>
+          <tr><td>缓存同起点</td><td>每轮删缓存；热臂先预热再计时</td><td class="num">预热 1.04s</td></tr>
+          <tr><td>产物硬线</td><td>全部 <code>扩展*.jpg</code> 的 (路径, md5) 对拍</td><td class="num">E_out = 0（53 张）</td></tr>
+          <tr><td>语义栏单列</td><td>C 只看 <code>R_blank</code> / <code>R_lvl</code> / <code>N_out</code> 与 plan 差异面，不记时间收益</td><td class="num">R_lvl 1.00 · N_out 38/53 ✗</td></tr>
+          <tr><td>工作量只降</td><td>D 判 <code>N_badge</code> / <code>N_scan_px</code> 不升，且逐字段差异 0</td><td class="num">−89.8% · 0 差异</td></tr>
+          <tr><td>原件只读</td><td>只在 rsync 快照跑，永不给 <code>--yes</code></td><td class="num">74 文件 0 变</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <div class="bar"></div>
+      <p><strong>B 的缓存只存像素量测</strong>：底图几何与字号拟合结果，不存等级、不存配对。代码（<code>expand_produce.py</code> + <code>core/draw_text.py</code>）或字体文件指纹一变，整份缓存作废；数组里含用户名，已加入 <code>.gitignore</code>，不进交付包。</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-ledger">
+    <div class="section-head"><h2 id="h-ledger">本轮落下的东西</h2><p>代码、基线、报告</p></div>
+    <div class="table-wrap panel">
+      <table>
+        <thead><tr><th>类型</th><th>文件</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>产品</td><td class="mono">expand/expand_produce.py</td><td><code>--cache</code>、两类量测缓存、<code>fit_hit/miss</code> 计数；<code>--level-pair</code> / <code>--level-pair-soft</code> / <code>--two-pass</code>、等级索引与脏值闸、<code>scan_px</code></td></tr>
+          <tr><td>评测台</td><td class="mono">eval/bench.py · eval/plandiff.py</td><td>H_cache 分母、缓存汇总、预热语义；C 的层级计数；D 的工作量指标；plan 差异面工具</td></tr>
+          <tr><td>基线</td><td class="mono">eval/baseline-sample73-p3b.json</td><td>B 代码冷臂 6 遍：8.482s，CV 3.36%</td></tr>
+          <tr><td>对照</td><td class="mono">eval/compare-B.json</td><td>冷/热、H_cache、E_out 判定</td></tr>
+          <tr><td>对照</td><td class="mono">eval/compare-C.json · compare-Csoft.json · compare-D.json</td><td>C 严 / C′ 软 / D 的判定（含层级与工作量）</td></tr>
+          <tr><td>差异面</td><td class="mono">eval/plandiff-C.json · plandiff-D.json</td><td>0 量测字段差异；C 的 38 张 md5 变化逐张可归因、D 的 0 张变化（已去用户目录名）</td></tr>
+          <tr><td>实验记录</td><td class="mono">eval/compare-A.json · eval/eval-E-resume.json</td><td>A 与 E 的原始验收</td></tr>
+          <tr><td>文档</td><td class="mono">docs/评测方案.html · docs/评测落地计划.html · eval/README.md · expand/README.md</td><td>协议、分母口径、B/C/D 用法与结果、31 键运行配置</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <p>下一步：<b>C 等一个决策</b>（回滚 / 第 4 层 / 只排序），D 已可默认开；全量 1,478 张语料到位后重冻 <code>scope: full-1478</code> 基线。</p>
+    <p>本页数字来自 <code>eval/compare-B.json</code>、<code>eval/compare-C.json</code>、<code>eval/compare-Csoft.json</code>、<code>eval/compare-D.json</code>、<code>eval/eval-E-resume.json</code> 与 <code>eval/baseline-sample73-p3b.json</code>。</p>
+  </footer>
+</div>

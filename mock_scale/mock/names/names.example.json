@@ -1,0 +1,10 @@
+{
+  "source": "data",
+  "platform": "douyin",
+  "default_count": 2,
+  "users": [
+    {"name": "张三", "count": 2},
+    "夜航船",
+    {"陈小满": 2}
+  ]
+}

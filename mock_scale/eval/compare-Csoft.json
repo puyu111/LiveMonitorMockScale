@@ -1,0 +1,93 @@
+{
+ "a": {
+  "tag": "C-off",
+  "median_s": 9.642,
+  "cv": null,
+  "rc": {
+   "plan": [
+    0
+   ],
+   "run": [
+    3
+   ]
+  },
+  "cache": {
+   "hit": 0,
+   "miss": 73,
+   "fit_hit": 0,
+   "fit_miss": 0,
+   "h": 0.0,
+   "enabled": false
+  }
+ },
+ "b": {
+  "tag": "C-soft",
+  "median_s": 9.003,
+  "cv": null,
+  "rc": {
+   "plan": [
+    0
+   ],
+   "run": [
+    3
+   ]
+  },
+  "cache": {
+   "hit": 0,
+   "miss": 73,
+   "fit_hit": 0,
+   "fit_miss": 0,
+   "h": 0.0,
+   "enabled": false
+  },
+  "warmup_s": null
+ },
+ "noise_pct": null,
+ "band_pct": null,
+ "gate_pct": null,
+ "noise_source": "none",
+ "delta_pct": 6.63,
+ "fingerprint_ok": true,
+ "same_corpus": true,
+ "same_code": true,
+ "same_env": true,
+ "join": null,
+ "verdicts": [
+  {
+   "metric": "T_total",
+   "status": "inconclusive",
+   "note": "缺噪声底",
+   "noise_pct": null,
+   "band_pct": null,
+   "gate_pct": null,
+   "noise_source": "none"
+  },
+  {
+   "metric": "N_out",
+   "status": "pass",
+   "a": 53,
+   "b": 53
+  },
+  {
+   "metric": "R_blank",
+   "status": "pass",
+   "a_pct": 0.0,
+   "b_pct": 0.0,
+   "over_baseline_pp": 0.0
+  },
+  {
+   "metric": "R_lvl",
+   "status": "fail",
+   "b": 0.6053,
+   "tiers": {
+    "same": 23,
+    "unknown": 9,
+    "degraded": 6,
+    "cross": 15,
+    "excluded": 0
+   },
+   "known_targets": 18
+  }
+ ],
+ "exit": 3
+}

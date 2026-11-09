@@ -1,0 +1,180 @@
+{
+ "schema_version": 1,
+ "label": "p3-sample73-B-cache",
+ "scope": "sample-73",
+ "created": "2026-10-27T23:12:01",
+ "runs": [
+  "BL"
+ ],
+ "repeats": 6,
+ "fingerprint": {
+  "corpus_sha256": "a941ea3f57d3af21e381f667cf5d4aaf1b992e58d8a2e72f9faec514fd9b5117",
+  "corpus_files": 74,
+  "corpus_source": "/home/puyu/github/LiveMonitorMockScale/out/风云T7_20260826_11/抖音/all_users_正面_2张以上",
+  "code": "file:4dbd6d80089f5a96",
+  "workers": 8,
+  "seed": 20261010,
+  "arm": "A-baseline"
+ },
+ "wall_s": {
+  "plan": {
+   "n": 6,
+   "median": 4.424,
+   "p95": 4.563,
+   "min": 4.318,
+   "max": 4.563
+  },
+  "run": {
+   "n": 6,
+   "median": 4.059,
+   "p95": 4.078,
+   "min": 3.997,
+   "max": 4.078
+  },
+  "total": {
+   "n": 6,
+   "median": 8.482,
+   "p95": 8.633,
+   "min": 8.348,
+   "max": 8.633,
+   "cv_pct": 3.36
+  }
+ },
+ "noise": {
+  "cv_pct": 3.36,
+  "band_pct": 6.72,
+  "rule": "Δ > 2×CV 才算收益；带内写 no_difference",
+  "method": "CV = (max-min)/median，同臂多遍"
+ },
+ "counts": {
+  "measure": {
+   "n": 6,
+   "median": 73.0,
+   "p95": 73.0,
+   "min": 73.0,
+   "max": 73.0
+  },
+  "badge_calls": {
+   "n": 6,
+   "median": 57.0,
+   "p95": 57.0,
+   "min": 57.0,
+   "max": 57.0
+  },
+  "badge_found": {
+   "n": 6,
+   "median": 45.0,
+   "p95": 45.0,
+   "min": 45.0,
+   "max": 45.0
+  },
+  "jobs": {
+   "n": 6,
+   "median": 53.0,
+   "p95": 53.0,
+   "min": 53.0,
+   "max": 53.0
+  },
+  "ok": {
+   "n": 6,
+   "median": 53.0,
+   "p95": 53.0,
+   "min": 53.0,
+   "max": 53.0
+  },
+  "n_out": {
+   "n": 6,
+   "median": 53.0,
+   "p95": 53.0,
+   "min": 53.0,
+   "max": 53.0
+  },
+  "need_targets": {
+   "n": 6,
+   "median": 19.0,
+   "p95": 19.0,
+   "min": 19.0,
+   "max": 19.0
+  },
+  "blank_targets": {
+   "n": 6,
+   "median": 0.0,
+   "p95": 0.0,
+   "min": 0.0,
+   "max": 0.0
+  },
+  "run_counters": {
+   "cache_hit": 0.0,
+   "cache_miss": 0.0,
+   "badge_calls": 0.0,
+   "scan_px": 0.0,
+   "resume_reused": 0.0
+  },
+  "plan_cache": {
+   "cache_hit": {
+    "n": 6,
+    "median": 0.0,
+    "p95": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "cache_miss": {
+    "n": 6,
+    "median": 73.0,
+    "p95": 73.0,
+    "min": 73.0,
+    "max": 73.0
+   },
+   "fit_hit": {
+    "n": 6,
+    "median": 0.0,
+    "p95": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "fit_miss": {
+    "n": 6,
+    "median": 0.0,
+    "p95": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   }
+  }
+ },
+ "plan_timings_ms": {
+  "decode": {
+   "p50": 18.006,
+   "p95": 27.773
+  },
+  "locate": {
+   "p50": 11.686,
+   "p95": 19.475
+  },
+  "badge": {
+   "p50": 0.764,
+   "p95": 1.239
+  }
+ },
+ "run_timings_agg_s": {
+  "sprite": 1.276,
+  "render": 14.601,
+  "badge": 0.004,
+  "check": 9.393,
+  "save": 4.252
+ },
+ "definitions": {
+  "plan_timings_ms": "逐图该段耗时（ms），先按遍算 p50/p95，再跨遍取中位数",
+  "run_timings_agg_s": "全部 job 的该段耗时之和（CPU 秒）；除以 workers ≈ 墙钟"
+ },
+ "quality": {
+  "blank_rate": 0.0,
+  "level_consistent": null
+ },
+ "outputs": {
+  "count": 53,
+  "sha256": "e5febcdf3a74fbc17bcc8376bd516d29d45494007edfbdd32e4154253944ed1d"
+ },
+ "notes": [
+  "P3 B（量测缓存）代码版本的冷臂噪声带；语料指纹与 P2/AE 相同（a941ea3f…）"
+ ]
+}

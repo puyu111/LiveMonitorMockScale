@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mock_scale 量测优化方案</title>
+<style>
+  :root{
+    --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+    --blue:#2a78d6; --orange:#eb6834; --aqua:#1baf7a;
+    --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+    --page:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --blue:#3987e5; --orange:#d95926; --aqua:#199e70;
+    --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  }}
+  :root[data-theme="dark"]{
+    --page:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --blue:#3987e5; --orange:#d95926; --aqua:#199e70;
+    --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);
+       font:15px/1.75 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+       padding:48px 16px 96px}
+  main{max-width:920px;margin:0 auto}
+  h1{font-size:26px;line-height:1.35;margin:0 0 6px}
+  h2{font-size:19px;margin:56px 0 14px;padding-top:14px;border-top:1px solid var(--border)}
+  h3{font-size:16px;margin:28px 0 10px}
+  p{margin:10px 0}
+  .sub{color:var(--ink2);font-size:14px;margin:0 0 4px}
+  .meta{color:var(--muted);font-size:13px;margin:0 0 24px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+        padding:18px 20px;margin:16px 0}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:20px 0}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+  .tile .v{font-size:26px;font-weight:650;line-height:1.2;font-variant-numeric:tabular-nums}
+  .tile .l{color:var(--ink2);font-size:13px;margin-top:4px}
+  .tile .s{color:var(--muted);font-size:12px;margin-top:2px}
+  table{border-collapse:collapse;width:100%;min-width:600px;font-size:14px;margin:0}
+  .tw{overflow-x:auto;margin:12px 0}
+  th,td{border:1px solid var(--grid);padding:7px 10px;text-align:left;vertical-align:top}
+  th{background:var(--surface);font-weight:600}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .src{color:var(--muted);font-size:12.5px}
+  .fig{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+       padding:18px 12px 8px;margin:16px 0;overflow-x:auto}
+  .fig h4{margin:0 8px 4px;font-size:15px}
+  .fig svg{min-width:620px}
+  .fig .cap{color:var(--muted);font-size:12.5px;margin:2px 8px 10px}
+  .fig img{display:block;width:100%;max-width:720px;min-width:640px;height:auto;
+           margin:8px auto 4px;border-radius:6px}
+  .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;
+      vertical-align:0}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--ink2);margin:6px 8px 4px}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  svg text{font-family:inherit}
+  .tick{font-size:11.5px;fill:var(--muted)}
+  .lab{font-size:12.5px;fill:var(--ink2)}
+  .val{font-size:12.5px;fill:var(--ink);font-weight:600}
+  .risk{border-left:4px solid var(--critical);background:var(--surface);
+        border-radius:0 10px 10px 0;padding:12px 16px;margin:12px 0}
+  .risk.warn{border-left-color:var(--warn)}
+  .risk.ok{border-left-color:var(--aqua)}
+  .tag{display:inline-block;font-size:12px;border:1px solid var(--border);border-radius:999px;
+       padding:1px 10px;color:var(--ink2);margin-right:6px}
+  code{background:var(--page);border:1px solid var(--border);border-radius:5px;
+       padding:1px 6px;font-size:13px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  #tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--page);
+       font-size:12.5px;line-height:1.5;padding:6px 10px;border-radius:6px;max-width:280px;
+       opacity:0;transition:opacity .12s;z-index:9}
+  ol,ul{padding-left:22px}
+  li{margin:5px 0}
+</style>
+</head>
+<body>
+<main>
+
+<h1>mock_scale 量测优化方案 · v3</h1>
+<p class="sub">读 livepipe 的产物，并在它上面做加法（默认关）—— 把「猜」换成「对账」，把重复量测换成缓存</p>
+<p class="meta">2026-10-27 · 数据出处：<code>mock_scale/expand/扩展张数.md</code> §2/§4.6/§12/§17/§22（2026-10-10~12 实测账）· 本页新增实测：<code>out/风云T7_20260826_11</code> 7 段 <b>73 张导出图</b> × 其 <code>comments.jsonl</code> / <code>rows.jsonl</code> / 导出 <code>manifest.json</code>（2026-10-27 本机跑 <code>measure_base</code> / <code>find_erase_region</code>）</p>
+
+<div class="card">
+  <b>一句话结论：</b>livepipe 手里是<b>语义与身份</b>（谁、哪一行、什么等级、冒号在哪），mock_scale 手里是<b>像素几何</b>（整颗药丸、名字墨宽、字带、背景色）。
+  两者是<b>互补</b>，不是替代：livepipe 的数据替不掉一次 <code>find_erase_region</code>，但能让它<b>少跑、跑对、跑完能对账</b>。
+  所以执行顺序改成 —— <b>0 打点 → 改 livepipe（前置：加法 + 默认关）→ A 对账 → C 三级判据 → B 缓存 → D 两遍 → E 续跑</b>。
+</div>
+
+<div class="tiles">
+  <div class="tile"><div class="v">73 / 73</div><div class="l">导出图能与 <code>rows.jsonl</code> 对上号（roi 公式）</div><div class="s">7 段样本 · 2026-10-27 实测</div></div>
+  <div class="tile"><div class="v">34%</div><div class="l">图能读到<b>干净等级</b>（<code>badge_text</code>，25/73，纯数字 25/25）</div><div class="s">mock_scale 只量得到宽度，量不到等级</div></div>
+  <div class="tile"><div class="v">16.7 ms</div><div class="l">单张量测全耗时：解码 7.3 + 定位 7.2 + 徽章 2.2</div><div class="s">73 张中位 18.0ms</div></div>
+  <div class="tile"><div class="v">~36 s</div><div class="l">每轮 plan 全量量测 2,178 张的 CPU 时间（8 workers 理想 4.5s）</div><div class="s">与 §22「12s/700 张」同口径</div></div>
+</div>
+
+<!-- ===================== livepipe 有什么 ===================== -->
+<h2>1 · livepipe 已经算好、mock_scale 还在重算的那部分</h2>
+<p><code>comments.jsonl</code>（每段一条，与 <code>rows.jsonl</code> 同目录）是<b>最直接的索引</b>：一条评论一个对象，导出图的 <code>roi</code> 就是它的 <code>roi</code>，<b>按 roi 精确匹配实测 73/73</b>。退一步用 <code>rows.jsonl</code> 也行 —— 一行 = 一帧里的一条评论行（全帧原图像素），导出图的 <code>roi</code> 实测等于 <code>[badge_left, min(box.y1, badge_box.y1), x_right, box.y2]</code>（多行取并集；这张例子里 <code>min(1456,&nbsp;1455)</code> 正好是 roi 的 1455）。两条路都不重跑 OCR、不读一个像素。</p>
+
+<div class="fig">
+  <h4>一行真数据：livepipe 已经标好的四个框</h4>
+  <img src="data:image/jpeg;base64,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llqmqanZXr6lpbXghia+QOqP92ElSzb8BhsByADnCXwhpHgDwn4m1fwD4L0z4iXn/Ce3ugj+0rA6ottp8YBtkWPnBmy373qduFINTz9DZ4fZp6WX5JnybRX3rofwc8EReOfiBoyeFtLvbDw14i8/wtDL5ZfVdS+xPNJokkhBM0Sui8OTjbt5MtfCepXEt3qN1PPFHBNLK7vFFEsSIxJJVUUAKAeAoAA6Yqoz5jKpSdJK7/pFaiiirMAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKANDRPEWreGriWfSNTvNKnljMMktlcPCzpkNtJUgkZVTjplR6VduvHvia+8SReIrnxFq1x4giKmPVZb6VrpCOARKW3DHbmiilYd3tcXU/H3ifW7q1utR8R6tf3NpO11bzXV9LI8Mzbd0iFmJVz5ceWHJ2L6Cu7+GXx71fQviDZa14w1rxD4hsoxcHedQea4tbiS2eBLuHzWK+dFuVlJ/uAZHBBRScU1YpTlF3TNb4t/HweL/AOieFbPXvFPiqXT9Wk1ceI/Fcii9jYxhEghCyylEGNxPmHLYIC454Jfijqmq6zFqHjBG+InkwGCG38T6heypECQcq0U8bgjGMbtvPIPGCihRSVipVJSd2Lq3xHgeS1uPDnhbSvAuo27sRqPh681EXDKyFGQtPdygKQxB2gE9M4JBw/EPjDXvF0ltJrut6jrT20YhgbUbuScxJ/dUuTtHsOKKKdkQ5NmhP8UfGd1d6VdTeLtdmudJ50+aTUpmez4x+5YtmPj+7ish/EOqy6MdIfU7x9JNyb02DXDmAzldpl8vO3ft43YzjjNFFFkHM31M+iiimSFFFFAFvSdXv9B1GDUNMvbjTr+Bt8N1aStFLG3qrKQQfoa2E+JXi6PxK3iNPFWtr4hddjasNRmF2V6YMu7fj2zRRSshptbMpp4w16ObVZV1vUVl1ZDHqLi7kDXiE5KzHP7wEgEhs81JD448R23huXw7Fr+qReH5W3yaUl7ILV2znJiDbSc85xRRRZBd9wi8ceI7fUbC/i8QapHfafa/YbO6S9kEttb7WTyY23ZSPa7rsGBhmGME1v6V8RPD+n6ba21x8L/Cmpzwxqj3l1dasss5A5dxHfIgJ6naqj0AoooshqTRm2/xP8VaZbz2ek+INW0TSpFkjTTNP1G4jtooncu0SqXJ2ZY8MTnqSTk1Q8NeNPEPgya4l8P69qehS3CeXM+m3klu0i/3WKEZHsaKKLIOZ9xsXjDXoItNjj1vUY49NuWvLFFu5ALWdirNLEM/I5KqSy4JKjngVn319c6pe3F5e3Et3eXEjTTXE7l5JXY5ZmY8kkkkk8kmiimK7ZBRRRQIKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAP//Z"
+       alt="一条直播评论行，标出 roi、text_box、badge_box、colon_box 四个框">
+  <p class="cap"><code>seg1</code> · <code>青***</code>（等级 17）· 整帧 720×1600 里 y≈1455 那一行，截 60px 高的带。
+  绿 <code>roi</code> [32,1455,700,1482] · 蓝 <code>text_box</code> [102,1456,387,1482] ·
+  青 <code>badge_box</code> [49,1455,99,1481]（宽 50）· 橙 <code>colon_box</code> [165,1466,175,1478]；<code>badge_text</code> = "17"。</p>
+</div>
+
+<p><b>图上的 17px 就是「不能拿 OCR 框当几何」的现场：</b><code>roi</code> 左沿 32，<code>badge_box</code> 左沿 49 —— 药丸最左边一截落在 OCR 框外。所以 <code>badge_box</code> 只当「有丸」的旁证（§2），丸画到哪仍由 <code>pill_box()</code> 自己量。</p>
+
+<p><b>join 的算式对得上：</b><code>manifest.images[].roi</code> 与 <code>comments.roi</code> 逐字节相同；只有 <code>rows.jsonl</code> 时，<code>[badge_left, min(box.y1, badge.y1), x_right, box.y2]</code> = <code>[32, 1455, 700, 1482]</code>，也对得上。但 rows 是三道闸：<code>seg1</code> 的 <b>270 行</b>里 <code>badge_left</code> / <code>x_right</code> / <code>panel</code> 全是常数，认不出一行；同一帧 <code>t=585.448</code> 还有 <b>12 行</b>，得再用 roi 的 y 区间筛。<b>这就是「先读 <code>comments.jsonl</code>」的理由。</b></p>
+
+<div class="tw"><table>
+  <tr><th style="width:120px">字段</th><th style="width:180px">样例（实测）</th><th class="num" style="width:90px">覆盖 / 73</th><th>能用在哪</th></tr>
+  <tr><td><code>box</code></td><td><code>[102,1456,387,1482]</code></td><td class="num">73</td><td>导出图 ROI 的来源；判断「这张图里有几行」</td></tr>
+  <tr><td><code>colon_box</code></td><td><code>[165,1466,175,1478]</code></td><td class="num">73</td><td><b>冒号位置的独立旁证</b>（像素找点对，与 OCR 认不认无关）</td></tr>
+  <tr><td><code>badge_box</code></td><td><code>[49,1455,99,1481]</code></td><td class="num">25</td><td>「这一行有徽章」的旁证；<b>不能当几何</b>（见 §2）</td></tr>
+  <tr><td><code>badge_text</code></td><td><code>"17"</code></td><td class="num">25</td><td><b>等级</b> —— mock_scale 量不到的信息（纯数字 25/25）</td></tr>
+  <tr><td><code>x_text</code> / <code>x_right</code></td><td><code>106</code> / <code>700</code></td><td class="num">73</td><td>名字槽位右界、面板右沿（换名字的可用宽度）</td></tr>
+  <tr><td><code>emojis</code> / <code>emoji_text</code></td><td><code>[]</code> / <code>""</code></td><td class="num">2</td><td>名字里有没有表情（选取色窗口时已在上游做过）</td></tr>
+  <tr><td><code>rel</code> / <code>t</code> / <code>panel</code></td><td><code>青___◆17-1/1.jpg</code> · 585.448 · comments</td><td class="num">73</td><td><b>身份主键</b>：join、缓存 key、报告逐行对账</td></tr>
+  <tr><td><code>username</code> / <code>level</code></td><td><code>青***</code> / <code>17</code></td><td class="num">73</td><td>目标用户身份（已用）；等级可与 <code>badge_text</code> 互校</td></tr>
+</table></div>
+<p class="src">join 实测：<code>comments.jsonl</code> 按 <code>roi</code> 精确匹配 <b>73/73</b>；若只能拿到 <code>rows.jsonl</code>，按 <code>t</code> + <code>panel</code> 取行、要求 <code>box</code> 落在 <code>roi</code> 的 y 区间内且 <code>badge_left / x_right</code> 与 roi 左右沿一致，同样 73/73（其中 8 张是「一个 ROI 里两行以上」）。两个文件都在语料目录的上两级（<code>&lt;out&gt;/&lt;段&gt;/</code>），与语料同一次跑出来。<b>livepipe 合入 <code>row</code> 块之后</b>（§3.1），这条 join 改读 <code>manifest.images[].row</code>；两条路的结果都已被 73/73 验证，有 <code>row</code> 就用、没有就退回这里。</p>
+
+<!-- ===================== 能替 / 不能替 ===================== -->
+<h2>2 · 能替什么、不能替什么（实测划界）</h2>
+<div class="tw"><table>
+  <tr><th style="width:50%">✅ livepipe 更准或独有 —— 应当直接用</th><th>❌ 只能由像素量 —— 用了反而错</th></tr>
+  <tr>
+    <td>
+      <ul style="margin:0">
+        <li><b>等级</b>：<code>badge_text</code>，纯数字 25/25</li>
+        <li><b>身份</b>：<code>rel/t/panel</code>，比 mtime 稳</li>
+        <li><b>行结构</b>：一张图里几行、是否续行</li>
+        <li><b>冒号位置</b>：独立的第二意见</li>
+        <li><b>有没有徽章</b>：旁证（<code>badge_box</code> 非空）</li>
+      </ul>
+    </td>
+    <td>
+      <ul style="margin:0">
+        <li><b>整颗药丸</b>：OCR 框实测 13~50px 抖动；抖音药丸在 17 张认定成功的图里 15 张是 <b>57px</b>（另 2 张 56/46），与等级无关</li>
+        <li><b>名字墨宽</b> <code>slot_width</code>、<b>字带</b> <code>glyph_top/bottom</code></li>
+        <li><b>背景 mode 色</b>、<b>文本众数色</b></li>
+        <li><b>擦除蒙版</b>（逐笔画膨胀，决定残墨）</li>
+      </ul>
+    </td>
+  </tr>
+</table></div>
+
+<div class="card">
+  <b>关键发现：宽度分不出等级。</b>样本里 25 张带徽章的图，mock_scale 认定成功 17 张，其中 15 张宽度都是 <b>57px</b>（用户等级 3~19 各不相同）——
+  而口径 C2 现在只比「宽度同档 ±3」，等于只验证了「都有一颗丸」，<b>等级对不对它看不出来</b>。livepipe 的 <code>badge_text</code> 是目前唯一能落到「等级相同」的信号。
+  <b>但等级对成品没有像素影响</b>（贴的是目标自己的丸，覆盖写）⇒ C 买的是<b>配对语义与审计</b>，不是像素。所以它要做，但<b>必须带三级降级链</b>（等级相同 &gt; 等级未知退回宽度 &gt; 明确不同排除），见 §3.2。
+</div>
+
+<div class="fig">
+  <h4>单张量测的耗时构成（73 张实测，720×1600）</h4>
+  <div class="legend">
+    <span><i style="background:var(--blue)"></i>解码 7.3ms（44%）</span>
+    <span><i style="background:var(--orange)"></i>定位 7.2ms（43%）</span>
+    <span><i style="background:var(--aqua)"></i>徽章 2.2ms（13%）</span>
+  </div>
+  <svg viewBox="0 0 880 120" width="100%" role="img" aria-label="单张量测耗时构成">
+    <text x="8" y="46" class="lab" font-weight="600">单张</text>
+    <text x="8" y="64" class="tick">16.7 ms</text>
+    <rect data-tip="解码 JPEG：7.3ms（44%）—— 缓存命中可以整段跳过，连图都不用读"
+          x="150" y="30" width="280" height="34" rx="4" fill="var(--blue)"/>
+    <rect data-tip="find_erase_region：7.2ms（43%）—— 背景色 + 列投影 + 段统计 + 定位"
+          x="434" y="30" width="276" height="34" rx="4" fill="var(--orange)"/>
+    <rect data-tip="badge_rect_of + pill_box：2.2ms（13%）—— 只有认定有徽章的图才跑 pill_box"
+          x="714" y="30" width="84" height="34" rx="4" fill="var(--aqua)"/>
+    <text x="290" y="52" text-anchor="middle" class="val" fill="#fff">7.3 ms</text>
+    <text x="572" y="52" text-anchor="middle" class="val" fill="#fff">7.2 ms</text>
+    <text x="756" y="52" text-anchor="middle" class="val">2.2</text>
+    <text x="150" y="86" class="tick">0</text>
+    <text x="430" y="86" class="tick" text-anchor="middle">8</text>
+    <text x="710" y="86" class="tick" text-anchor="middle">16 ms</text>
+  </svg>
+  <p class="cap">换算：2,178 张 × 16.7ms ≈ <b>36s CPU</b>（8 workers 理想 4.5s，实际受磁盘与进程开销限制）。
+  ⚠️ 解码占 44% —— <b>这也是缓存的真正收益面</b>：命中即不读图，而不是省那 7ms 的计算。</p>
+</div>
+
+<!-- ===================== 方案 ===================== -->
+<h2>3 · 执行顺序（七步，livepipe 排在前置）</h2>
+<p>顺序由依赖定，不由工时定：<b>C 等着 livepipe 的等级</b>，<b>B/D 的收益等着 C 定下候选池</b>，<b>E 要把 plan 绑死</b>；而 <b>0</b> 给出后面所有收益的分母，所以仍然第一个做。</p>
+<p class="src">两个判据（C 的三级链、livepipe 的加法前置）的完整推理与数据见 <code>docs/决策说明-档C与manifest.html</code>；每一步怎么评测（指标、噪声底、A/B 协议）见 <code>docs/评测方案.html</code>；改哪里、按什么顺序改见 <code>docs/评测落地计划.html</code>；本页只排执行顺序、依赖与验收。</p>
+
+<div class="fig">
+  <h4>依赖顺序：0 → livepipe（前置）→ A → C → B → D → E</h4>
+  <div class="legend">
+    <span><i style="background:var(--blue)"></i>mock_scale 侧</span>
+    <span><i style="background:var(--orange)"></i>livepipe 侧（另一仓库，可先上线）</span>
+  </div>
+  <svg viewBox="0 0 880 390" width="100%" role="img" aria-label="七步执行顺序与依赖">
+    <line x1="26" y1="30" x2="26" y2="354" stroke="var(--axis)" stroke-width="2"/>
+
+    <circle cx="26" cy="30" r="12" fill="var(--blue)" stroke="var(--surface)" stroke-width="4"/>
+    <text x="26" y="34" text-anchor="middle" class="val" fill="#fff">0</text>
+    <text x="52" y="34" class="lab" font-weight="600">耗时打点</text>
+    <text x="236" y="34" class="tick">measure_all / cmd_run 分项计时，给后面所有收益当分母</text>
+    <text x="872" y="34" text-anchor="end" class="tick">0.5 h</text>
+
+    <circle cx="26" cy="84" r="12" fill="var(--orange)" stroke="var(--surface)" stroke-width="4"/>
+    <text x="26" y="88" text-anchor="middle" class="val" fill="#fff">1</text>
+    <text x="52" y="88" class="lab" font-weight="600">改 livepipe（前置）</text>
+    <text x="236" y="88" class="tick">schema v3 + 可选 row 块 + badge_level；默认关，旧产物 0 变</text>
+    <text x="872" y="88" text-anchor="end" class="tick">0.5 d</text>
+
+    <circle cx="26" cy="138" r="12" fill="var(--blue)" stroke="var(--surface)" stroke-width="4"/>
+    <text x="26" y="142" text-anchor="middle" class="val" fill="#fff">A</text>
+    <text x="52" y="142" class="lab" font-weight="600">对账表</text>
+    <text x="236" y="142" class="tick">读 row 块，没有就按 roi join comments.jsonl；只对账</text>
+    <text x="872" y="142" text-anchor="end" class="tick">0.5 d</text>
+
+    <circle cx="26" cy="192" r="12" fill="var(--blue)" stroke="var(--surface)" stroke-width="4"/>
+    <text x="26" y="196" text-anchor="middle" class="val" fill="#fff">C</text>
+    <text x="52" y="196" class="lab" font-weight="600">等级判据</text>
+    <text x="236" y="196" class="tick">三级降级链 + 脏值闸 + A/B 阈值（会改配对）</text>
+    <text x="872" y="196" text-anchor="end" class="tick">0.5 d</text>
+
+    <circle cx="26" cy="246" r="12" fill="var(--blue)" stroke="var(--surface)" stroke-width="4"/>
+    <text x="26" y="250" text-anchor="middle" class="val" fill="#fff">B</text>
+    <text x="52" y="250" class="lab" font-weight="600">量测缓存</text>
+    <text x="236" y="250" class="tick">key 不含 lp_level：C 改配对不作废缓存</text>
+    <text x="872" y="250" text-anchor="end" class="tick">0.5 d</text>
+
+    <circle cx="26" cy="300" r="12" fill="var(--blue)" stroke="var(--surface)" stroke-width="4"/>
+    <text x="26" y="304" text-anchor="middle" class="val" fill="#fff">D</text>
+    <text x="52" y="304" class="lab" font-weight="600">两遍量测 + 收窄</text>
+    <text x="236" y="304" class="tick">收益按 C 后的候选池重算，逐字段 0 差异再上线</text>
+    <text x="872" y="304" text-anchor="end" class="tick">1 d</text>
+
+    <circle cx="26" cy="354" r="12" fill="var(--blue)" stroke="var(--surface)" stroke-width="4"/>
+    <text x="26" y="358" text-anchor="middle" class="val" fill="#fff">E</text>
+    <text x="52" y="358" class="lab" font-weight="600">断点续跑</text>
+    <text x="236" y="358" class="tick">plan 指纹一致才复用旧 ok，防 C 改配对后误复用</text>
+    <text x="872" y="358" text-anchor="end" class="tick">0.5 d</text>
+  </svg>
+  <p class="cap">竖直方向就是执行顺序；箭头/位置表示「前一步的产物是后一步的输入」。0 与 livepipe 可并行开工，A 起串行。<b>总计约 3.5 天</b>（0 的半小时另算）。</p>
+</div>
+
+<div class="tw"><table>
+  <tr><th style="width:150px">步</th><th>做什么</th><th style="width:200px">改动面</th><th style="width:230px">依赖 / 收益依据</th><th class="num" style="width:66px">工时</th></tr>
+
+  <tr>
+    <td><b>0 · 耗时打点</b><br><span class="tag">先做</span></td>
+    <td>给 <code>measure_all</code> / <code>cmd_run</code> 加阶段计时，打印 decode / 定位 / 徽章分项</td>
+    <td><code>expand_produce.py</code></td>
+    <td>本页 16.7ms 只是 73 张样本，真实语料 1,478 张的分布未知 ⇒ 后面每一步的收益都用它当分母</td>
+    <td class="num">0.5 h</td>
+  </tr>
+
+  <tr>
+    <td><b>1 · 改 livepipe</b><br><span class="tag">前置 · 另仓</span></td>
+    <td><code>SCHEMA_VERSION</code> 2→3；新增 <code>--row-geometry</code>（默认关）；<code>images[]</code> 加 <code>row</code> 块；<code>badge_level</code> 干净字段；<b>join 在 livepipe 内做一次</b></td>
+    <td><code>tools/export_user_images/{io.py,run.py}</code></td>
+    <td>关 ⇒ 旧产物逐字节不变；开 ⇒ 只加键。<b>mock_scale 的 A 不等它</b>（comments.jsonl 照样 join），详见 §3.1</td>
+    <td class="num">0.5 d</td>
+  </tr>
+
+  <tr>
+    <td><b>A · livepipe 对账表</b><br><span class="tag">不改出片</span></td>
+    <td>优先读 <code>manifest.images[].row</code>；没有就按 <code>roi</code> join <code>comments.jsonl</code>；落 <code>livepipe_join.json</code> + 报告对账列</td>
+    <td><code>expand_produce.py</code>（+~80 行）</td>
+    <td>join 实测 73/73；<b>A 只产数据、自己不判</b> ⇒ 出片与计划逐字节不变（C 才用它做配对，见 §3.2）</td>
+    <td class="num">0.5 d</td>
+  </tr>
+
+  <tr>
+    <td><b>C · 等级判据</b><br><span class="tag">三级链</span></td>
+    <td>等级相同 &gt; 等级未知退回宽度 &gt; 明确不同排除；脏值只降级、不排除；先跑 A/B 对照再上线，详见 §3.2</td>
+    <td><code>expand_produce.py</code>（配对段）</td>
+    <td>纯「同等级」会让 32% 的目标配空；三级链把配空率压到 ≤ 基线 +1pp，且只在「能判断」时多一层排序</td>
+    <td class="num">0.5 d</td>
+  </tr>
+
+  <tr>
+    <td><b>B · 量测缓存</b></td>
+    <td>measure 结果按 key 落 <code>expand/measure_cache.json</code>（原子写）；<code>measure_all</code> 先查表</td>
+    <td><code>expand_produce.py</code> · <code>.gitignore</code></td>
+    <td>命中即不读图（解码占 44%）；<b>key 不含 <code>lp_level</code></b> ⇒ C 改配对不作废缓存；<b>收益也等 C</b>：分母用 C 之后的 job 数</td>
+    <td class="num">0.5 d</td>
+  </tr>
+
+  <tr>
+    <td><b>D · 两遍量测 + 收窄</b></td>
+    <td>首遍只跑 <code>find_erase_region</code>；<code>badge_rect_of + pill_box</code> 只对过结构闸的图跑；列扫描用 <code>badge_left / colon_box</code> 收窄</td>
+    <td><code>expand_produce.py</code> + <code>core/inkmask.py</code>（可选参数）</td>
+    <td>省掉落选图的徽章量测（13%）与大部分列扫描；<b>落选面由 C 决定 ⇒ 收益等 C 的配空率数据</b></td>
+    <td class="num">1 d</td>
+  </tr>
+
+  <tr>
+    <td><b>E · 断点续跑</b></td>
+    <td><code>cmd_run</code> 跳过「报告里已 ok + <code>扩展N.jpg</code> 存在 + <b>plan 指纹一致</b>」的 job</td>
+    <td><code>expand_produce.py</code></td>
+    <td>中途崩溃/补跑：从整批 590 张重出 → 只补缺失；指纹防 C 改配对后把旧 ok 当新结果</td>
+    <td class="num">0.5 d</td>
+  </tr>
+</table></div>
+
+<div class="risk ok">
+  <b>0 与 1 可以并行</b>（两个仓库、互不依赖）；A 起串行。若时间紧，<b>1 可以先合入但不开 flag</b> —— 它默认关，对现有产物零影响，mock_scale 也不等它。
+</div>
+
+<h3>3.1 前置：改 livepipe 的三个件（全是加法，默认关）</h3>
+<div class="tw"><table>
+  <tr><th style="width:150px">件</th><th>写什么</th><th style="width:250px">为什么这么写</th></tr>
+  <tr>
+    <td><code>schema_version</code></td>
+    <td><code>io.py: SCHEMA_VERSION 2 → 3</code>；<b>只有写了 row 块才写 3</b>，关掉时仍是 2</td>
+    <td>版本是消费者判断「有没有 row 块」的唯一开关；不写 3 的产物与今天逐字节相同</td>
+  </tr>
+  <tr>
+    <td>可选 <code>row</code> 块</td>
+    <td><code>--row-geometry</code>（默认 <b>off</b>）。开时 <code>images[]</code> 每条多一个 <code>row</code>：<code>box / text_box / colon_box / badge_box / badge_left / badge_text / badge_level / x_text / x_right / rid</code></td>
+    <td>数据源是段目录的 <code>comments.jsonl</code>，export 按 <code>roi</code> join 一次即可（73/73）；关时不改任何既有字段 ⇒ 老验收（944+533 条）照用</td>
+  </tr>
+  <tr>
+    <td><code>badge_level</code> 干净字段</td>
+    <td>直接调现成的 <code>account_id.badge_level()</code>（NFKC + Unicode <code>Nd</code>，与账号身份同一条判据）；读不出写 <code>""</code></td>
+    <td>脏值在源头清一次；下游各写一遍 <code>isdigit</code> 早晚会不一致（现在就有 ~7% 的脏值，见 §3.2）</td>
+  </tr>
+</table></div>
+<p>改动面就两个文件：<code>tools/export_user_images/io.py</code>（版本常量）与 <code>run.py</code>（读段目录的 <code>comments.jsonl</code>、按 roi 建索引、给 <code>images[]</code> 挂 <code>row</code>）。<b>不动 <code>qualify</code>、不动 <code>users_qualified.jsonl</code> 的 6 键投影</b> —— 那会让旧产物变字节。</p>
+<div class="risk ok">
+  <b>两仓库解耦上线：</b>livepipe 先合入（默认关 ⇒ 现有产物一字节不变）；mock_scale 的 A 用 <code>comments.jsonl</code> 的 roi join，<b>不等它</b>；等语料按 <code>--row-geometry</code> 重导一次，A 自动改读 <code>row</code>（有就用、没有就退）—— <b>两个仓库不需要同一天发版</b>。
+</div>
+<p class="src">livepipe 侧验收：关 ⇒ manifest 与今天逐字节相同；开 ⇒ diff 只允许 <code>schema_version</code> 与新增的 <code>row</code> 键；<code>row.roi</code> 与图 <code>roi</code> 100% 相同；<code>badge_level</code> 要么是 1~3 位数字、要么是空串。</p>
+
+<h3>3.2 档 C：三级降级链（不是「只留同等级」）</h3>
+<p>纯「等级相同」会把 <b>32%</b> 的目标配空（中位候选 24 → 1.5）—— 那是硬损失。三级链用「未知」把池子补回来，只砍「明确不同」：</p>
+<div class="tw"><table>
+  <tr><th style="width:48px">层</th><th style="width:150px">目标等级</th><th style="width:250px">底图等级</th><th>动作</th><th style="width:150px">样本量级</th></tr>
+  <tr><td><b>1</b></td><td>已知</td><td>已知且<b>相同</b></td><td>首选</td><td class="num">中位 1.5 张</td></tr>
+  <tr><td><b>2</b></td><td>已知</td><td><b>未知</b>（读不出 / 脏值 / 无读数）</td><td>允许，退回宽度判据（现状口径）</td><td class="num">约 2/3 的图是「未知」</td></tr>
+  <tr><td><b>3</b></td><td>已知</td><td>已知且<b>不同</b></td><td>排除</td><td class="num">只砍明确不同</td></tr>
+  <tr><td colspan="3">目标等级未知</td><td>整条链退化为现状：只按宽度</td><td class="num">约 29%（14/48 个目标）</td></tr>
+</table></div>
+<p>宽度闸（<code>BADGE_W_TOL = 3</code>）在每一层都仍然生效 —— 等级不是宽度的替代品，它只在「能判断」时加一层排序。</p>
+
+<div class="risk warn">
+  <b>脏值闸（只降级，不排除）：</b>同时满足才算「已知」—— ① <code>badge_level</code> 是 1~3 位数字；② 同一 <code>rid</code> 的多次读数<b>全部一致</b>（A 从 <code>rows.jsonl</code> 顺带拿到）；③ 与账号级 <code>level</code> 不冲突。任一条不满足 ⇒ 当「未知」走第 2 层。<b>绝不能让一次 OCR 误读变成「等级不同」的排除</b>。
+</div>
+
+<div class="tw"><table>
+  <tr><th style="width:230px">A/B 对照项（同语料 · 同 seed · C 关/开各跑一遍）</th><th style="width:170px">阈值</th><th>为什么是这一条</th></tr>
+  <tr><td>配空率（0 候选的目标占比）</td><td class="num">≤ 基线 + 1pp，且 ≤ 2%</td><td>三级链的全部意义；超标就停下来重新拍板（加第 4 层或回滚），<b>不静默放宽</b></td></tr>
+  <tr><td>等级一致配对占比（双方已知）</td><td class="num">≥ 70%</td><td>证明第 1 层确实在起作用，而不是被第 2 层吞掉</td></tr>
+  <tr><td>出片张数（P3/P4）</td><td class="num">≥ 基线</td><td>C 只该改配对，不该改产量</td></tr>
+  <tr><td><code>expand_plan.json</code> 差异面</td><td class="num">仅配对字段</td><td>其余字段逐字段相同（seed 固定 20261010）</td></tr>
+</table></div>
+<p class="src">诚实说清楚：等级对成品<b>没有像素影响</b>（贴的是目标自己的丸，覆盖写）。C 买的是<b>配对语义可控、可审计</b>，不是更好看 —— 所以它必须配一条不亏产量的降级链，收益也只能记在「对账/语义」栏，不能记进「省时间」栏。</p>
+
+<h3>3.3 B / D / E 的依赖补丁</h3>
+<ul>
+  <li><b>B 的 key 不放 <code>lp_level</code></b>：缓存存的是<b>像素量测</b>（<code>slot_width / glyph_height / badge_rect / 背景色</code>），等级只影响配对、不影响量测。把等级放进 key，C 一调参数整批缓存就作废 —— 方向是反的。key = <code>rel + t + panel + (roi_inset, roi_vinset, profile, 代码版本) + size/mtime</code>。<b>B 的收益也要用 C 之后的分母</b>：缓存省的是「重复量测的次数」，而 plan/run 覆盖的图数会随配空率变 —— 拿 C 之前的数报会偏高。</li>
+  <li><b>D 的收益等 C 的数据</b>：两遍量测省掉的是「落选图」的徽章量测与列扫描，而落选面由配对规则决定。C 把候选池从「宽度同档」换成「三级链」⇒ 必须先跑 C 的 A/B，拿到<b>配空率</b>与各层命中数，再估 D 能省多少。顺序反了就是拿旧分母报收益。</li>
+  <li><b>E 加 plan 指纹</b>：<code>expand_plan.json</code> 顶部写 <code>plan_fingerprint</code>（<code>source / ratio / min_images / base_cap / per_target_per_base / seed / 口径常量 / C 规则版本与参数 / livepipe join 摘要</code> 的 sha256），run report 每张记指纹；续跑只复用<b>指纹相同</b>且 <code>扩展N.jpg</code> 存在的 job。没有它，C 改了配对之后旧报告里的 ok 会被当成新结果复用 —— 正是 bug-300 那种「账和片子不是同一把尺子」。</li>
+</ul>
+
+<!-- ===================== 护栏 ===================== -->
+<h2>4 · 守口径与护栏</h2>
+<div class="risk warn">
+  <b>⚠ 边界：</b>① <code>render_one → process_image</code> 出片路径一字不动（2026-10-11 定案「全盘照上游」，§22）；② 不改 <code>BADGE_*</code> / <code>JOIN_GAP_*</code> / <code>ROI_*</code> 任何常量（§18.3 内缩 5px 是逐张回放标定出来的）；
+  ③ <b>livepipe 侧只做加法</b> —— 新键 + 新块 + schema 版本，默认关；旧产物逐字节不变，不改任何既有字段的语义；
+  ④ <b>mock_scale 不写 livepipe 目录</b> —— 只读；join 结果落自己的 <code>livepipe_join.json</code>。
+</div>
+<div class="risk">
+  <b>被同型改动坑过的两次：</b><br>
+  ① <b>bug-300</b>：规划与出片用了不同的框/内缩量 —— 「账上量到的」与「实际擦写的」不是同一处 ⇒ 缓存 key 必须把 <code>roi_inset / roi_vinset / profile</code> 绑死；<br>
+  ② <b>bug-284</b>：ASCII 目录只量第一张，第一张恰好没徽章 ⇒ 整户误杀 ⇒ 两遍量测只许<b>延后</b>徽章，不许跳过（自己的图仍每张都量）。
+</div>
+
+<!-- ===================== 验收 ===================== -->
+<h2>5 · 验收（改前 / 改后各跑一遍同语料 P1+P3）</h2>
+<div class="tw"><table>
+  <tr><th>对照项</th><th class="num" style="width:170px">一致标准</th><th>说明</th></tr>
+  <tr><td><code>expand_plan.json</code></td><td class="num">0 / A / B：逐字节相同<br>C：仅配对字段</td><td>seed 固定（20261010）⇒ 同参数应逐字节相同。<b>C 有意改配对</b>，差异只允许出现在 base 选择与配对列，阈值见 §3.2</td></tr>
+  <tr><td><code>expand_run_report.json</code></td><td class="num">0 / A / B：逐张相同<br>C：仅 base 相关列</td><td>font_size / slot_width / join_gap / tail_shift 等度量列必须一列不差（C 只改「用哪张底图」）</td></tr>
+  <tr><td>成品图</td><td class="num">0 / A / B：md5 一致<br>C：按新配对照</td><td>缓存命中路径与像素路径同源时；C 之后配对变了，md5 变化必须能逐张追到「换了一张底图」</td></tr>
+  <tr><td>原图 md5</td><td class="num">869 + 192 张 0 变</td><td>所有步骤都适用（沿用现行验收，§22.3）</td></tr>
+  <tr><td>manifest 原有条目</td><td class="num">flag 关：944 + 533 条一致<br>flag 开：只多 <code>row</code> 键</td><td>livepipe 改动的验收：关 ⇒ 与今天逐字节相同；开 ⇒ diff 只允许 <code>schema_version</code> 与新增 <code>row</code></td></tr>
+  <tr><td><b>新增 · livepipe 对账</b></td><td class="num">见右</td><td>join 来源（<code>row</code> / <code>comments</code> / 无）与覆盖率、冒号位置差 ≤2px 的比例、徽章有无一致率、有干净等级的图占比（样本：73/73 · 17&nbsp;vs&nbsp;25 · 34%）—— 每轮写进报告</td></tr>
+  <tr><td><b>新增 · C 的 A/B</b></td><td class="num">见右</td><td>配空率 ≤ 基线 +1pp（且 ≤2%）、等级一致配对占比 ≥70%、出片张数 ≥ 基线 —— 三条全过才算 C 可上线</td></tr>
+  <tr><td><b>新增 · E 的指纹</b></td><td class="num">100% 命中</td><td>续跑复用的每个 job，其 <code>plan_fingerprint</code> 必须与当前 plan 相同（构造一次「换 C 参数后重跑」的用例验证）</td></tr>
+</table></div>
+
+<p class="src">数据索引：语料与版式 §2 · ASCII 代价 §4.6 · 定位失败面 §12.2（LOC_NONE 137/280）· 徽章标定 §18.3 · 救回 §17.3 · 渲染口径 §22.3 ·
+本页实测 2026-10-27：<code>out/风云T7_20260826_11</code> 7 段 73 张（join 73/73 · colon 73/73 · badge 25/73 · 纯数字 25/25 · 多行 ROI 8 张里定位成功 1 张 · <code>measure_base</code> 均值 16.7ms / 中位 18.0ms）。</p>
+
+</main>
+<div id="tip"></div>
+<script>
+(function(){
+  var tip = document.getElementById('tip');
+  document.querySelectorAll('[data-tip]').forEach(function(el){
+    el.addEventListener('mousemove', function(e){
+      tip.textContent = el.getAttribute('data-tip');
+      tip.style.opacity = 1;
+      var x = e.clientX + 14, y = e.clientY + 14;
+      if (x + tip.offsetWidth > innerWidth - 8) x = e.clientX - tip.offsetWidth - 14;
+      if (y + tip.offsetHeight > innerHeight - 8) y = e.clientY - tip.offsetHeight - 14;
+      tip.style.left = x + 'px'; tip.style.top = y + 'px';
+    });
+    el.addEventListener('mouseleave', function(){ tip.style.opacity = 0; });
+  });
+})();
+</script>
+</body>
+</html>

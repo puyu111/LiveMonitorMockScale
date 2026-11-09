@@ -1,0 +1,99 @@
+{
+ "a": {
+  "tag": "BL2",
+  "median_s": 8.54,
+  "cv": 0.03548009367681488,
+  "rc": {
+   "plan": [
+    0
+   ],
+   "run": [
+    3
+   ]
+  }
+ },
+ "b": {
+  "tag": "JOIN",
+  "median_s": 8.5305,
+  "cv": 0.042435965066526006,
+  "rc": {
+   "plan": [
+    0
+   ],
+   "run": [
+    3
+   ]
+  }
+ },
+ "noise_pct": 3.3,
+ "band_pct": 6.6,
+ "gate_pct": 6.6,
+ "noise_source": "baseline",
+ "delta_pct": 0.11,
+ "fingerprint_ok": true,
+ "same_corpus": true,
+ "same_code": true,
+ "same_env": true,
+ "join": {
+  "status": "ok",
+  "images": 73,
+  "matched": 73,
+  "coverage": 1.0,
+  "rows_matched": 73,
+  "rows_coverage": 1.0,
+  "rows_exact": 73,
+  "rows_multi": 8,
+  "conflict_count": 0,
+  "unmatched_count": 0,
+  "badge_text_covered": 52,
+  "badge_text_ratio": 0.7123287671232876
+ },
+ "verdicts": [
+  {
+   "metric": "T_total",
+   "status": "no_difference",
+   "value_pct": 0.11,
+   "note": "带内 ⇒ 不记收益",
+   "noise_pct": 3.3,
+   "band_pct": 6.6,
+   "gate_pct": 6.6,
+   "noise_source": "baseline"
+  },
+  {
+   "metric": "N_out",
+   "status": "pass",
+   "a": 53.0,
+   "b": 53.0
+  },
+  {
+   "metric": "R_blank",
+   "status": "pass",
+   "a_pct": 0.0,
+   "b_pct": 0.0,
+   "over_baseline_pp": 0.0
+  },
+  {
+   "metric": "R_lvl",
+   "status": "inconclusive",
+   "note": "等级还没接"
+  },
+  {
+   "metric": "E_out",
+   "status": "pass",
+   "diff": 0
+  },
+  {
+   "metric": "J_join",
+   "status": "pass",
+   "coverage_pct": 100.0,
+   "images": 73
+  },
+  {
+   "metric": "J_conflict",
+   "status": "pass",
+   "conflicts": 0,
+   "rows_multi": 8
+  }
+ ],
+ "exit": 6
+}

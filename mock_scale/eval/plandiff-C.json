@@ -1,0 +1,40 @@
+{
+ "schema_version": 1,
+ "kind": "plan_diff",
+ "label": "C 关/开（--level-pair）",
+ "ok": true,
+ "problems": [],
+ "top_diff_keys": [],
+ "top_expected_keys": [
+  "fingerprint",
+  "source"
+ ],
+ "users": {
+  "changed_fields": {
+   "level_excluded": 27,
+   "pool": 17,
+   "short_reason": 8,
+   "t_level": 18
+  }
+ },
+ "jobs": {
+  "count_a": 53,
+  "count_b": 38,
+  "same_pair_field_diff_count": 0,
+  "same_pair_meta_diff_count": 4,
+  "groups_same_base_set": 0,
+  "groups_changed_base_set": 16,
+  "dropped_count": 49,
+  "added_count": 34,
+  "swapped_groups": 16
+ },
+ "outputs": {
+  "a": 53,
+  "b": 38,
+  "only_a_count": 15,
+  "only_b_count": 0,
+  "md5_changed": 38,
+  "md5_changed_explained": 38,
+  "md5_changed_unexplained_count": 0
+ }
+}

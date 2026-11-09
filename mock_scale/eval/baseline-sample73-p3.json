@@ -1,0 +1,150 @@
+{
+ "schema_version": 1,
+ "label": "p3-sample73-A-join",
+ "scope": "sample-73",
+ "created": "2026-10-27T22:08:08",
+ "runs": [
+  "BL"
+ ],
+ "repeats": 6,
+ "fingerprint": {
+  "corpus_sha256": "a941ea3f57d3af21e381f667cf5d4aaf1b992e58d8a2e72f9faec514fd9b5117",
+  "corpus_files": 74,
+  "corpus_source": "/home/puyu/github/LiveMonitorMockScale/out/风云T7_20260826_11/抖音/all_users_正面_2张以上",
+  "code": "file:078d8d825c0cd56d",
+  "workers": 8,
+  "seed": 20261010,
+  "arm": "A-baseline"
+ },
+ "wall_s": {
+  "plan": {
+   "n": 6,
+   "median": 4.413,
+   "p95": 4.545,
+   "min": 4.253,
+   "max": 4.545
+  },
+  "run": {
+   "n": 6,
+   "median": 4.072,
+   "p95": 4.081,
+   "min": 4.065,
+   "max": 4.081
+  },
+  "total": {
+   "n": 6,
+   "median": 8.49,
+   "p95": 8.614,
+   "min": 8.334,
+   "max": 8.614,
+   "cv_pct": 3.3
+  }
+ },
+ "noise": {
+  "cv_pct": 3.3,
+  "band_pct": 6.6,
+  "rule": "Δ > 2×CV 才算收益；带内写 no_difference",
+  "method": "CV = (max-min)/median，同臂多遍"
+ },
+ "counts": {
+  "measure": {
+   "n": 6,
+   "median": 73.0,
+   "p95": 73.0,
+   "min": 73.0,
+   "max": 73.0
+  },
+  "badge_calls": {
+   "n": 6,
+   "median": 57.0,
+   "p95": 57.0,
+   "min": 57.0,
+   "max": 57.0
+  },
+  "badge_found": {
+   "n": 6,
+   "median": 45.0,
+   "p95": 45.0,
+   "min": 45.0,
+   "max": 45.0
+  },
+  "jobs": {
+   "n": 6,
+   "median": 53.0,
+   "p95": 53.0,
+   "min": 53.0,
+   "max": 53.0
+  },
+  "ok": {
+   "n": 6,
+   "median": 53.0,
+   "p95": 53.0,
+   "min": 53.0,
+   "max": 53.0
+  },
+  "n_out": {
+   "n": 6,
+   "median": 53.0,
+   "p95": 53.0,
+   "min": 53.0,
+   "max": 53.0
+  },
+  "need_targets": {
+   "n": 6,
+   "median": 19.0,
+   "p95": 19.0,
+   "min": 19.0,
+   "max": 19.0
+  },
+  "blank_targets": {
+   "n": 6,
+   "median": 0.0,
+   "p95": 0.0,
+   "min": 0.0,
+   "max": 0.0
+  },
+  "run_counters": {
+   "cache_hit": 0.0,
+   "cache_miss": 0.0,
+   "badge_calls": 0.0,
+   "scan_px": 0.0,
+   "resume_reused": 0.0
+  }
+ },
+ "plan_timings_ms": {
+  "decode": {
+   "p50": 18.319,
+   "p95": 27.979
+  },
+  "locate": {
+   "p50": 11.678,
+   "p95": 19.293
+  },
+  "badge": {
+   "p50": 0.764,
+   "p95": 1.256
+  }
+ },
+ "run_timings_agg_s": {
+  "sprite": 1.254,
+  "render": 14.794,
+  "badge": 0.003,
+  "check": 9.411,
+  "save": 4.319
+ },
+ "definitions": {
+  "plan_timings_ms": "逐图该段耗时（ms），先按遍算 p50/p95，再跨遍取中位数",
+  "run_timings_agg_s": "全部 job 的该段耗时之和（CPU 秒）；除以 workers ≈ 墙钟"
+ },
+ "quality": {
+  "blank_rate": 0.0,
+  "level_consistent": null
+ },
+ "outputs": {
+  "count": 53,
+  "sha256": "e5febcdf3a74fbc17bcc8376bd516d29d45494007edfbdd32e4154253944ed1d"
+ },
+ "notes": [
+  "P3 A/E 代码版本的噪声带（产品加入 livepipe join 与 resume journal 后重冻；语料指纹与 P2 相同）"
+ ]
+}

@@ -1,0 +1,8 @@
+{
+  "name": "A-join",
+  "workers": 8,
+  "seed": 20261010,
+  "cache": "cold",
+  "plan_flags": ["--livepipe-join"],
+  "run_flags": []
+}

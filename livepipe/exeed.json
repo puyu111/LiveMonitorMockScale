@@ -1,0 +1,417 @@
+// ============================================================================
+// CTCC 职业联赛 · 视频号直播录屏（手机 App 竖屏 720×1600）→ 结构化评论
+//
+// 素材 = 「12-2026-08-09CTCC职业联赛（8.9）」视频号/ 下的**三段**录屏
+// （同一场直播、时间**不重叠**）：
+//   seg1  `10：06-10：37.mp4`  1889s
+//   seg2  `11：23-12：00.mp4`  2204s
+//   seg3  `15：22-15：45.mp4`  1349s
+//
+// 三段**一次配全**（`input.videos` 吃目录/通配符）：每段自动在 output.dir 下开一个子目录
+// （seg1/seg2/seg3），逐段步骤各跑一遍、跨段步骤（qualify/collect）整批跑一次。
+// 三段**必须串行**跑（这台机器可用内存 5G，并行 OCR 会 OOM）—— 管线本来就是串行循环。
+// 跨段的两件事（合格按**合计**判、同名账号并成一个目录）已进管线，见文件末尾的 `qualify`/`collect`。
+//
+// 行版式：`[✦N 等级药丸] [粉丝药丸] 昵称：正文`
+//   · 等级药丸画在**昵称左边**、独占左侧徽章列（与抖音同族，但数字完全不同）。
+//     OCR 有时把它并进正文块 ⇒ 用户名长出前缀（`1A-幸运小福星` / `+1A-幸运小福星` /
+//     `★1A-幸运小福星` / `￥1A-幸运小福星`），同一个人被算成好几个账号 ⇒ 归一见 `badge_alias`。
+//   · 行首偶尔还有一枚「粉丝」药丸（关注了主播的人才有）⇒ 见 `fan_badge_x_max`。
+//
+// ⚠⚠ 平台名取 `wechat_app`，**不要**用内置的 `wechat`：内置那份量的是**网页版**
+//   （row_pitch 61 / y_phase 21 / x_text 60，见 livepipe/csj.json 里 x2_from 的注释），
+//   手机 App 实测 50.6 / 25 / 30 —— 数字一个都不能照抄，照抄行网格全错、整片认不出。
+//
+// 这块素材量到的（证据写在各参数的行内注释里）：
+//   ✅ 行距 50.6 · 首行相位 25 · x_text 30 · 裁切右沿取窗口（App 评论列表满宽）
+//      · 行首两枚药丸的几何闸（`fan_badge_x_max` 37 / `badge_alias`）
+//      · 表情用视频号那套表（109 个模板；seg1 实跑 26 个表情、**0 个未识别**）
+//   ⚠ 还没量：`x_ignore_from`（这块素材的评论列表里没见到商品卡/浮层）；
+//      表情阈值直接照视频号表，没按手机 App 单独标定。
+//
+// 跑法（OCR 要带 rapidocr 的解释器）：
+//   P=/home/puyu/anaconda3/envs/vlx/bin/python
+//   HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 $P -m livepipe run livepipe/ctcc.json
+//   $P -m livepipe check livepipe/ctcc.json           # 只校验配置，不跑（安全）
+//   $P -m livepipe run  livepipe/ctcc.json --dry-run  # 只说要做什么
+// ============================================================================
+{
+  "version": 1,                        // 配置格式版本，必须是 1
+  "name": "CTCC 2026-08-09 · 视频号手机 App · 竖屏",   // 只出现在日志里
+
+  // -------------------------------------------------------------------------
+  // 平台档案：人工在面板文件里只填平台名，行距 / 表情表 / 裁切策略 / 两枚药丸的闸
+  // 都从这里取。**这块素材手机 App 的版式与网页版不是一套数字**，所以单独起一个名字，
+  // 不去覆盖内置的 `wechat`（覆盖会让 csj.json 那条桌面网页版的线跟着变）。
+  // -------------------------------------------------------------------------
+  "platforms": {
+    "wechat_app": {
+      "label": "视频号直播（手机 App 竖屏；等级标 ✦N 在昵称左边，行首还可能有「粉丝」药丸）",
+      "emoji": "wechat",                // → emoji.tables 里的键（视频号那套 109 个模板）
+
+      // 行距（像素）—— **实测**（720×1600 手机 App，2026-10-09/10-12）：
+      //   行投影 12+ 个连续间隔落在 50~51（中位 50.5/50.6）；解析自标定 50.5、置信度高。
+      //   内置 wechat 的 61 是**网页版**的，差 10px ⇒ 槽位逐行漂移、越到下面越错。
+      "row_pitch": 50.6,
+
+      // 首行中心距面板顶 —— **实测**：rect 顶 760 + 25 = 首行中心 785。
+      // 手机 App 是平滑滚动，相位逐帧估，这个值只在估不出来时兜底。
+      "y_phase": 25,
+
+      // 正文列左沿（徽章列右沿，**裁切内**坐标）。**实测**（seg1 的 5620 行，带全角冒号
+      // 且在评论 rect 内的 2168 行）正文块左沿成三簇：
+      //   40（1613 行，昵称顶在正文列 —— 行首没有药丸）/ 80~90（495 行，昵称被 ✦N 药丸
+      //   顶到右边）/ 30（19 行，被 OCR 单独检出的行首药丸碎片）。
+      // 取 **30**：必须**小于**真昵称块的最小左沿（40），否则真昵称整块落进「徽章列」被
+      // 当碎片丢掉（微博踩过这个坑：x_text=45 时 10 条评论里 8 条昵称消失）。
+      // 而 26~29 那颗「并进正文的药丸碎片」正好落在 30 以左，被丢在框外 —— 这是想要的效果，
+      // 归一的活交给 `badge_alias`。
+      "x_text": 30,
+
+      // 裁切右沿：**取窗口右沿**（App 的评论列表**满宽**、不随内容伸缩）。
+      // 网页版那样按内容摆动定右沿的问题（csj.json 里量到 686px 的摆动）在 App 上不存在；
+      // 反过来按内容裁会在窗口更宽时把**更宽的评论切掉**（OCR 在裁切边界上不是平移不变的：
+      // 整行丢或误读），所以取超集。
+      "x2_from": "window",
+
+      // 行首「粉丝」药丸**被 OCR 并进正文**时的几何闸（这个药丸是唯一一个 OCR 认不出是
+      // 徽章的徽章：「粉丝」两个字既不是数字也不是标点）⇒ 不剥就把真昵称啃掉头两个字。
+      // **实测**（seg1+seg3 共 723 行，2026-10-09）：徽章行 x1 ∈ [32,35]（药丸自己的左沿）、
+      // 真昵称行 x1 ∈ [38,45]（`粉丝团团长` 这种真名在这儿）⇒ 取 **37** 夹在两簇中间。
+      // 判据要 text + 几何**两条**（`_FAN_BADGE_RE` / `_strip_fan_badge`）。
+      "fan_badge_x_max": 37,
+
+      // 行首**等级**药丸被 OCR 并进正文 ⇒ 同一人被读成好几个账号，按几何见证归一
+      // （详见 CONFIG.md 的同名小节）。**实测**（seg1 的 5620 行，2026-10-12）：
+      //   并进药丸的读法 x1 ∈ 26~29（= 药丸左沿）· 干净读法 x1 ∈ 82~87（= 昵称列）
+      //   两簇相距 ≥42px、同读法自身抖动 ≤3px ⇒ `MIN_GAP=20` 夹在中间，同时把
+      //   「OCR 丢了个行首字」（丢一个数字 ≈13px、丢一个汉字 ≈24px）排除在外。
+      // 效果（seg1 实跑）：交付账号 23 → **22**、评论一条不少。
+      "badge_alias": true,
+
+      // 评论列表上会压**浮层卡**（不是评论，但长在评论 rect 里、又没有冒号 ⇒ 会被当匿名
+      // 评论收进来）。短语表在 parse_live_comments 的 `_OVERLAY_CARD_RE` 里，这里只开开关。
+      // **实测**（2026-10-12，90s 样本）：seg1 的 172 行里 **140 行**是「通知 + 平台提示」
+      // 两张卡，t=0 那帧产出的 3 条「评论」全是卡（色情低俗提示 / 主题卡 / 公众号卡）；
+      // seg2 t=30.1 里的广告气泡 `HER奇瑞汽车占击了解详情` 也是。
+      // `_NOCOLON_NOTICE_RE`（只认微博那套）一条都认不出它们 —— 视频号的卡是**版式事实**，
+      // 所以挂在这个档案上：抖音/微博的面板不开它，那两套已交付语料行为一字不变
+      // （量过：三套语料的无冒号行命中该表 0 行）。
+      // 卡片的**第二行**（主题卡的 `2026CTCC中国汽车场地职业联赛`、广告气泡的品牌行
+      // `奇瑞汽车`）没有特征词、按内容认会误伤真评论 ⇒ 由解析层的「卡片续行」规则吃掉
+      // （命中卡片短语的行被丢之后，紧跟的一行也丢）。
+      //
+      // 取值给**字符串**时 = 内置短语表 ＋ 这段正则，用于「这个素材才有」的词（内置表里
+      // 不敢放：`奇瑞汽车` 在三套已交付语料的无冒号行里命中 25/40 行，全是真评论的折行
+      // 续行 `奇瑞汽车老品牌，值得信赖`）。下面两条是**广告气泡**的实测形态（2026-10-12）：
+      //   · `奇瑞汽车` —— 气泡的品牌行。OCR 把气泡切成两行时，CTA 那行命中内置表、
+      //     品牌这行什么特征词都没有（seg2 t=5.02 `奇瑞汽车` / t=20.07 `奇瑞汽车`）；
+      //   · `^广?告[^知]` —— 气泡左上角的「广告」标签（seg2 t=45.5 读成 `告奇瑞汽车`，
+      //     CTA 整行没读出来）。加 `[^知]` 是躲开 `告知…` 这类正文。三段材料里这两条
+      //     共命中 6 行，全是气泡；`奇瑞汽车` 在 seg1 命中的是 `公众号奇瑞汽车>`（已由
+      //     `^公众号` 认掉）。
+      "overlay_cards": "奇瑞汽车|^广?告[^知]"
+
+      // ✅ 2026-10-12 已迁移：out/ctcc_20260809/seg{1,2,3}/panels.json 原先是
+      //   `"platform": "wechat"`（内置的**网页版**档案）+ 把这 6 个数**逐项覆盖在面板条目里**，
+      //   现在只剩 `{rect, platform: "wechat_app"}`，数字只留在这一处（备份见
+      //   out/ctcc_20260809/_panels_backup_pre_wechat_app/）。迁移脚本自己断言过两种写法解析出的
+      //   行网格**逐个相同**（只有 platform 这个**名字**不同，而 comments.jsonl 里不存平台名
+      //   ⇒ 三段产物逐字节不变）；迁移后用 `--only panels,parse` 零 OCR 复算过三段，
+      //   comments.jsonl 与迁移前（OCR 跑批产物）逐行一致 —— 也就是说 `--rows` 复算这条路
+      //   与真跑等价（自标定出的 row_pitch=51 / wrap_gap_ratio=0.765 只影响产 rows 那一步，
+      //   复算读 rows 时不再需要）。
+      //   （`wechat_app` 与 `wechat` 在 export 里落到**同一个交付目录** `视频号/`，见
+      //    export_user_images.PLATFORM_CN —— 档案名多了别忘了往里加一行，否则会多出一个目录。）
+
+      // 以下版式量**不用写** —— 解析时从采样帧自标定（本素材实测自标定出的值：
+      //   wrap_indent=true · wrap_gap_ratio=0.765）：
+      //   "x_ignore_from": null,        // 浮层（商品卡/预约按钮）左界；该 x 以右的文字不是评论
+      //   "wrap_gap_ratio": 0.765,      // 续行间距比上限（≥1 个行距的是左对齐横幅）
+      //   （wrap_indent 只在测到缩进续行时自动开，不手写）
+    }
+  },
+
+  "input": {
+    // 多段素材：**目录或通配符**（或路径数组），展开后按**文件名排序** = 时间顺序。
+    //   「10：06-10：37.mp4」<「11：23-12：00.mp4」<「15：22-15：45.mp4」 ⇒ seg1/seg2/seg3 正好对上。
+    //   ⚠ 不要写成 `"video"`（那是单段；两个都写会报错）—— 多段时 output.dir 只是**段的父目录**，
+    //   每段的实际输出在 <output.dir>/seg1、seg2…（名字可自定义：input.segment_names）。
+    "videos": "/home/puyu/work/data/13-2026-08-10艾瑞泽8PRO上市/视频号/视频号EXEED星途汽车/*.mp4",
+    "segment_names": null,              // 段名（= 子目录名）；null ⇒ seg1、seg2…（长度须与段数一致）
+    "video": null,                      // 单段写法（与 videos 互斥，本件用不到）              --video
+    "rows": null,                       // 单段：已有 rows.jsonl ⇒ 复算（省一次 OCR）——
+                                        //   多段不用写这个：每段的 <段目录>/rows.jsonl 已在就自动复算
+    "text": null,                       // 纯文本行文件，每行一条；"-" 读 stdin                --text
+    "start": 0.0,                       // 起始时间（秒）                                    --start
+    "duration": null,                   // 处理多长（秒）；null = 整段                        --duration
+    "interval": 2.0,                    // 固定间隔抽样用（本配置用 adaptive，此项不生效）      --interval
+    "max_frames": null,                 // 最多抽几帧；null = 不限                            --max-frames
+    "resume": true,                     // 断点续跑：rows.jsonl 已在就接着它跑（已处理帧跳过）  --resume
+
+    // 抽帧策略：**手机 App 是平滑滚动**（相位逐帧变），固定间隔会在两次拍摄之间漏条 ⇒
+    // 长录屏强烈建议 adaptive（静止段几乎不拍、滚动段不漏条）。
+    // 本素材实测（seg1，1889s）：抽 618 帧、`gap 324 / entry 237 / settle 55 / move 1`。
+    "sample": {
+      "mode": "adaptive",               //   interval / backoff / adaptive                     --sample-mode
+      "stride": 2,                      //   每 N 个解码帧估一次位移（1 = 每帧都估）
+      "safety_rows": 5.0,               //   累计位移 ≥ 这么多行 ⇒ 强制拍（上限 5，防重复评论）
+      "settle_frames": 3,               //   动过之后静止这么多帧 ⇒ 拍一次（抓住稳定的一屏）
+      "eps_px": 1.0,                    //   位移小于它算「没动」
+      "entry_thr": 8.0,                 //   底部入口行变化多少像素算「新评论弹进来」
+      "max_gap_s": 5.0,                 //   最长多久必须拍一次（0 = 不限）
+      "min_interval": 0.2,              //   两次拍摄的最小间隔（秒）
+      "max_interval": 6.0,              //   两次拍摄的最大间隔（秒）
+      "min_score": 0.3                  //   位移估计的匹配分下限
+    }
+  },
+
+  "emoji": {
+    "enabled": true,                    // false ⇒ 关掉表情识别，只出 OCR 文字        取反 --no-emoji
+    "tables": {                         // 表情表资产（platforms.<p>.emoji 指向这里的键）
+      "wechat": {
+        "path": "out/wechat_emoji/wechat-emoji.json",   // 微信 2021 新版表（109 个模板）
+        "build": {
+          "enabled": false,             //   false ⇒ 不重建，假定表已存在（建表：见下面命令）
+          "mode": "fetch",              //   从微信表情包接口抓一套（不联网枚举就先用已有的表）
+          "out": "out/wechat_emoji",
+          "src": null,                  //   已有图目录 ⇒ 离线重建                            --src
+          "no_sheet": false             //   ⚠ 置 true 就不出对照贴图；跑新素材前先看对照图
+                                        //   建表命令：python3 livepipe/wechat_emoji_table.py --out out/wechat_emoji
+        }
+      }
+    }
+  },
+
+  // -------------------------------------------------------------------------
+  // 面板：**手写**（评论列表的位置已量好，不需要再跑模型定位）。
+  // rect 是**原图像素**的评论区窗口：[x1, y1, x2, y2]
+  //   · y1=760：三段**相同** —— 切在半截行之上（露出来的只有下半截，留着会被读成评论）。
+  //   · y2：三段**不同**，因为每段的浮层卡不一样高（切在浮层卡之上）：
+  //       seg1 1235 · seg2 1330 · seg3 1400
+  //     不切的话卡片标题会被读成评论（微博踩过：主题卡标题成了 1 条评论）。
+  //   · x1=0 / x2=720：App 列表满宽（再由 x2_from=window 覆盖右沿）。
+  // 想重新用模型定位：mode 改成 locate。**改了 rect 要记得删 panels.file 再跑**，
+  // 否则 panels.overwrite=false 不会覆盖它。
+  // -------------------------------------------------------------------------
+  "panels": {
+    "mode": "manual",                   // 取值见文件末尾说明。manual=手写面板直接写进 file
+                                        //   交付走 manual：手写 rect 的 y2 是「切在浮层卡之上」（量好的），
+                                        //   locate 只看「哪几行有冒号」，量不出卡片在哪 —— 2026-10-12
+                                        //   实测 seg1 定位到 y2=1350，而广告白卡在 1237~1357（整段 1889s
+                                        //   每一帧都在，白像素恒占 58%），卡片标题会落进裁切区。
+                                        //   locate 已修好（不切分 + sub_width 500），想用它把这里改回 "locate"。
+    "file": null,                       // null ⇒ 每段各一个 <段目录>/panels.json（多段）
+    "files": null,                      // 也可显式一份一段地列出面板文件路径（顺序 = 段顺序）
+    "overwrite": false,                 // locate/manual：file 已存在时是否覆盖（默认 false，保住人工标注）
+    "auto": {                           // 自动定位参数（mode=locate/auto/batch 时用；本配置用不到）
+      "method": "hybrid",
+      "at": 1000,
+      "frames": 5,
+      "span": null,
+      "split_x": null,                  //   ⚠ null = **不切分**（整帧一个窗口）。本素材是竖屏单直播间，
+                                        //   一列评论：按半宽切会把它劈成两半 —— 左半模型给不出框、
+                                        //   右半一条含冒号的行都凑不出，结果两个窗口一起失败
+                                        //   （2026-10-12 实测：split_x=360 时正是这么报的）。
+                                        //   桌面双直播间的 1150 / 以前这里填的 360 都别再用。
+      "pad_x": 60,                      //   App 评论列表满宽，内容右沿之外留这么多
+      "pad_top": 80,
+      "pad_y": 16,
+      "sub_width": 500,                 //   ⚠ 竖屏整帧裁切**必须降下来**：1000 时 720x1600 →
+                                        //   (1000,2222) = 2.22 Mpx，4bit 模型只剩 ~1.5 GiB 空闲，
+                                        //   要 1.67 GiB ⇒ CUDA OOM（见 /tmp/ctcc_probe/model_probe2.log）
+      "model": "nvidia/LocateAnything-3B",
+      "quant": "4bit",
+      "device": "cuda",
+      "platforms": {                    //   只在 mode=auto/builtin/batch 时用
+        "left": "wechat_app",           //   ⚠ 不切分后**唯一的窗口叫 left**（窗口名只有 left/right
+                                        //   两个），所以键是 left —— 写 "comments" 会一个都匹配不上，
+                                        //   表情表直接空掉
+        "right": null                   //   null = 显式关掉（默认值里有 right→wechat，那是**网页版**
+                                        //   档案；不切分时本来也没有右窗口）
+      },
+      "frame_width": null
+    },
+    // mode=manual：手写面板，**一段一项**（顺序与 input.videos 展开的段顺序一致）。
+    // 段目录里的 panels.json 已经在了 ⇒ 本步不动它（overwrite=false）；这一段的作用是
+    // 「白纸重来/删掉某个 segN/panels.json 时，靠它就能把矩形恢复出来」，别让数字只活在 out/ 里。
+    "manual": [
+      {                                //   seg1  10：06-10：37.mp4
+        "comments": {
+          "rect": [0, 850, 720, 1380], //   x1,y1,x2,y2（原图像素，浮层卡之上）
+          "platform": "wechat_app"
+        }
+      },
+      {                                //   seg2  11：23-12：00.mp4（只差 y2：浮层卡更高）
+        "comments": {"rect": [0, 850, 720, 1380], "platform": "wechat_app"}
+      }
+    ],
+    "batch": {                          // mode=batch：稳定性研究（挑固定矩形用；不动 file）
+      "count": 30,
+      "start": 0.0,
+      "span": 600.0,
+      "anchor": "panel"
+    }
+  },
+
+  "parse": {
+    "sep": " ",                         // 续行拼接用的分隔符                                      --sep
+    "max_username_len": 24,             // 冒号前超过这个长度就不当用户名                          --max-username-len
+    "merge_continuation": true,         // 是否把「无用户名的行」并进上一条评论；false ⇒ 不并    取反 --no-merge
+    "adjacency": true,                  // 「续行必须相邻」守卫；false ⇒ 回到纯文本判续行        取反 --no-adjacency
+    "dedup": true,                      // 按滚动对齐跨帧去重出唯一评论表；false ⇒ 每帧各一条    取反 --no-dedup
+    "calibrate": true,                  // 面板几何自标定（行距/浮层右界/续行；相位逐帧估）     取反 --no-calibrate
+    "right_pad": 0,                     // ROI 右边界距面板右边的余量；0 = 贴面板边圈住框外表情   --right-pad
+    "emoji_workers": 8                  // 表情扫描线程数；1 = 不开（默认）；4~8 ⇒ 整段快 1.5~2.5×
+                                        //   （只影响速度、不改变结果。seg1~seg3 那三次实跑用的
+                                        //    是默认 1：整段 OCR 才是大头，seg1 1889s 花了 1167s）
+  },
+
+  "output": {
+    // 多段时这里是**段的父目录**：实际各写 <dir>/seg1、<dir>/seg2、<dir>/seg3；
+    // 跨段的两个产物也落在这儿：merged_users.json（qualify）+ <平台>/all_users_正面_3张以上/（collect）。
+    "dir": "out/exeed_20260810",         // 输出根目录                                            --out
+    "write": true,                      // 是否写盘（comments.jsonl + summary.json 成对）
+    "rows": true,                       // 另存 rows.jsonl（**可回喂复算**）             --dump-rows <段目录>/rows.jsonl
+    "panels": true,                     // mode=auto 时把定位结果存成 panels.json         --dump-panels <段目录>/panels.json
+    // frames：**抽样帧**一张图 frames/<t>_roi.jpg（≈0.55MB/张），不是每条评论一张。
+    // 本配置整段跑（seg1 实测 618 帧）≈ 340MB ⇒ 默认关，要抽查某几帧时再开。
+    "frames": true,                    // 取反 --no-frames
+    "print": false                      // 除写盘外也把评论打到 stdout                            --print
+  },
+
+  // 评论 → 合格用户：用户名 ≥min_positive 条**正面**评论（正面由大模型判定，表情也发），
+  // 并排除用户名命中关键词的官方侧账号。**要花钱**，所以默认关；
+  // key **只走环境变量**（本项目铁律：不写进任何配置文件）：
+  //   NLP_API_KEY=sk-… $P -m livepipe run livepipe/ctcc.json --only filter
+  //
+  // ⚠ 本件是**三段素材**，交付要求「该账号 ≥3 条正面」是**按三段合计**判的 ⇒
+  //   这里 `min_positive: 1`（只出全量用户表），合格与否交给 `qualify` 步按合计判 ——
+  //   否则 seg1 两条 + seg2 两条 = 4 条的那个账号会被判掉两遍（详情见下面 qualify 的注释）。
+  "filter": {
+    "enabled": true,                   // 打开才会调模型；只想抽评论就先 --skip filter
+    "source": null,                     // 评论来源；null ⇒ <段目录>/comments.jsonl
+    "out": null,                        // 合格用户 JSONL；null ⇒ <段目录>/users.jsonl
+    "cache": null,                      // 判定缓存；null ⇒ 多段共用 <output.dir>/judgments.jsonl
+                                        //   （同一句话只判一次：省钱 + 三段口径一致）
+    "min_positive": 3,                  // 单段阈值（**合计口径见上面 ⚠**；qualify 一开就自动取 stage_min）
+    "exclude_keywords": [               // 用户名含任一即排除（不区分大小写）
+      // ⚠ 这份表是**奇瑞那条线**的（品牌 + 4S + 车型 + 高管姓名），CTCC 只是沿用了它
+      //   —— 本件**还没**按 CTCC 补官方侧账号（赛事官方号 / 车队 / 裁判 / 赞助商）。
+      //   填错的代价是**把真观众挡在名单外**，所以宁可先不填，等名单出来再逐条加。
+      "奇瑞", "4s", "店", "qq3", "汽车",
+      "尹同跃", "张国忠", "鲍思语", "王津华", "王孝伟", "胡敬源", "尹祥领",
+      "王来春", "李晶", "商文江", "杨棉之", "叶盛基", "路风", "黎汝雄",
+      "李学用", "张贵兵", "代立宏", "章红玉", "高新华", "戚士龙", "王琅"
+    ],
+    "nlp": {
+      "api_key": "sk-4d55468816fe4637994bf8350217aabf",                  // 直接写 key（**别提交到仓库**）；留 null 则读下面的环境变量
+      "api_key_env": "NLP_API_KEY",     // ← 这里是环境变量的**名字**（把 key 写到这行永远取不到，等于没配）
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "deepseek-v4.1-flash",   // ⚠ 模型名会随平台改，写错就是 404（不是 key 的问题）；
+                                           //   换名前先看一眼现名：curl -s $BASE_URL/models -H "Authorization: Bearer $KEY"
+      "batch_size": 20,                 // 一次调用判几条：越大越省，越大越怕一条坏整批
+      "concurrency": 4,
+      "timeout": 60.0,
+      "retries": 3,
+      "limit": null,                    // 最多调多少批（控成本）
+      "prompt": null                    // null ⇒ 用 user_filter.DEFAULT_PROMPT
+    }
+  },
+
+  // -------------------------------------------------------------------------
+  // 跨段的两步（**合并进管线**，替代以前 out/ctcc_20260809/merge_segments.py 那个独立脚本）
+  //   顺序有依赖：filter（逐段）→ qualify（跨段判合格）→ export（逐段）→ collect（拼树）。
+  // -------------------------------------------------------------------------
+
+  // 跨段判合格（**全局步**，整批只跑一次）：把三段的 users.jsonl 按**用户名合计**算正面条数，
+  // ≥3 的才算合格，再把合格用户**回写**成每段的 users_qualified.jsonl 交给 export。
+  // 为什么必须跨段：一个账号 seg1 两条、seg2 两条，合起来 4 条就该交付；各段自判 ≥3 会把它
+  // 在两段各判掉一次 —— 名单上少了人，而且是**静默**少的，事后极难发现。
+  // 代价：判定量按合计算（≈2.6 倍单段），所以各段 filter 的阈值被强制放到最松（stage_min）。
+  "qualify": {
+    "enabled": true,                    // 单段素材开着也无害（退化成「按本段判」）
+    "min_positive": 3,                  // 交付阈值（**跨段合计**）—— 与参考语料一致
+    "stage_min": 1                      // 各段 filter/export 用的阈值（先出全量，合格留给这一步判）
+  },
+
+  // ⑥ 逐段出交付图（**逐段步**）：读该段 users_qualified.jsonl，按**原帧**画绿框，一人一个目录
+  // `<昵称>-<本段条数>`（跨段同名目录由 collect 并成一个）。
+  "export": {
+    "enabled": true,
+    "base": "frame",                    // frame=原帧（参考语料形态）/ annotated=标注图      --base
+    "labels": "正面",                   // 只出正面评论                                        --labels
+    "min_positive": null,               // null ⇒ qualify.stage_min（合格已在 qualify 判完）
+    "min_scope": "platform",            // 平台内各自够数；三段是同一个平台 ⇒ 等同于按合计     --min-scope
+    "users": null,                      // null ⇒ <段目录>/users_qualified.jsonl
+    "color": "0,255,0", "width": 3,     // 绿框（对齐参考语料）
+    "pad": 0, "pad_ratio": 0.25, "quality": 90,
+    "force": true                       // 重跑覆盖上一轮的导出目录
+  },
+
+  // 拼最终交付树（**全局步**）：把三段的导出目录按**昵称**并成一个账号目录、图号 1..N **跨段连续**，
+  // 后缀取**合计**条数（`张三-4`，不再是 `张三-2` + `张三-2-2`），顺带写 正面账号.txt + manifest.json。
+  "collect": {
+    "enabled": true,
+    "stage_min": null,                  // 各段导出目录名里的数字；null ⇒ qualify.stage_min
+    "platform_dir": null,               // 交付树里的平台目录名；null ⇒ 从各段导出目录自动认（视频号）
+    "out": null,                        // null ⇒ <output.dir>/<平台目录>/all_users_正面_<合计阈值>张以上
+    "force": true                       // 目标非空时整棵重来（否则报错退出）
+  },
+
+  "draw": {                             // 独立描框步骤（draw_boxes.py）；核心解析已自带逐帧标注图，故默认关
+    "enabled": true,
+    "source": null,
+    "at": 8.0,
+    "window": 5.0,
+    "out": null,
+    "width": 5,
+    "quality": 90,
+    "labels": true
+  },
+
+  "steps": {
+    // 顺序**不能乱**：filter（逐段）→ qualify（跨段判合格）→ export（逐段）→ collect（拼树）。
+    // 逐段步（panels/parse/filter/export/draw）三段各跑一遍；全局步（emoji_tables/qualify/collect）整批一次。
+    "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
+              "export", "collect", "draw"],
+    "skip": ["emoji_tables", "draw"]    // 表情表已建好（out/wechat_emoji/）；独立描框用不上
+  }
+}
+
+// ---------------------------------------------------------------------------
+// panels.mode 取值：
+//   locate   ① 定位评论区 → 写出面板文件（platform 留空），交给人工标注。**工作流第一步**
+//   reuse    ② 复用面板文件（人工标注过 platform）→ 按平台处理
+//   manual   手写面板（rect + platform）直接写进 file。**本配置**（rect 已量好）
+//   auto     解析时自己定位，平台按 auto.platforms 归属（无人值守快捷路径，需 GPU）
+//   batch    跑批量定位 + 稳定性统计（挑固定矩形用；不动 file）
+//   builtin  用脚本内置的 DEFAULT_PANELS（只对特定录屏有效）
+//
+// 三段怎么跑（**一条命令，串行** —— 这台机器可用内存 5G，并行 OCR 会 OOM）：
+//   export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1      # 跑 OCR 要离线，别让它去连 HF
+//   P=/home/puyu/anaconda3/envs/vlx/bin/python
+//
+//   ① 抽行（免费、慢：三段 OCR 合计约 1 小时）—— 每段已有 rows.jsonl 时会自动零 OCR 复算：
+//        $P -m livepipe run livepipe/ctcc.json                    # = panels → parse
+//        $P -m livepipe run livepipe/ctcc.json --only panels,parse
+//   ② 筛 + 判合格 + 出图 + 拼交付树（**要 key**，本件 filter 默认关，所以用 --only 点名）：
+//        NLP_API_KEY=sk-xxxx $P -m livepipe run livepipe/ctcc.json \
+//            --only filter,qualify,export,collect
+//      只跑其中几步也行（--only 会按 steps.order 的相对顺序执行）：
+//        --only qualify,export,collect      # filter 已跑过、只想重出图时
+//        --only collect                     # 只重拼交付树
+//      注意 `--only` 之前会先套 `steps.skip`：skip 里的步骤点名也拉不回来，
+//      所以本件只把 emoji_tables / draw 放进 skip，filter 那一串留着不 skip。
+//   ③ 先看后交：产物在 out/ctcc_20260809/视频号/all_users_正面_3张以上/，
+//      核对完再整个目录拷到 work/data/12-2026-08-09CTCC职业联赛（8.9）/视频号/。
+//
+// 两个跨段步的**产物**（出问题时先看这两个）：
+//   out/ctcc_20260809/merged_users.json       名单 + 每个账号各段各几条（判合格的依据）
+//   out/ctcc_20260809/视频号/all_users_正面_3张以上/manifest.json   交付树清单（含图数核对 +
+//                                             **逐图 images**：t/roi/label/content… rel 已重写成合并树路径）
+//
+// 其它平台的配置见 livepipe/weibo.json（微博手机 App 竖屏）·
+// livepipe/csj.json（抖音 + 视频号 桌面网页版双窗口）·
+// livepipe/examples/pipeline.example.json（带注释的最小样例）。
+// ---------------------------------------------------------------------------

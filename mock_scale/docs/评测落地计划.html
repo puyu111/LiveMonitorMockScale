@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>评测落地计划</title>
+<style>
+  :root{
+    --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+    --blue:#2a78d6; --orange:#eb6834; --aqua:#1baf7a;
+    --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+    --page:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --blue:#3987e5; --orange:#d95926; --aqua:#199e70;
+    --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  }}
+  :root[data-theme="dark"]{
+    --page:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --blue:#3987e5; --orange:#d95926; --aqua:#199e70;
+    --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);
+       font:15px/1.75 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+       padding:48px 16px 96px}
+  main{max-width:920px;margin:0 auto}
+  h1{font-size:26px;line-height:1.35;margin:0 0 6px}
+  h2{font-size:19px;margin:56px 0 14px;padding-top:14px;border-top:1px solid var(--border)}
+  h3{font-size:16px;margin:28px 0 10px}
+  p{margin:10px 0}
+  .sub{color:var(--ink2);font-size:14px;margin:0 0 4px}
+  .meta{color:var(--muted);font-size:13px;margin:0 0 24px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:20px 0}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+  .tile .v{font-size:26px;font-weight:650;line-height:1.2;font-variant-numeric:tabular-nums}
+  .tile .l{color:var(--ink2);font-size:13px;margin-top:4px}
+  .tile .s{color:var(--muted);font-size:12px;margin-top:2px}
+  table{border-collapse:collapse;width:100%;min-width:600px;font-size:14px;margin:0}
+  .tw{overflow-x:auto;margin:12px 0}
+  .tw.wide table{min-width:780px}
+  th,td{border:1px solid var(--grid);padding:7px 10px;text-align:left;vertical-align:top}
+  th{background:var(--surface);font-weight:600}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .src{color:var(--muted);font-size:12.5px}
+  .fig{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+       padding:18px 12px 8px;margin:16px 0;overflow-x:auto}
+  .fig h4{margin:0 8px 4px;font-size:15px}
+  .fig svg{min-width:620px}
+  .fig .cap{color:var(--muted);font-size:12.5px;margin:2px 8px 10px}
+  svg text{font-family:inherit}
+  .tick{font-size:11.5px;fill:var(--muted)}
+  .lab{font-size:12.5px;fill:var(--ink2)}
+  .val{font-size:12.5px;fill:var(--ink);font-weight:600}
+  .risk{border-left:4px solid var(--critical);background:var(--surface);
+        border-radius:0 10px 10px 0;padding:12px 16px;margin:12px 0}
+  .risk.warn{border-left-color:var(--warn)}
+  .risk.ok{border-left-color:var(--aqua)}
+  .tag{display:inline-block;font-size:12px;border:1px solid var(--border);border-radius:999px;
+       padding:1px 10px;color:var(--ink2);margin-right:6px}
+  code{background:var(--page);border:1px solid var(--border);border-radius:5px;
+       padding:1px 6px;font-size:13px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  pre{background:var(--page);border:1px solid var(--border);border-radius:8px;
+      padding:12px 14px;overflow-x:auto;font-size:12.5px;line-height:1.65;margin:12px 0;
+      font-family:ui-monospace,Menlo,Consolas,monospace}
+  pre .c{color:var(--muted)}
+  ol,ul{padding-left:22px}
+  li{margin:5px 0}
+</style>
+</head>
+<body>
+<main>
+
+<h1>评测落地计划 · 一次埋点，四处取数</h1>
+<p class="sub">先把「账」补进 0 步，再搭评测台，再取基线；之后每一步的「省了 x%」才有判据。</p>
+<p class="meta">改 1 个文件（<code>expand/expand_produce.py</code>）+ 新增 2 个（<code>eval/bench.py</code>、<code>eval/thresholds.json</code>）· 不动判据、不动 livepipe · 到第一份基线约 <b>1.5 d</b>。</p>
+
+<div class="tiles">
+  <div class="tile"><div class="v">0.5 d</div><div class="l">P0 补账</div><div class="s">计时 + 四类计数 + 配对轨迹</div></div>
+  <div class="tile"><div class="v">0.5 d</div><div class="l">P1 搭台</div><div class="s">快照 / 跑臂 / 对拍 / 判定</div></div>
+  <div class="tile"><div class="v">0.5 d</div><div class="l">P2 基线</div><div class="s">3 遍 + placebo，冻结噪声带</div></div>
+</div>
+
+<h2>1 · 为什么先补账</h2>
+<p>评测方案里有两个洞，不补就量不出数：</p>
+<div class="risk warn">
+  <b>洞 1 · C 算不出配空率。</b><code>cmd_plan</code> 里构造的 <code>short</code>（0 候选名单）<b>只打印、不落盘</b>（<code>expand_produce.py:1500-1502</code>），<code>users[]</code> 也没有候选池大小；而 <code>allocate()</code> 的 <code>skip_stat</code> 是<b>按 path 记、只有两种原因</b>，不是按目标记。<code>R_blank</code> 与三层命中数现在都算不出来。
+</div>
+<div class="risk warn">
+  <b>洞 2 · B 的命中率分母会被做小。</b>只拿 plan 的 2,178 次当分母，会把 run 的 590 次重复定位漏掉，命中率直接翻倍。分母必须是「plan + run 的重复定位 + 重跑」，并且两臂都从空缓存起步。
+</div>
+<p>两条都指向同一件事：<b>埋点要一次做够</b>。分四次改 schema（B 一次、C 一次、D 一次、E 一次），就得跑四遍基线，四份账还互相对不上。所以 P0 一次性把 B/C/D/E 需要的计数与轨迹都埋好，后面每一步只开开关、只读字段。</p>
+
+<h2>2 · 埋点地图</h2>
+<div class="fig">
+  <h4>一个文件里的四个埋点，喂全部指标</h4>
+  <svg viewBox="0 0 880 340" width="100%" role="img" aria-label="埋点与指标对应关系">
+    <text x="16" y="16" class="tick">代码（在哪埋）</text>
+    <text x="250" y="16" class="tick">落盘（新增字段 / 文件）</text>
+    <text x="540" y="16" class="tick">喂给哪个指标</text>
+
+    <rect x="16" y="30" width="176" height="56" rx="9" fill="var(--page)" stroke="var(--border)"/>
+    <text x="30" y="54" class="val">measure_base()</text>
+    <text x="30" y="74" class="tick">decode / locate / badge</text>
+    <path d="M192,58 L244,58" stroke="var(--axis)" stroke-width="1.5"/>
+    <path d="M250,58 l-6,-4 v8 z" fill="var(--axis)"/>
+    <rect x="250" y="30" width="230" height="56" rx="9" fill="var(--page)" stroke="var(--border)"/>
+    <text x="264" y="54" class="val">expand_measure_timings.jsonl</text>
+    <text x="264" y="74" class="tick">一行/图 · 三段 ms · ok</text>
+    <path d="M480,58 L534,58" stroke="var(--axis)" stroke-width="1.5"/>
+    <path d="M540,58 l-6,-4 v8 z" fill="var(--axis)"/>
+    <text x="540" y="54" class="val">T_stage · N_measure</text>
+    <text x="540" y="74" class="tick">分项 p50 / p95，总量的分母</text>
+
+    <rect x="16" y="105" width="176" height="56" rx="9" fill="var(--page)" stroke="var(--border)"/>
+    <text x="30" y="129" class="val">render_one / render_job</text>
+    <text x="30" y="149" class="tick">render / check / save</text>
+    <path d="M192,133 L244,133" stroke="var(--axis)" stroke-width="1.5"/>
+    <path d="M250,133 l-6,-4 v8 z" fill="var(--axis)"/>
+    <rect x="250" y="105" width="230" height="56" rx="9" fill="var(--page)" stroke="var(--border)"/>
+    <text x="264" y="129" class="val">report.rows[].ms</text>
+    <text x="264" y="149" class="tick">逐张分段（不另开文件）</text>
+    <path d="M480,133 L534,133" stroke="var(--axis)" stroke-width="1.5"/>
+    <path d="M540,133 l-6,-4 v8 z" fill="var(--axis)"/>
+    <text x="540" y="129" class="val">T_run 分项</text>
+    <text x="540" y="149" class="tick">出片哪一段慢了</text>
+
+    <rect x="16" y="180" width="176" height="56" rx="9" fill="var(--page)" stroke="var(--border)"/>
+    <text x="30" y="204" class="val">cmd_plan</text>
+    <text x="30" y="224" class="tick">pool / short / pairs</text>
+    <path d="M192,208 L244,208" stroke="var(--axis)" stroke-width="1.5"/>
+    <path d="M250,208 l-6,-4 v8 z" fill="var(--axis)"/>
+    <rect x="250" y="180" width="230" height="56" rx="9" fill="var(--page)" stroke="var(--border)"/>
+    <text x="264" y="204" class="val">users[].pool · short[]</text>
+    <text x="264" y="224" class="tick">expand_pairs.jsonl</text>
+    <path d="M480,208 L534,208" stroke="var(--axis)" stroke-width="1.5"/>
+    <path d="M540,208 l-6,-4 v8 z" fill="var(--axis)"/>
+    <text x="540" y="204" class="val">R_blank · R_lvl</text>
+    <text x="540" y="224" class="tick">配空率、三层命中数</text>
+
+    <rect x="16" y="255" width="176" height="56" rx="9" fill="var(--page)" stroke="var(--border)"/>
+    <text x="30" y="279" class="val">cmd_run</text>
+    <text x="30" y="299" class="tick">cache / badge / resume</text>
+    <path d="M192,283 L244,283" stroke="var(--axis)" stroke-width="1.5"/>
+    <path d="M250,283 l-6,-4 v8 z" fill="var(--axis)"/>
+    <rect x="250" y="255" width="230" height="56" rx="9" fill="var(--page)" stroke="var(--border)"/>
+    <text x="264" y="279" class="val">report.counters</text>
+    <text x="264" y="299" class="tick">hit / badge_calls / scan_px</text>
+    <path d="M480,283 L534,283" stroke="var(--axis)" stroke-width="1.5"/>
+    <path d="M540,283 l-6,-4 v8 z" fill="var(--axis)"/>
+    <text x="540" y="279" class="val">H_cache · N_badge · N_scan</text>
+    <text x="540" y="299" class="tick">B / D 的收益；E 的复用数</text>
+  </svg>
+  <p class="cap">左边四个埋点都在 <code>expand/expand_produce.py</code> 里；中间的产物一份是逐图 JSONL、一份是既有 plan/report 的新键。右边每个指标只从一个地方取数，不重复算。</p>
+</div>
+
+<h3>2.1 逐处改什么</h3>
+<div class="tw wide"><table>
+  <tr><th style="width:150px">位置</th><th>加什么</th><th style="width:170px">喂哪个指标</th><th style="width:210px">注意</th></tr>
+  <tr>
+    <td><code>measure_base()</code><br><span class="src">:545</span></td>
+    <td>读图前后、<code>find_erase_region</code> 前后、<code>badge_rect_of + pill_box</code> 前后各取一次 <code>perf_counter</code>；结果写进 <code>Base.ms_decode / ms_locate / ms_badge</code>（三个 <code>float</code>，保留 3 位小数，默认 0）</td>
+    <td><code>T_stage</code>、<code>N_measure</code></td>
+    <td><b>在 worker 内计时</b>，跨进程只传数字；提前 <code>return</code> 的图也要带上已发生的段</td>
+  </tr>
+  <tr>
+    <td><code>measure_all()</code> / <code>build_pool()</code><br><span class="src">:654 / :1221</span></td>
+    <td>汇总 <code>len(items)</code>、拒绝原因；把逐图的 <code>path · ms_* · ok · reason</code> 写成 <code>expand_measure_timings.jsonl</code></td>
+    <td><code>T_stage</code> 分布、<code>N_measure</code></td>
+    <td>写在 <code>source</code>（评测时就是快照）；<b>落盘只放 <code>cmd_plan</code> 一处</b>，别让 worker 并发写文件</td>
+  </tr>
+  <tr>
+    <td><code>render_one()</code> / <code>render_job()</code><br><span class="src">:1063 / :1686</span></td>
+    <td>「<code>process_image</code> / 贴徽章 / 自检 / 落盘」分段计时，写进 <code>rec["ms"]</code>（读图在 <code>process_image</code> 内部，拆不开）</td>
+    <td><code>T_run</code> 分项</td>
+    <td><code>rec</code> 本来就逐张进 report，不另开文件</td>
+  </tr>
+  <tr>
+    <td><code>cmd_plan</code><br><span class="src">:1477 / :1500 / :1522</span></td>
+    <td><code>users[]</code> 加 <code>pool</code>（过硬闸的候选数）、<code>short_reason</code>；落盘 <code>short[]</code>；新建 <code>expand_pairs.jsonl</code>；plan 加 <code>meta.counters</code></td>
+    <td><code>R_blank</code>、<code>R_lvl</code></td>
+    <td><code>allocate()</code> 要返回 <code>len(fits)</code>（现在只回 <code>picked</code>）；<code>skip_stat</code> 按 path 记，改成按目标记原因</td>
+  </tr>
+  <tr>
+    <td><code>cmd_run</code><br><span class="src">:2079</span></td>
+    <td>report 加 <code>timings</code> 聚合与 <code>counters</code>：<code>cache_hit / cache_miss / badge_calls / scan_px / resume_reused</code></td>
+    <td><code>H_cache</code>、<code>N_badge</code>、<code>N_scan</code>、E</td>
+    <td>开关没开时写 <b>0</b>，不要缺字段 —— 缺字段会被误读成「没测」。<code>scan_px</code> 要动共享的 <code>core/inkmask.py</code>，随 D 落地，先写 0</td>
+  </tr>
+  <tr>
+    <td>B 量测缓存<br><span class="src">cmd_plan / measure_all / fit_font_size_for</span></td>
+    <td><code>--cache</code>：底图量测按「路径+size/mtime+roi+内缩+profile+用户名+代码/字体指纹」缓存；字号拟合按「文字+字高+字体指纹」缓存；plan <code>meta.counters</code> 加 <code>cache_hit/miss</code> 与 <code>fit_hit/miss</code></td>
+    <td><code>H_cache</code>、冷/热 <code>T_plan</code></td>
+    <td>只存像素量测，不存等级/配对；两臂从空缓存起步，热臂同轮预热后计时；缓存文件含用户名 ⇒ 不进 git/交付包</td>
+  </tr>
+  <tr>
+    <td>新文件 <code>expand_pairs.jsonl</code></td>
+    <td>每次配对一行：<code>dir / base / base_user / tier / t_level / b_level / w_t</code>；被第 3 层排除的也记一行 <code>tier="excluded"</code></td>
+    <td><code>R_lvl</code>、审计</td>
+    <td>等级还没接进来时 <code>t_level/b_level</code> 写 <code>null</code>；<b>不要把 null 当 0</b></td>
+  </tr>
+</table></div>
+
+<div class="risk ok">
+  <b>只增不改：</b>plan schema <b>6 → 7</b>、report schema <b>2 → 3</b>，全部是新键；老产物照样能读（一律 <code>.get()</code>），老计划照样能跑。改完先拿一份旧 plan 跑一遍做回归：产物 md5 必须逐张相同。
+</div>
+
+<h2>3 · 评测台 <code>eval/bench.py</code></h2>
+<p>bench 不 import 产品代码、不复制判据，<b>只通过命令行跑产品、读产物、对拍 md5</b>。这样产品怎么改，评测台都不用跟着改。</p>
+<pre>python3 eval/bench.py snapshot --corpus "$SRC" --into "$EVAL/corpus"
+python3 eval/bench.py pair     --snapshot "$EVAL/corpus" --tag-a A --tag-b B --repeat 3 \
+                               --a-arm eval/arms/A-baseline.json \
+                               --b-arm eval/arms/B-cache-warm.json --eval-root "$EVAL"
+python3 eval/bench.py compare  --a "$EVAL/runs/A" --b "$EVAL/runs/B" \
+                               --thresholds eval/thresholds.json \
+                               --baseline "$EVAL/baseline.json" \
+                               --out "$EVAL/compare-A-B.json"
+python3 eval/bench.py baseline --run "$EVAL/runs/A" --run "$EVAL/runs/A2" \
+                               --eval-root "$EVAL" --scope full-1478 --out "$EVAL/baseline.json"
+python3 eval/bench.py crash    --snapshot "$EVAL/corpus" --eval-root "$EVAL" \
+                               --arm eval/arms/A-baseline.json --kill-after 20 \
+                               --out "$EVAL/eval-E-resume.json"
+python3 eval/bench.py verify   --corpus "$SRC" --md5 "$EVAL/corpus.md5"</pre>
+
+<p class="src"><code>crash</code> 是 E 档的验收：完整跑一遍当参照 → 起 <code>--mode run</code> 等 journal 攒到 <code>--kill-after</code> 张 → <code>SIGKILL</code> 整个进程组 → 同 out <code>--resume</code>（要求复用 &gt; 0、md5 差 0）→ 换 seed 再续跑（要求复用 0、<code>stale_fingerprint &gt; 0</code>）。</p>
+
+<p class="src"><code>pair</code> 就是协议里的「A/B/A/B/A/B」：奇数轮 A→B、偶数轮 B→A，两臂的 <code>rep&lt;i&gt;</code> 共用轮次号；同配置两臂即 placebo。<code>baseline</code> 把同配置的若干 <code>--run</code> 并起来算中位数 / p95 / <code>CV</code>，写出冻结的噪声带（<code>noise.band_pct</code>）；<code>compare --baseline</code> 优先用它（并要求语料指纹一致），没给才退回本臂 CV。它只存输出树的<b>摘要</b>，不存逐文件 md5 表 —— 那张表的键是用户目录名。</p>
+
+<p>臂与阈值都是<b>文件</b>，不是代码里的常数 —— 改阈值必须改文件、进 diff：</p>
+<pre><span class="c">// eval/arms/A-join.json（A 档：只在 plan 时开）</span>
+{ "name": "A-join", "workers": 8, "seed": 20261010, "cache": "cold",
+  "plan_flags": ["--livepipe-join"], "run_flags": [] }
+
+<span class="c">// eval/thresholds.json</span>
+{
+  "T_total":  { "kind": "time",  "min_delta_over_noise": 2 },
+  "R_blank":  { "kind": "blank", "max_over_baseline_pp": 1, "abs_max": 2 },
+  "R_lvl":    { "kind": "ratio", "min": 0.70 },
+  "N_out":    { "kind": "count", "min": "baseline" },
+  "E_out":    { "kind": "count", "max": 0 },
+  "J_join":   { "kind": "ratio", "min": 1.0 },
+  "J_conflict": { "kind": "count", "max": 0 }
+}</pre>
+
+<p><code>compare</code> 的输出就是评测方案 §5 的 <code>eval_metrics.json</code>：两臂的中位数、噪声带、<code>Δ</code>/<code>Δ%</code>、每条通过线的结论。<b>缺指标写 <code>null</code> 并判 <code>inconclusive</code></b>，绝不拿 0 顶替。</p>
+
+<div class="tw"><table>
+  <tr><th style="width:180px">退出码</th><th>含义</th></tr>
+  <tr><td class="num">0</td><td>全部通过线通过</td></tr>
+  <tr><td class="num">3</td><td>有指标回退（超出阈值），报告照写</td></tr>
+  <tr><td class="num">4</td><td>四指纹不一致 / 缺失 ⇒ 两臂不可比</td></tr>
+  <tr><td class="num">5</td><td>原件被改动（md5 清单对不上）⇒ 立即停</td></tr>
+  <tr><td class="num">6</td><td>指标缺失 ⇒ <code>inconclusive</code>，不算通过</td></tr>
+</table></div>
+
+<p class="src">产品的退出码 <code>3</code>（缺口 &gt;5%）<b>不算评测失败</b>：那一步在 report / reconcile 写完<b>之后</b>才发生，产物是全的 ⇒ bench 照跑照记（<code>summary.json</code> 的 <code>rc_values</code>），只有其他非 0 码才当崩溃。噪声底按评测方案 §4 的 <code>CV = (max−min)/median</code> 算，<b>不是</b> stdev/mean —— 后者对 3 次重复只有前者约 0.4 倍，会把带内抖动判成收益。</p>
+
+<h2>4 · 顺序与工时</h2>
+<div class="fig">
+  <h4>先补账、再搭台、再取基线；livepipe 与 P0/P1 并行</h4>
+  <svg viewBox="0 0 880 235" width="100%" role="img" aria-label="落地顺序与依赖">
+    <rect x="60" y="18" width="156" height="64" rx="9" fill="var(--page)" stroke="var(--blue)"/>
+    <text x="74" y="42" class="val">P0 补账</text>
+    <text x="74" y="62" class="tick">计时 + 计数 + 配对轨迹</text>
+    <text x="74" y="76" class="tick">0.5 d</text>
+
+    <path d="M216,50 L252,50" stroke="var(--axis)" stroke-width="1.5"/>
+    <path d="M258,50 l-6,-4 v8 z" fill="var(--axis)"/>
+
+    <rect x="260" y="18" width="156" height="64" rx="9" fill="var(--page)" stroke="var(--blue)"/>
+    <text x="274" y="42" class="val">P1 搭台</text>
+    <text x="274" y="62" class="tick">eval/bench.py</text>
+    <text x="274" y="76" class="tick">0.5 d</text>
+
+    <path d="M416,50 L452,50" stroke="var(--axis)" stroke-width="1.5"/>
+    <path d="M458,50 l-6,-4 v8 z" fill="var(--axis)"/>
+
+    <rect x="460" y="18" width="156" height="64" rx="9" fill="var(--page)" stroke="var(--blue)"/>
+    <text x="474" y="42" class="val">P2 基线</text>
+    <text x="474" y="62" class="tick">3 遍 + placebo</text>
+    <text x="474" y="76" class="tick">0.5 d（机器 2 h）</text>
+
+    <path d="M616,50 L652,50" stroke="var(--axis)" stroke-width="1.5"/>
+    <path d="M658,50 l-6,-4 v8 z" fill="var(--axis)"/>
+
+    <rect x="660" y="18" width="200" height="64" rx="9" fill="var(--page)" stroke="var(--blue)"/>
+    <text x="674" y="42" class="val">P3 逐步 A/B</text>
+    <text x="674" y="62" class="tick">A / B / E 立即可评；C 后 D</text>
+    <text x="674" y="76" class="tick">每步 0.5 d</text>
+
+    <rect x="60" y="120" width="156" height="56" rx="9" fill="var(--page)" stroke="var(--orange)"/>
+    <text x="74" y="142" class="val">livepipe 前置</text>
+    <text x="74" y="160" class="tick">--row-geometry</text>
+    <text x="74" y="172" class="tick">另行 0.5 d</text>
+    <path d="M216,148 Q430,215 660,84" stroke="var(--orange)" stroke-width="1.5"
+          stroke-dasharray="5 4" fill="none"/>
+    <text x="300" y="140" class="tick">与 P0/P1 并行；A 的 row 分支等它</text>
+
+    <text x="60" y="212" class="tick">P2 冻结噪声带之后，P3 的每个 Δ 才有判据；C 之前先补 §2 的 pool/short 与 pairs。</text>
+  </svg>
+  <p class="cap">总账：到第一份基线 <b>约 1.5 天</b>；之后每步 0.5 天。livepipe 在另一个仓库，不占这条线。</p>
+</div>
+
+<div class="tw"><table>
+  <tr><th style="width:90px">阶段</th><th>产出</th><th style="width:150px">完成标志</th></tr>
+  <tr><td><b>P0</b></td><td><code>expand_measure_timings.jsonl</code>、plan <code>users[].pool</code> / <code>short[]</code>、<code>expand_pairs.jsonl</code>、report <code>timings/counters</code></td><td>旧计划回归：产物 md5 0 差异</td></tr>
+  <tr><td><b>P1</b></td><td><code>eval/bench.py</code> 七个子命令（snapshot / run / pair / baseline / compare / crash / verify）+ 两个 JSON 配置</td><td>bench 自检 6 条全过（§5）</td></tr>
+  <tr><td><b>P2</b></td><td><code>eval/baseline.json</code>：各指标中位数、p95、<code>CV</code>、噪声带</td><td><code>CV ≤ 5%</code>（否则先降噪）</td></tr>
+  <tr><td><b>P3</b></td><td>每步一份 <code>eval/compare-*.json</code>（C/D 另加 <code>eval/plandiff.py</code> 的 <code>plandiff-*.json</code>）</td><td>阈值全过，或停下重新拍板；<b>A/E/B/D 已通过</b>（<code>compare-A.json</code>、<code>eval-E-resume.json</code>、<code>compare-B.json</code>、<code>compare-D.json</code>）；<b>C 两条口径各栽一条线</b>（<code>compare-C.json</code> / <code>compare-Csoft.json</code>）⇒ 默认关、停在决策点</td></tr>
+</table></div>
+
+<h2>5 · 评测台自己的验收</h2>
+<div class="tw"><table>
+  <tr><th style="width:190px">自检</th><th>怎么测</th><th style="width:180px">通过线</th></tr>
+  <tr><td>快照可复现</td><td><code>snapshot</code> 跑两次，比 <code>corpus_sha256</code></td><td>完全相同</td></tr>
+  <tr><td>产品可复现</td><td>同臂跑两次，比全部 <code>扩展*.jpg</code> 的 md5</td><td>逐张相同</td></tr>
+  <tr><td>不碰原件</td><td><code>verify</code> 对原件 md5 清单</td><td>逐条相同</td></tr>
+  <tr><td>指纹完整</td><td>报告必须带语料 / plan / 代码 / 环境四项</td><td>缺一项 ⇒ 退出码 4</td></tr>
+  <tr><td>自身无偏</td><td><code>compare A vs A</code></td><td><code>|Δ| ≤ 噪声</code> 且判 <code>inconclusive</code></td></tr>
+  <tr><td>崩溃可续</td><td><code>crash --kill-after 20</code></td><td>复用 &gt; 0 · md5 差 0 · 换 seed 复用 0</td></tr>
+</table></div>
+
+<h2>6 · 风险与回滚</h2>
+<ul>
+  <li><b>埋点改变产物</b>：计时和计数都不参与判据；但新增字段会改 plan/report 的字节。<b>比产物、不比账本</b>：<code>扩展*.jpg</code> 的 md5 是硬线，账本新增键列白名单。</li>
+  <li><b>逐图 JSONL 太慢</b>：2,178 行是小文件；缓冲后一次写，别每张 <code>open/close</code>。</li>
+  <li><b>schema 变更弄坏老读者</b>：只增键、读者用 <code>.get()</code>；拿一份 schema 6 的旧 plan 跑一遍回归。</li>
+  <li><b>配对轨迹泄隐私</b>：<code>expand_pairs.jsonl</code> 含用户目录名，只落在本地 <code>eval/</code> 与快照里，不进交付包、不进 git（写 <code>.gitignore</code>）。</li>
+  <li><b>C 的等级字段还是 null</b>：bench 把 <code>R_lvl</code> 标 <code>null</code>/<code>inconclusive</code>，不许算成 0%；等 A/livepipe 接上再评。</li>
+</ul>
+<div class="risk">
+  <b>回滚方式：</b>P0 全部是新键/新文件，回滚 = 不读它们（老逻辑不看新键，产物不变）；bench 是独立脚本，删掉不影响产品。唯一不可回滚的是<b>已经用新 schema 产出的 plan</b> —— 但它能被老代码读（只多键），不需要回滚。
+</div>
+
+<h2>7 · 开工清单</h2>
+<ol>
+  <li>P0-a：<code>measure_base</code> / <code>render_one</code> 分段计时（0.5 h，先把墙钟与分项拿到）。</li>
+  <li>P0-b：plan/report 计数 + <code>users[].pool/short</code> + <code>expand_pairs.jsonl</code>（0.5 d）。</li>
+  <li>P1：<code>eval/bench.py</code> 四子命令 + <code>eval/arms/*.json</code> + <code>eval/thresholds.json</code>（0.5 d）。</li>
+  <li>P2：快照 → 基线 3 遍 → placebo → <code>eval/baseline.json</code>（0.5 d）。</li>
+  <li>P3：按评测方案 §3 逐项开开关、跑 <code>compare</code>；C 之前先确认 <code>R_blank</code> 不再为 null。<b>A / E / B / D 已通过</b>；<b>C 未过</b>（严 <code>N_out</code> 38&lt;53、软 <code>R_lvl</code> 0.605&lt;70%）⇒ 默认关，等用户拍板。</li>
+</ol>
+<p class="src">另两份文档：<code>docs/量测优化方案.html</code>（做什么、什么顺序）· <code>docs/评测方案.html</code>（指标、协议、判定）。本页只讲落地：改哪里、按什么顺序、怎么验收。</p>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,100 @@
+{
+ "a": {
+  "tag": "BCOLD",
+  "median_s": 8.5385,
+  "cv": 0.027053932189494624,
+  "rc": {
+   "plan": [
+    0
+   ],
+   "run": [
+    3
+   ]
+  },
+  "cache": {
+   "hit": 0.0,
+   "miss": 73.0,
+   "fit_hit": 0.0,
+   "fit_miss": 0.0,
+   "h": 0.0,
+   "enabled": false
+  }
+ },
+ "b": {
+  "tag": "BWARM",
+  "median_s": 4.301,
+  "cv": 0.03324808184143217,
+  "rc": {
+   "plan": [
+    0
+   ],
+   "run": [
+    3
+   ]
+  },
+  "cache": {
+   "hit": 73.0,
+   "miss": 0.0,
+   "fit_hit": 1060.0,
+   "fit_miss": 0.0,
+   "h": 1.0,
+   "enabled": true
+  },
+  "warmup_s": 1.0354999999999999
+ },
+ "noise_pct": 3.36,
+ "band_pct": 6.72,
+ "gate_pct": 6.72,
+ "noise_source": "baseline",
+ "delta_pct": 49.63,
+ "fingerprint_ok": true,
+ "same_corpus": true,
+ "same_code": true,
+ "same_env": true,
+ "join": null,
+ "verdicts": [
+  {
+   "metric": "T_total",
+   "status": "pass",
+   "value_pct": 49.63,
+   "note": "超出噪声带",
+   "noise_pct": 3.36,
+   "band_pct": 6.72,
+   "gate_pct": 6.72,
+   "noise_source": "baseline"
+  },
+  {
+   "metric": "N_out",
+   "status": "pass",
+   "a": 53.0,
+   "b": 53.0
+  },
+  {
+   "metric": "R_blank",
+   "status": "pass",
+   "a_pct": 0.0,
+   "b_pct": 0.0,
+   "over_baseline_pp": 0.0
+  },
+  {
+   "metric": "R_lvl",
+   "status": "inconclusive",
+   "note": "等级还没接"
+  },
+  {
+   "metric": "E_out",
+   "status": "pass",
+   "diff": 0
+  },
+  {
+   "metric": "H_cache",
+   "status": "pass",
+   "h": 1.0,
+   "hit": 73.0,
+   "miss": 0.0,
+   "fit_hit": 1060.0,
+   "fit_miss": 0.0
+  }
+ ],
+ "exit": 6
+}

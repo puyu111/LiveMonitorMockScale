@@ -1,0 +1,12 @@
+// 最小可用配置：只给视频 + 输出目录，其余全走默认值（见 CONFIG.md / config.py 的 DEFAULTS）。
+// 默认 panels.mode=locate ⇒ **两阶段工作流的第一步**：
+//   ① python -m livepipe panels livepipe/examples/pipeline.minimal.json
+//        → 定位评论区，写出 out/livepipe_minimal/panels.json（platform 留空）
+//   ② 人工给每个面板填 platform（本文件没写 platforms 段 ⇒ 用 DEFAULTS 里的 douyin / wechat）
+//   ③ python -m livepipe run livepipe/examples/pipeline.minimal.json
+// 默认 panels.auto.method=hybrid ⇒ 定位要用 LocateAnything（需要 GPU / conda env vlx）。
+{
+  "version": 1,
+  "input": { "video": "/home/puyu/work/data/抖音奇瑞汽车/抖音视频号.mp4" },  // 录屏 mp4
+  "output": { "dir": "out/livepipe_minimal" }                              // 输出目录
+}

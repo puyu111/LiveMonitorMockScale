@@ -1,0 +1,117 @@
+{
+  "kind": "bodies_need",
+  "schema_version": 1,
+  "_说明": "正文的『要几条多长的句子』。**聚合结果、不含昵称**，可以进交付包；gen_bodies.py 读这份下订单，replace_body.py 按像素宽度从 bodies.jsonl 里挑。",
+  "_怎么读": "ladder 的键是『整段正文几个字』，值是语料里有几行需要这个长度；per_bucket 是每个桶要下几条（字数只提高命中率，最后仍按像素宽度挑）。two_line 是折行行的行字数对，句子必须能恰好折在同一个位置。corpus.skipped = images − eligible（其中黑名单 4 张、纯表情 2 张、框跨下一条评论 2 张；skipped_by_reason 只数量测给出的几何理由，黑名单的 2 张官方横幅几何本身是好的，所以不在此列）。",
+  "generator": {
+    "script": "mock/measure_bodies.py",
+    "module": "core/body_text.py"
+  },
+  "inputs_digest": "383569cf25855c8e",
+  "corpus": {
+    "images": 219,
+    "eligible": 210,
+    "skipped": 9,
+    "line_count": {
+      "1": 207,
+      "2": 3
+    },
+    "skipped_by_reason": {
+      "NO_INK": 6,
+      "EMOJI_ONLY": 3
+    },
+    "blacklist": 0
+  },
+  "ladder": {
+    "2": 2,
+    "3": 4,
+    "4": 15,
+    "5": 32,
+    "6": 50,
+    "7": 26,
+    "8": 18,
+    "9": 9,
+    "10": 16,
+    "11": 10,
+    "12": 9,
+    "13": 6,
+    "14": 6,
+    "15": 3,
+    "17": 3,
+    "22": 1
+  },
+  "per_bucket": 8,
+  "prompt_version": 1,
+  "model": "deepseek-v4-flash-0731",
+  "two_line": [
+    {
+      "line_chars": [
+        10,
+        3
+      ],
+      "line_widths": [
+        246,
+        71
+      ]
+    },
+    {
+      "line_chars": [
+        10,
+        4
+      ],
+      "line_widths": [
+        248,
+        98
+      ]
+    },
+    {
+      "line_chars": [
+        10,
+        5
+      ],
+      "line_widths": [
+        248,
+        121
+      ]
+    }
+  ],
+  "body_width_px": {
+    "min": 48,
+    "p25": 122,
+    "median": 168,
+    "p75": 221,
+    "max": 559
+  },
+  "line1_width_px": {
+    "min": 48,
+    "p25": 123,
+    "median": 169,
+    "p75": 222,
+    "max": 559
+  },
+  "em": {
+    "min": 19,
+    "p25": 24,
+    "median": 24,
+    "p75": 25,
+    "max": 26
+  },
+  "ladder_all_rows_with_body": {
+    "2": 2,
+    "3": 4,
+    "4": 15,
+    "5": 32,
+    "6": 50,
+    "7": 26,
+    "8": 18,
+    "9": 9,
+    "10": 16,
+    "11": 10,
+    "12": 9,
+    "13": 6,
+    "14": 6,
+    "15": 3,
+    "17": 3,
+    "22": 1
+  }
+}

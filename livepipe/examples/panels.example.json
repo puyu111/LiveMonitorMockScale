@@ -1,0 +1,35 @@
+// ============================================================================
+// 面板文件（人工编辑的就是它）—— livepipe 的阶段①产出、阶段②人工标注。
+//
+// 工作流：
+//   ① python -m livepipe panels cfg.json      # 定位评论区，产出本文件（platform 留空）
+//   ② 手工给每个面板填 platform                 # ← 这一步必须人工：平台决定行距与表情表
+//   ③ python -m livepipe run cfg.json          # 本文件不会被覆盖，直接进解析
+//
+// 本文件是「已经填好 platform」的样例，供 examples/pipeline.example.json 直接跑通。
+//
+// 面板条目可写的字段：
+//   rect      [x1,y1,x2,y2]  原图像素，裁切窗口。必填。
+//   platform  "douyin" | "wechat" | …   → 决定行网格 + 表情表 + 裁切右沿策略。必填。
+//             可用值 = 配置 platforms 段里的键。微博的档案在 livepipe/weibo.json（手机 App 竖屏，
+//             行距 74 / x_text 38 / rank_pill），别的配置要用得把 platforms.weibo 那段抄过来，
+//             否则只能命令行点表：--emoji-table <面板>=weibo（点表给不出行距，也给不出 rank_pill）。
+//   row_pitch / y_phase / x_text         → 可选，覆盖平台档案里对应的值
+//   x2_from   "content" | "window"       → 可选，覆盖平台档案的裁切右沿策略
+//   rank_pill true | false               → 可选，等级标是「跟在昵称右边」的榜N 药丸（微博）
+// ============================================================================
+{
+  // 定位产物会带这段（每个面板所在窗口的框）——x2_from=window 时靠它取窗口右沿。
+  // 手写面板文件没有这段时，用配置里的 panels.auto.frame_width 兜底。
+  "_locate_meta": {
+    "left":  { "window": [0, 0, 1150, 1520] },
+    "right": { "window": [1150, 0, 2560, 1520] }
+  },
+  "panels": {
+    // 抖音面板是固定宽 ⇒ 裁切右沿跟内容走（更省 OCR），rect 就是实际裁切窗口
+    "left":  { "rect": [575, 604, 1137, 1429], "platform": "douyin" },
+    // 视频号面板右边跟着内容伸缩 ⇒ x2_from=window（取窗口右沿 2560 当超集，按构造不裁内容）。
+    // 这里 rect 的 x2 写多少都无所谓（会被覆盖成 2560），但留个贴近真实的值便于人看。
+    "right": { "rect": [1202, 1052, 1688, 1311], "platform": "wechat" }
+  }
+}

@@ -1,0 +1,240 @@
+// ============================================================================
+// livepipe 配置样例（JSONC：支持 // 与 /* */ 注释、末尾多余逗号）
+// 逐参数说明见此处行内注释，完整参考见 CONFIG.md。
+//
+// 【两阶段工作流】—— 评论区范围是可变的（视频号尤其），所以先定位、再人工标注平台：
+//   ① 定位：  python -m livepipe panels livepipe/examples/pipeline.example.json
+//            → 产出 panels.file，里面每个面板的 platform 留空
+//   ② 标注：  打开 panels.file，给每个面板填 "platform": "douyin" / "wechat"
+//   ③ 解析：  python -m livepipe run livepipe/examples/pipeline.example.json
+//            （面板文件已存在 ⇒ 阶段①自动跳过，不会覆盖你的标注）
+//
+// 为什么要人工填平台：定位只能说「这里有一片评论」，说不出「这是哪个平台」；
+// 而 **平台决定行距与表情表**（抖音/视频号/微博三套资产互不通用），填错整片认不出。
+// 注：微博的**平台档案在 livepipe/weibo.json**（手机 App 竖屏：行距 74 / 相位 45 / x_text 38 /
+//     rank_pill，后者把「榜N」药丸从昵称/正文里切掉），
+//     本样例的 platforms 段里没有它 —— 档案跟着配置走，要在这里填 "platform": "weibo" 得先把那段
+//     抄过来；否则只能命令行点表：--emoji-table right=weibo（但点表给不出行距，阈值也还没标定）。
+//
+// 本样例直接指向一份**已标注好**的面板文件，所以不用 GPU 也能跑通（只抽 3 帧，≈22 秒）。
+// ============================================================================
+{
+  "version": 1,                        // 配置格式版本，必须是 1
+  "name": "抖音奇瑞汽车 · 快速样例",     // 只出现在日志里（不给则用配置文件名）
+  // "base_dir": null,                // 相对路径的基准目录；null = 运行命令时的工作目录（通常仓库根）
+
+  // -------------------------------------------------------------------------
+  // 平台档案：**不同平台走不一样的处理方式** —— 行网格 + 表情表。
+  // 人工在面板文件里只填平台名，行距/表情表从这里取。加新平台 = 在这里加一条。
+  // -------------------------------------------------------------------------
+  "platforms": {
+    "douyin": {
+      "label": "抖音直播（等级标 ◆N）",   // 只是给人看的说明
+      "emoji": "douyin",                // → emoji.tables 里的键；不填 ⇒ 该平台的面板不跑表情
+      "row_pitch": 68,                  // 行距（像素）—— **兜底值**，解析时从采样帧自标定
+      "y_phase": 17,                    // 首行中心距面板顶（兜底值，默认逐帧自校准）
+      "x_text": 70,                     // 正文起始 x（徽章列右沿，裁切内坐标）
+      "x2_from": "content"              // 裁切右沿跟内容走（面板固定宽 ⇒ 更省 OCR）
+      // 以下版式量**一般不用写** —— 解析时会自标定（手机版/网页版版式不同，见 CONFIG.md）：
+      //   "x_ignore_from": null,        // 浮层（商品卡/预约按钮）左界；该 x 以右的文字不是评论
+      //   "wrap_gap_ratio": 0.73        // 续行间距比上限（≥1 个行距的是左对齐横幅）
+      //   （wrap_indent = 续行是否缩进，只在测到缩进续行时自动开，不手写）
+    },
+    "wechat": {
+      "label": "视频号直播（等级标 ✦N；跑在网页里）",
+      "emoji": "wechat",
+      "row_pitch": 61,                  // 兜底值；解析时自标定
+      "y_phase": 21,                    // 兜底值；逐帧自校准
+      "x_text": 60,
+      // 视频号的面板**右边跟着内容伸缩**（实测内容右沿整片在 1323~2009 之间摆，跨 686px）。
+      // 右沿若由内容定，定位那一刻定死的值后面必然裁内容 —— 被裁的行会整行丢或**误读**
+      // （实测 `这品牌就是太实诚了…` 被读成 `这品牌就是太实证`）。所以固定取窗口右沿（超集）。
+      // 代价：该面板裁切面积 ×2.8，全片 OCR 约 +38%。
+      "x2_from": "window"
+    }
+  },
+
+  "input": {
+    "video": "/home/puyu/work/data/抖音奇瑞汽车/抖音视频号.mp4",  // 录屏 mp4：OCR 抽行 + 解析      --video
+    "rows": null,                       // 已有 rows.jsonl：复算（省一次 OCR）；与 text 互斥   --rows
+    "text": null,                       // 纯文本行文件，每行一条；"-" 读 stdin；与 rows 互斥   --text
+    "start": 0.0,                       // 起始时间（秒）                                    --start
+    "duration": null,                   // 处理多长（秒）；null = 整段                        --duration
+    "interval": 2.0,                    // 抽样帧间隔（秒），必须 >0。全片 6294s÷2s≈3147 帧  --interval
+    "max_frames": 3,                    // 最多抽几帧；null = 不限。样例只抽 3 帧≈22 秒      --max-frames
+    "resume": false,                    // 断点续跑：rows.jsonl 已在就接着它跑（已处理帧跳过） --resume
+    // 抽帧策略（只影响 --video 抽行那一步）。mode 见 --sample-mode，其余见 --sample（JSON）。
+    //   interval —— 固定间隔（默认，行为与从前一致）
+    //   backoff  —— 按画面变化自适应间隔（便宜；突发爆量只能事后反应）
+    //   adaptive —— 按面板位移/停稳/入口内容触发（不漏且少重复，推荐长跑）
+    // mode=interval 时下面这些参数一律不生效（保持与从前逐字节一致）。
+    "sample": {
+      "mode": "adaptive",               // interval | backoff | adaptive                     --sample-mode
+      "stride": 1,                      // 每 N 个解码帧估一次位移（1 = 每帧都估）
+      "safety_rows": 3.0,               // 累计位移 ≥ 这么多行 ⇒ 强制拍（上限 5，防重复评论）
+      "settle_frames": 3,               // 停稳多少帧后拍（主力触发）
+      "eps_px": 1.0,                    // 相邻帧位移 < 它算「没动」（噪声地板）
+      "entry_thr": 8.0,                 // 底带灰度均差 > 它且没在滚 ⇒ 判入口有新评论
+      "max_gap_s": 5.0,                 // 距上次拍超过这么久也拍一次（0 = 关）
+      "min_interval": 0.2,              // backoff：间隔下限
+      "max_interval": 6.0,              // backoff：间隔上限
+      "min_score": 0.3                  // 位移估计互相关下限；低于它当作「没有平移」（抗动画）
+    }
+  },
+
+  "emoji": {
+    "enabled": true,                    // false ⇒ 关掉表情识别，只出 OCR 文字        取反 --no-emoji
+    "tables": {                         // 表情表资产（platforms.<p>.emoji 指向这里的键）
+      "douyin": {
+        "path": "out/douyin_emoji/douyin-emoji.json",   // 表路径（阈值随表走）
+        "build": {                      // 建表设置（仅 emoji_tables 步骤且 enabled=true 时生效）
+          "enabled": false,             //   false ⇒ 不重建，假定表已存在
+          "mode": "api",                //   api=打官方接口（推荐）/ dom=从网页 DOM 抽
+          "out": "out/douyin_emoji",    //   建表输出目录                                     --out
+          "api": null,                  //   null=内置接口地址；也可给本地 JSON 路径/自定义 URL  --api
+          "html": "-",                  //   mode=dom 时的 DOM 文件；"-"=stdin                --html
+          "per_sheet": 100,             //   每张核对图放几个表情                              --per-sheet
+          "no_download": false          //   true ⇒ 只解析 URL，不下载表情图                  --no-download
+        }
+      },
+      "wechat": {
+        "path": "out/wechat_emoji/wechat-emoji.json",    // 视频号用的微信 2021 新版表（109 个）
+        "build": {
+          "enabled": false,
+          "mode": "fetch",              //   fetch=下 tarball / src=用手上已有目录（离线）
+          "out": "out/wechat_emoji",
+          "src": null,                  //   mode=src 时的 <NNN_名称>.png 目录                --src
+          "no_sheet": false             //   true ⇒ 不产出核对图                              --no-sheet
+        }
+      },
+      "weibo": {
+        "path": "out/weibo_emoji/weibo-emoji.json",      // 微博表情表（自动模式 338 条；身份=CDN stem）
+        "build": {
+          "enabled": false,
+          "mode": "panel",              //   panel=面板 DOM + key→URL 解析表；src=本地图目录
+          "out": "out/weibo_emoji",
+          "config": null,               //   自动模式：路径/URL，或 "mirror"=公开镜像；非 null 跳过 panel/map  --config
+          "cookie": null,               //   取官方 /ajax/statuses/config 的 Cookie（需登录态）             --cookie
+          "include_parse_only": false,  //   把「仅解析」老表情也收进表                              --include-parse-only
+          "panel": null,                //   手工模式：null ⇒ <out>/panel.html（out/ 不在 git 里）    --panel
+          "map": null,                  //   手工模式：null ⇒ <out>/panel_map.json（key→URL）         --map
+          "src": null,                  //   已有图目录（按 CDN 原名存）⇒ 离线重建            --src
+          "no_sheet": false             //   ⚠ 这张表的 thresholds 只是**部分标定**（height_ratio 实量，
+                                        //      min_score/looks_like 只有 [打call] 一种字形）：跑新素材前先量，
+                                        //      否则表现是**静默丢光**。详见 out/weibo_emoji/README.md
+        }
+      }
+    }
+  },
+
+  "panels": {
+    "mode": "reuse",                    // 取值见文件末尾说明。样例用 reuse：直接吃已标注好的面板文件
+    "file": "livepipe/examples/panels.example.json",   // ← **人工编辑的就是这个文件**
+    "overwrite": false,                 // locate/manual：file 已存在时是否覆盖（默认 false，保住人工标注）
+    "auto": {                           // 自动定位参数（mode=locate/auto/batch 时用）
+      "method": "hybrid",               //   model=全用模型 / ocr=只用评论行(不占GPU) / hybrid=混合
+      "at": null,                       //   用第几秒的帧定位；null = input.start                  --at
+      "frames": 5,                      //   定位时跨几帧取样评论行                         parse --panel-frames、locate --frames
+      "span": null,                     //   取样时间跨度（秒）；null = 覆盖要解析的帧
+      "split_x": 1150,                  //   左右两个窗口的分界 x（原图像素）                      --split-x
+      "pad_x": 180,                     //   hybrid：内容右沿之外再留多少（给框外表情留余量）        --pad-x
+      "pad_top": 80,                    //   hybrid：首行之上再放宽多少                            --pad-top
+      "pad_y": 16,                      //   hybrid/ocr：行上下各留的边距                          --pad-y
+      "sub_width": 1000,                //   窗口子图推理前缩到的宽度（避免 OOM）                  --sub-width
+      "model": "nvidia/LocateAnything-3B",   // 定位模型                              parse --panel-model、locate/batch --model
+      "quant": "4bit",                  //   量化加载：none / 4bit / 8bit                          --quant
+      "device": "cuda",                 //   推理设备                                              --device
+      "platforms": {                    //   只在 mode=auto/builtin/batch 时用：定位窗口名 → 平台（无人值守快捷路径）
+        "left": "douyin",
+        "right": "wechat"
+      },
+      "frame_width": null              //   x2_from=window 且面板文件无 _locate_meta 时，用它当窗口右沿兜底
+    },
+    "manual": {                         // mode=manual：手写面板，直接写进 file
+      // "left": { "rect": [575, 604, 1137, 1429], "platform": "douyin" },
+      // "right": { "rect": [1202, 1052, 1688, 1311], "platform": "wechat" }
+    },
+    "batch": {                          // mode=batch：稳定性研究（挑固定矩形用；不动 file）
+      "count": 30,                      //   定位几次                                              --count
+      "start": 0.0,                     //   起始时间（秒）                                        --start
+      "span": 600.0,                    //   在这些秒内均匀取样                                    --span
+      "anchor": "panel"                 //   定位目标：panel=评论区 / input=聊天输入框             --anchor
+    }
+  },
+
+  "parse": {
+    "sep": " ",                         // 续行拼接用的分隔符                                      --sep
+    "max_username_len": 24,             // 冒号前超过这个长度就不当用户名                          --max-username-len
+    "merge_continuation": true,         // 是否把「无用户名的行」并进上一条评论；false ⇒ 不并    取反 --no-merge
+    "adjacency": true,                  // 「续行必须相邻」守卫；false ⇒ 回到纯文本判续行        取反 --no-adjacency
+    "dedup": true,                      // 按滚动对齐跨帧去重出唯一评论表；false ⇒ 每帧各一条    取反 --no-dedup
+    "calibrate": true,                  // 面板几何自标定（行距/浮层右界/续行；相位逐帧估）     取反 --no-calibrate
+    "right_pad": 0,                     // ROI 右边界距面板右边的余量；0 = 贴面板边圈住框外表情   --right-pad
+    "emoji_workers": 1                  // 表情扫描线程数；1 = 不开（默认）；4~8 ⇒ 整段快 1.5~2.5× --emoji-workers
+  },
+
+  "output": {
+    "dir": "out/livepipe_example",      // 输出目录                                               --out
+    "write": true,                      // 是否写盘（comments.jsonl + summary.json 成对）；false ⇒ 只打 stdout
+    "rows": true,                       // 另存 rows.jsonl（可回喂 input.rows 复算）      --dump-rows <dir>/rows.jsonl
+    "panels": true,                     // mode=auto 时把定位结果存成 panels.json         --dump-panels <dir>/panels.json
+    "frames": true,                     // 出逐帧标注图 frames/<t>_roi.jpg；全片务必 false  取反 --no-frames
+    "print": false                      // 除写盘外也把评论打到 stdout                            --print
+  },
+
+  // 评论 → 合格用户：用户名 ≥min_positive 条**正面**评论（正面由大模型判定，表情也发），
+  // 并排除用户名命中关键词的官方侧账号。默认关 —— 这一步要花钱调模型。
+  "filter": {
+    "enabled": false,                   // 打开才会调模型
+    "source": null,                     // 评论来源；null ⇒ <output.dir>/comments.jsonl
+    "out": null,                        // 合格用户 JSONL；null ⇒ <output.dir>/users.jsonl
+    "min_positive": 3,                  // 用户名至少要有几条正面评论
+    "exclude_keywords": [               // 用户名含任一即排除（不区分大小写）
+      "奇瑞", "4s", "店", "qq3", "汽车",
+      "尹同跃", "张国忠", "鲍思语", "王津华", "王孝伟", "胡敬源", "尹祥领",
+      "王来春", "李晶", "商文江", "杨棉之", "叶盛基", "路风", "黎汝雄",
+      "李学用", "张贵兵", "代立宏", "章红玉", "高新华", "戚士龙", "王琅"
+    ],
+    "nlp": {
+      "api_key": null,                  // 直接写 key（**别提交到仓库**）；留 null 则读下面的环境变量
+      "api_key_env": "NLP_API_KEY",     // ← 这里是环境变量的**名字**（不是 key 本身）；key 用 NLP_API_KEY=sk-… 传
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "deepseek-v4-flash-0731",
+      "batch_size": 20,                 // 一次调用判几条：越大越省，越大越怕一条坏整批
+      "concurrency": 4,
+      "timeout": 60.0,
+      "retries": 3,
+      "limit": null,                    // 最多调多少批（控成本）
+      "prompt": null                    // null ⇒ 用 user_filter.DEFAULT_PROMPT
+    }
+  },
+
+  "draw": {                             // 独立描框步骤（draw_boxes.py）；核心解析已自带逐帧标注图，故默认关
+    "enabled": false,                   //   是否跑 draw 步骤
+    "source": null,                     //   框来源 JSON/JSONL；null ⇒ <output.dir>/comments.jsonl   --json
+    "at": 8.0,                          //   取第几秒的帧                                          --at
+    "window": 5.0,                      //   JSONL 下只画 |t-at| ≤ window 的框                     --window
+    "out": null,                        //   输出图片；null ⇒ <output.dir>/draw_<at>.jpg           --out
+    "width": 5,                         //   框线宽（像素）                                        --width
+    "quality": 90,                      //   JPEG 质量                                             --quality
+    "labels": true                      //   是否画文字标签                                  取反 --no-labels
+  },
+
+  "steps": {
+    "order": ["emoji_tables", "panels", "parse", "filter", "draw"],   // 执行顺序（可重排）
+    "skip": ["emoji_tables"]            // 跳过的步骤（命令行 --only/--skip 可临时覆盖）
+  }
+}
+
+// ---------------------------------------------------------------------------
+// panels.mode 取值：
+//   locate   ① 定位评论区 → 写出面板文件（platform 留空），交给人工标注。**工作流第一步**
+//   reuse    ② 复用面板文件（人工标注过 platform）→ 按平台处理。样例用这个
+//   manual   手写面板（rect + platform）直接写进 file
+//   auto     解析时自己定位，平台按 auto.platforms 归属（无人值守快捷路径，需 GPU）
+//   batch    跑批量定位 + 稳定性统计（挑固定矩形用；不动 file）
+//   builtin  用脚本内置的 DEFAULT_PANELS（只对特定录屏有效）
+//
+// 注意：mode=auto 与 input.rows 冲突（复算时行已抽好，改矩形回不去），配置校验会报错。
+// 注意：locate/manual 不会覆盖已存在的面板文件（panels.overwrite=false），所以人工标注不会丢。
+// ---------------------------------------------------------------------------

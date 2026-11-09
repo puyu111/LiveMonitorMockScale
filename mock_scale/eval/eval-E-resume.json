@@ -1,0 +1,87 @@
+{
+ "kind": "crash_resume",
+ "generated": "2026-10-27T22:35:32",
+ "tag": "E-crash",
+ "arm": "A-baseline",
+ "fingerprint": {
+  "corpus_sha256": "a941ea3f57d3af21e381f667cf5d4aaf1b992e58d8a2e72f9faec514fd9b5117",
+  "code": "file:078d8d825c0cd56d",
+  "workers": 8,
+  "seed": 20261010,
+  "arm": "A-baseline"
+ },
+ "kill": {
+  "requested_after_jobs": 20,
+  "killed_at": 22,
+  "reason": "journal",
+  "exit": -9,
+  "journal_lines_at_kill": 22,
+  "plan_s": 4.355,
+  "run_wall_s": 2.014
+ },
+ "reference": {
+  "outputs": 53,
+  "wall_s": {
+   "plan": 4.299,
+   "run": 4.085,
+   "total": 8.384,
+   "plan_rc": 0,
+   "run_rc": 3
+  }
+ },
+ "resume": {
+  "enabled": true,
+  "fingerprint": "71c84c9712d0c5c4de6b71c3ad05e96e1b44656ca756de3c38777da0eb3ac160",
+  "product": "078d8d825c0cd56d",
+  "reused": 22,
+  "redone": 31,
+  "stale_fingerprint": 0,
+  "missing_file": 0,
+  "journal": "expand_run_progress.jsonl"
+ },
+ "resume_wall_s": 2.542,
+ "outputs": {
+  "count": 53,
+  "md5_diff_vs_reference": 0,
+  "sha256": "3e1616a37cab5c6e"
+ },
+ "seed_mismatch": {
+  "seed": 12345,
+  "enabled": true,
+  "fingerprint": "433fc7034d127e90cde67e194a632263a8a0062b99684bb7fb5e0dd2ebbf86e0",
+  "product": "078d8d825c0cd56d",
+  "reused": 0,
+  "redone": 53,
+  "stale_fingerprint": 53,
+  "missing_file": 0,
+  "journal": "expand_run_progress.jsonl"
+ },
+ "verdicts": [
+  {
+   "metric": "E_kill",
+   "status": "pass",
+   "requested": 20,
+   "killed_at": 22,
+   "reason": "journal"
+  },
+  {
+   "metric": "E_reuse",
+   "status": "pass",
+   "reused": 22,
+   "redone": 31,
+   "missing_file": 0
+  },
+  {
+   "metric": "E_identical",
+   "status": "pass",
+   "md5_diff": 0
+  },
+  {
+   "metric": "E_seed_guard",
+   "status": "pass",
+   "reused": 0,
+   "stale_fingerprint": 53
+  }
+ ],
+ "exit": 0
+}

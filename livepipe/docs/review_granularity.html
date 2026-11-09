@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>复核按条还是整帧</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+
+<style>
+/* 版式：与 dataset.html 同一套（测量记录表：左标签右内容，细线，等宽数字）。 */
+:root{
+  --bg:#eef0ec;
+  --surface:#fafbf8;
+  --surface-2:#e6eae3;
+  --ink:#151a17;
+  --muted:#5b6560;
+  --line:#d1d7cf;
+  --accent:#0d6857;
+  --accent-ink:#084a3e;
+  --accent-soft:#dcebe5;
+  --warn:#964c18;
+  --warn-ink:#7a3c11;
+  --warn-soft:#f4e3d4;
+  --font-body:"IBM Plex Sans","Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1412; --surface:#171d1a; --surface-2:#1f2723;
+    --ink:#e7ece8; --muted:#98a49e; --line:#2a332e;
+    --accent:#5fc9b0; --accent-ink:#9ae5d3; --accent-soft:#14332b;
+    --warn:#dfa274; --warn-ink:#f0c49d; --warn-soft:#2c2018;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1412; --surface:#171d1a; --surface-2:#1f2723;
+  --ink:#e7ece8; --muted:#98a49e; --line:#2a332e;
+  --accent:#5fc9b0; --accent-ink:#9ae5d3; --accent-soft:#14332b;
+  --warn:#dfa274; --warn-ink:#f0c49d; --warn-soft:#2c2018;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:var(--font-body); font-size:.95rem; line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1040px;margin-inline:auto}
+.mono,code{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+code{font-size:.84em;background:var(--surface-2);padding:.08em .36em;border-radius:3px;color:var(--ink)}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.masthead{padding-block:64px 0}
+.eyebrow{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+h1{font-size:clamp(2.1rem,5.2vw,3.05rem);line-height:1.06;letter-spacing:-.025em;font-weight:600;margin:.4rem 0 .7rem;text-wrap:balance}
+.lede{max-width:64ch;color:var(--muted);font-size:1.02rem;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:0;margin-top:34px;border-top:1px solid var(--line)}
+.facts div{padding:14px 26px 14px 0;margin-right:26px;border-right:1px solid var(--line)}
+.facts div:last-child{border-right:0;margin-right:0;padding-right:0}
+.facts .k{display:block;font-family:var(--font-mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.facts .v{font-size:1.25rem;font-weight:600;letter-spacing:-.01em}
+.facts .v small{font-size:.7rem;font-weight:400;color:var(--muted);letter-spacing:0;margin-left:.3em}
+.ruler{height:9px;margin-top:30px;background:repeating-linear-gradient(90deg,var(--line) 0 1px,transparent 1px 14px);border-bottom:1px solid var(--line);opacity:.85}
+
+section{padding-block:46px;border-bottom:1px solid var(--line)}
+section:last-of-type{border-bottom:0}
+.sec-head{display:grid;grid-template-columns:118px minmax(0,1fr);gap:26px;margin-bottom:26px}
+.kicker{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding-top:.5rem}
+h2{font-size:clamp(1.32rem,2.6vw,1.7rem);line-height:1.24;letter-spacing:-.015em;font-weight:600;margin:0 0 .45rem;text-wrap:balance}
+.sec-head p{margin:0;color:var(--muted);max-width:66ch;font-size:.93rem}
+h3{font-size:1rem;font-weight:600;margin:0 0 .3rem;letter-spacing:-.005em}
+
+.table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:5px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.83rem;min-width:660px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.55}
+thead th{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--surface-2);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td .sub{display:block;color:var(--muted);font-size:.9em;margin-top:2px}
+.tnum{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:.93em}
+.scroll-hint{display:none;margin:7px 0 0;font-family:var(--font-mono);font-size:.68rem;letter-spacing:.04em;color:var(--muted)}
+.good{color:var(--accent-ink);font-weight:600}
+.bad{color:var(--warn-ink);font-weight:600}
+
+/* 条形：两口径的保留/丢弃 */
+.bars{display:grid;gap:14px;margin-top:22px}
+.bar-row{display:grid;grid-template-columns:120px minmax(0,1fr) 122px;gap:14px;align-items:center}
+.bar-name{font-family:var(--font-mono);font-size:.76rem;color:var(--muted)}
+.bar{display:flex;height:22px;border-radius:3px;overflow:hidden;border:1px solid var(--line);background:var(--surface)}
+.bar i{display:block;height:100%}
+.bar .keep{background:var(--accent-soft);border-right:2px solid var(--surface)}
+.bar .drop{background:var(--warn-soft)}
+.bar-val{font-family:var(--font-mono);font-size:.78rem;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.figures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+.figure{border:1px solid var(--line);border-radius:5px;background:var(--surface);padding:16px 16px 12px;overflow-x:auto}
+.figure.wide{grid-column:1/-1}
+.figure svg{width:100%;min-width:430px;height:auto;display:block}
+figcaption{color:var(--muted);font-size:.8rem;line-height:1.55;margin-top:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin:2px 0 10px;font-family:var(--font-mono);font-size:.68rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:14px;height:0;border-top-width:2px;border-top-style:solid;display:inline-block}
+
+/* SVG 元素 */
+.f-frame{fill:var(--surface-2);stroke:var(--line);stroke-width:1}
+.f-caption{fill:var(--surface);stroke:var(--line);stroke-width:.8;stroke-dasharray:2 2}
+.b-roi{fill:none;stroke:var(--accent);stroke-width:1.6}
+.b-text{fill:none;stroke:var(--muted);stroke-width:.9;stroke-dasharray:3 2}
+.b-colon{fill:none;stroke:var(--ink);stroke-width:1}
+.b-badge{fill:none;stroke:var(--warn);stroke-width:1.5}
+.b-emoji{fill:none;stroke:var(--accent);stroke-width:.9;stroke-dasharray:2 2;opacity:.8}
+.b-miss{fill:var(--warn-soft);stroke:var(--warn);stroke-width:1.2;stroke-dasharray:3 2}
+.s-label{fill:var(--muted);font-family:var(--font-mono);font-size:8.5px}
+.s-warn{fill:var(--warn-ink);font-family:var(--font-mono);font-size:8.5px}
+.s-ink{fill:var(--ink);font-family:var(--font-body);font-size:9.5px}
+.s-strip{fill:var(--surface);stroke:var(--line);stroke-width:1}
+
+.note{border-left:3px solid var(--warn);background:var(--warn-soft);padding:13px 16px;border-radius:0 4px 4px 0;font-size:.86rem;line-height:1.65}
+.note strong{color:var(--warn-ink)}
+.note.calm{border-left-color:var(--accent);background:var(--accent-soft)}
+.note.calm strong{color:var(--accent-ink)}
+.note + .note{margin-top:10px}
+.stack{display:grid;gap:12px;margin-top:20px}
+
+ol.points{list-style:none;counter-reset:p;padding:0;margin:0;display:grid;gap:16px}
+ol.points li{counter-increment:p;display:grid;grid-template-columns:30px minmax(0,1fr);gap:14px}
+ol.points li::before{content:counter(p,decimal-leading-zero);font-family:var(--font-mono);font-size:.76rem;color:var(--accent);padding-top:.16rem}
+ol.points p{margin:.2rem 0 0;color:var(--muted);font-size:.88rem}
+ol.points b{color:var(--ink)}
+
+pre.codeblock{
+  background:var(--surface);border:1px solid var(--line);border-radius:5px;
+  padding:16px 18px;overflow-x:auto;font-family:var(--font-mono);font-size:.78rem;
+  line-height:1.7;color:var(--ink);margin:0;
+}
+pre.codeblock .cm{color:var(--muted)}
+pre.codeblock + pre.codeblock{margin-top:12px}
+
+footer{padding-block:38px 46px;color:var(--muted);font-size:.8rem;line-height:1.7}
+footer .mono{font-size:.74rem;letter-spacing:.04em}
+
+@media (max-width:820px){
+  .figures{grid-template-columns:minmax(0,1fr)}
+  .sec-head{grid-template-columns:minmax(0,1fr);gap:6px}
+  .kicker{padding-top:0}
+  .facts div{padding-right:18px;margin-right:18px}
+  .bar-row{grid-template-columns:96px minmax(0,1fr);gap:10px}
+  .bar-val{grid-column:2;text-align:left}
+  .scroll-hint{display:block}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="eyebrow">livepipe · dataset · 复核口径</div>
+  <h1>复核按条，还是按整帧？</h1>
+  <p class="lede">两种口径都不免费。逐条保住全部 14,202 个框，代价是 914 个「有读数没坐标」的等级标在训练时算背景；
+  整帧全或无消灭这些假负，代价是连坐丢掉 4,206 个正确框。下面把两边的账都算出来，再说清楚在什么条件下谁更划算。</p>
+  <div class="facts">
+    <div><span class="k">复核单元</span><span class="v">3,989 <small>条 / 2,865 帧</small></span></div>
+    <div><span class="k">整帧全或无</span><span class="v">−29.6% <small>的框</small></span></div>
+    <div><span class="k">逐条假负</span><span class="v">914 <small>个等级标 · 可见的 32.2%</small></span></div>
+    <div><span class="k">假负面积</span><span class="v">0.024% <small>的像素</small></span></div>
+    <div><span class="k">A/B 实测</span><span class="v">保持逐条 <small>整帧 mAP 更低</small></span></div>
+  </div>
+  <div class="ruler" aria-hidden="true"></div>
+</header>
+
+<div class="note calm" style="margin:24px 0 0">
+  <strong>2026-10-29 起：dataset 不再处理等级标。</strong>
+  数据集只剩四类（<code>comment_row</code> / <code>body_text</code> / <code>colon</code> / <code>emoji_run</code>），
+  <code>badge_box</code> 不写、<code>review/badge_bad/</code> 不再有特殊含义。本文中关于
+  <code>level_badge</code> 的账本与 A/B 数据保留为口径决策的历史记录；当前实现以
+  <a href="dataset.html">dataset.html</a> 与 <code>python3 -m livepipe.dataset -h</code> 为准。
+</div>
+
+<section>
+  <div class="sec-head">
+    <div class="kicker">01 · 先分清</div>
+    <div>
+      <h2>训练图早就是「整帧全标」，逐条只是人审的单位</h2>
+      <p>数据集里一张图 = 一整帧原图（720×1600，不裁），同一帧上的每条评论各出 1–5 行标签，全都写在同一张图上。
+      中间那一步人才是按条看的——因为「删」这个动作必须能表达「只这条不要」。</p>
+    </div>
+  </div>
+
+  <figure class="figure wide">
+    <div class="legend"><span><i class="b-roi" style="border-top-color:var(--accent)"></i>评论 roi</span>
+      <span><i class="b-text" style="border-top-color:var(--muted);border-top-style:dashed"></i>正文</span>
+      <span><i class="b-colon" style="border-top-color:var(--ink)"></i>冒号</span>
+      <span><i class="b-badge" style="border-top-color:var(--warn)"></i>等级标</span>
+      <span><i class="b-miss" style="border-top-color:var(--warn)"></i>缺框（有读数没坐标）</span></div>
+    <svg viewBox="0 0 780 355" role="img" aria-label="左边是一整帧训练图，两条评论的框都在同一张图上；右边是复核时人看到的两张横条">
+      <text class="s-label" x="10" y="14">训练图：一整帧 720×1600</text>
+      <rect class="f-frame" x="10" y="20" width="144" height="320" rx="2"/>
+      <rect class="b-roi" x="16.4" y="300" width="133.6" height="6.4"/>
+      <rect class="b-roi" x="16.4" y="311" width="133.6" height="5.2"/>
+      <rect class="b-text" x="28.2" y="300" width="42.2" height="6.4"/>
+      <rect class="b-text" x="20.4" y="311" width="42.6" height="5.2"/>
+      <rect class="b-colon" x="40.6" y="302.4" width="2" height="2.4"/>
+      <rect class="b-colon" x="44" y="311" width="4.8" height="5.2"/>
+      <rect class="b-badge" x="22.4" y="301.2" width="7" height="3.6"/>
+      <text class="s-label" x="158" y="303">①</text>
+      <text class="s-label" x="158" y="315">②</text>
+      <text class="s-label" x="10" y="352">评论区在 y=1400 / 1455</text>
+
+      <path d="M172 180 H204" fill="none" stroke="var(--line)" stroke-width="1.2"/>
+      <path d="M200 176 L206 180 L200 184" fill="none" stroke="var(--line)" stroke-width="1.2"/>
+      <text class="s-label" x="168" y="172">人审时</text>
+
+      <text class="s-label" x="210" y="32">复核：每条评论一张横条（按真实坐标缩放）</text>
+
+      <rect class="s-strip" x="210" y="40" width="540" height="60" rx="2"/>
+      <rect class="f-caption" x="210" y="40" width="250" height="14"/>
+      <text class="s-label" x="215" y="50.5">① 几点发布会</text>
+      <rect class="b-roi" x="232.4" y="58" width="467.6" height="22.4"/>
+      <rect class="b-text" x="273.7" y="58" width="147.7" height="22.4"/>
+      <rect class="b-colon" x="317.1" y="66.4" width="7" height="8.4"/>
+      <rect class="b-badge" x="253.4" y="62.2" width="24.5" height="12.6"/>
+      <text class="s-label" x="756" y="72">4 框</text>
+
+      <rect class="s-strip" x="210" y="115" width="540" height="55" rx="2"/>
+      <rect class="f-caption" x="210" y="115" width="200" height="14"/>
+      <text class="s-label" x="215" y="125.5">② 多少钱</text>
+      <rect class="b-roi" x="232.4" y="133" width="467.6" height="18.2"/>
+      <rect class="b-text" x="246.4" y="133" width="149.1" height="18.2"/>
+      <rect class="b-colon" x="329" y="133" width="16.8" height="18.2"/>
+      <rect class="b-miss" x="232.4" y="136" width="24.5" height="12.6"/>
+      <text class="s-warn" x="560" y="145">badge_text=4，没有框</text>
+      <text class="s-label" x="756" y="146">3 框</text>
+    </svg>
+    <figcaption>左边是训练样本：一帧原图，两条评论的 roi、正文、冒号、等级标都写在同一张图上，共 7 行标签。
+    右边是人审看到的：每条评论一张横条，右边并排等级标的 4 倍角标。删掉 ② 只影响 ②。框按 <code>jsonl</code> 里的真实坐标缩放绘制。</figcaption>
+  </figure>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="kicker">02 · 等级标</div>
+    <div>
+      <h2>等级标不是「不处理」，是「不编」</h2>
+      <p>量到框就写；只读到数字、没量到位置的，宁可不写一行标签，也不按邻居位置猜一个框——
+      猜出来的框会把误差写进训练集，而且恰恰写进最难的那批样本。</p>
+    </div>
+  </div>
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>数据里是什么</th><th>数量</th><th>进标签吗</th><th>为什么</th></tr></thead>
+      <tbody>
+        <tr><td>等级标量到了坐标 <code>badge_box</code></td><td class="tnum">1,818 框</td><td>写 <code>level_badge</code>（cls 3）</td><td>train 1,372 · val 426 · test 20</td></tr>
+        <tr><td>有读数 <code>badge_text</code>、没有 <code>badge_box</code></td><td class="tnum">850 条<span class="sub">21.3% 的评论 · 914 条记录</span></td><td class="bad">不写</td><td>位置没量出来；猜一个框 = 把误差写进标签</td></tr>
+        <tr><td>连读数都没有</td><td class="tnum">1,321 条</td><td>不写</td><td>微博那版界面本来就没有等级标</td></tr>
+        <tr><td>人挪进 <code>review/badge_bad/</code></td><td class="tnum">本次 0 条</td><td>只丢这一条的 <code>level_badge</code></td><td>框画歪了，其它四个类照留</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="scroll-hint">← 横向滑动看全部</p>
+  <div class="stack">
+    <div class="note"><strong>这 850 条就是整帧口径的引爆点。</strong>逐条口径下它们只少一行标签（训练时按背景算，代价见 §04）；
+      整帧全或无口径下，它们让所在的那一帧整个作废——<b>803 帧、1,266 条评论</b>，其中 416 条本身一点问题都没有。</div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="kicker">03 · 账本</div>
+    <div>
+      <h2>同一批标签，两种口径各剩多少</h2>
+      <p>「整帧全或无」按最严格的读法算：一帧里只要有一条评论的等级标缺框，整帧不进数据集。
+      触发条件来自真实数据，不是假设。</p>
+    </div>
+  </div>
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>口径</th><th>复核项</th><th>训练图</th><th>标签框</th><th>train / val / test</th><th>一次否决的代价</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>逐条</b>（现在）</td>
+          <td class="tnum">3,989 条</td>
+          <td class="tnum">2,865</td>
+          <td class="tnum good">14,202</td>
+          <td class="tnum">1,904 / 519 / 442</td>
+          <td>这一条评论的 3–5 个框</td>
+        </tr>
+        <tr>
+          <td><b>整帧全或无</b></td>
+          <td class="tnum">2,865 帧</td>
+          <td class="tnum bad">2,062<span class="sub">−28.0%</span></td>
+          <td class="tnum bad">9,996<span class="sub">−29.6%</span></td>
+          <td class="tnum">1,275 / 345 / 442<span class="sub">train −33.0% · val −33.5% · test 0</span></td>
+          <td>整帧：平均 4.96 个框，最多 37 个</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="scroll-hint">← 横向滑动看全部</p>
+
+  <div class="bars" role="img" aria-label="框保留率：逐条 100%，整帧全或无 70.4%">
+    <div class="bar-row">
+      <span class="bar-name">逐条</span>
+      <span class="bar"><i class="keep" style="width:100%"></i></span>
+      <span class="bar-val">14,202 / 14,202</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-name">整帧全或无</span>
+      <span class="bar"><i class="keep" style="width:70.4%"></i><i class="drop" style="width:29.6%"></i></span>
+      <span class="bar-val">9,996 / 14,202</span>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="note"><strong>丢得不是均匀的。</strong>被整帧丢掉的 803 帧平均 1.58 条评论，多人同屏（≥2 条）占 39.7%；
+      留下来的 2,062 帧平均 1.32 条，多人同屏只占 24.0%。也就是「一屏好几条」这种部署常态，被优先删掉了。</div>
+    <div class="note calm"><strong>这只是支出的一半。</strong>逐条口径也不是免费的——它保住了 14,202 个框，
+      但把 914 个「有读数没坐标」的等级标留在了图里当背景。那一半的账在 §04。</div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="kicker">04 · 假负</div>
+    <div>
+      <h2>逐条口径的代价：32% 的可见等级标没有框</h2>
+      <p>那 914 条不是被删掉了——它们还在图里、还在数据集中，只是没有标签。
+      对检测器来说，没有标签的目标就是背景。这就是逐条口径付的钱。</p>
+    </div>
+  </div>
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>口径</th><th>保留框</th><th>漏标（可见但没框）</th><th>连带丢掉的正确框</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>逐条 · 当背景</b>（现在）</td>
+          <td class="tnum good">14,202</td>
+          <td class="bad">914 个等级标<span class="sub">占可见等级标 32.2%</span></td>
+          <td class="tnum">0</td>
+        </tr>
+        <tr>
+          <td>逐条 · 补标</td>
+          <td class="tnum">15,116</td>
+          <td>0</td>
+          <td class="tnum">0<span class="sub">914 个框是推算的，带定位误差</span></td>
+        </tr>
+        <tr>
+          <td>逐条 · ignore 区</td>
+          <td class="tnum">14,202</td>
+          <td>0</td>
+          <td class="tnum">0<span class="sub">要训练侧支持，见下</span></td>
+        </tr>
+        <tr>
+          <td><b>整帧全或无</b></td>
+          <td class="tnum bad">9,996</td>
+          <td>0</td>
+          <td class="tnum bad">4,206</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="scroll-hint">← 横向滑动看全部</p>
+
+  <h3 style="margin-top:28px">这 914 个假负到底有多大</h3>
+  <div class="table-scroll" style="margin-top:12px">
+    <table style="min-width:600px">
+      <thead><tr><th>量的是什么</th><th>数字</th><th>怎么来的</th></tr></thead>
+      <tbody>
+        <tr><td>可见等级标</td><td class="tnum">1,927 有框 + 914 只读到数 = 2,841<span class="sub">记录数；落标签时去重为 1,818 个框</span></td><td>914 / 2,841 = <b>32.2%</b></td></tr>
+        <tr><td>单个等级标的面积</td><td class="tnum">42 × 21 px<span class="sub">882 px²，中位数</span></td><td>1,927 个已标框实测</td></tr>
+        <tr><td>假负总面积 / 全部像素</td><td class="tnum good">806,148 / 3,300,480,000 = 0.024%</td><td>914 × 882；2,865 帧 × 720 × 1600</td></tr>
+        <tr><td>落在已标注 <code>comment_row</code> 框内</td><td class="tnum">1,927 / 1,927 = 100%</td><td>等级标总在行内；假负同理</td></tr>
+        <tr><td>表情的假负</td><td class="tnum good">0</td><td>1,362 个 token 全部有框</td></tr>
+        <tr><td>冒号</td><td class="tnum">928 条没有 <code>colon_box</code><span class="sub">其中 531 条正文为空（续行/纯表情行）</span></td><td>剩下 363 条「可能有冒号」，需要人判，不能直接算漏标</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="scroll-hint">← 横向滑动看全部</p>
+
+  <h3 style="margin-top:30px">训练侧怎么处理「无框区域」</h3>
+  <p style="color:var(--muted);font-size:.88rem;max-width:70ch;margin:.2rem 0 0">
+    Ultralytics 的 YOLOv8/11 没有 ignore 标记：没有被 GT 匹配上的锚点一律按背景算负样本。
+    所以漏标在训练里不是被跳过的，是被当成负例用的。五种处理方式，代价各不相同：</p>
+  <div class="table-scroll" style="margin-top:14px">
+    <table>
+      <thead><tr><th>做法</th><th>怎么落地</th><th>代价</th><th>原生支持</th></tr></thead>
+      <tbody>
+        <tr><td><b>① 当背景</b>（现在）</td><td>什么都不用做</td><td>914 个等级标成为负例；这一类的难例召回偏低</td><td>YOLO 默认行为</td></tr>
+        <tr><td>② 像素遮挡</td><td>按推算位置把等级标涂掉</td><td>破坏 0.024% 的真实像素；位置本身还不准</td><td>离线脚本</td></tr>
+        <tr><td>③ 补标</td><td>用 <code>badge_left</code> / 邻居位置推一个框</td><td>914 个框带定位误差，等于换个方式把误差写进标签</td><td>改上游解析</td></tr>
+        <tr><td>④ ignore 掩码</td><td>损失里跳过该矩形内的锚点</td><td>要改 assigner / loss；YOLO 不原生支持</td><td>mmdet / Detectron2 原生</td></tr>
+        <tr><td>⑤ 整帧丢</td><td>整帧全或无</td><td>4,206 个正确框一起没（见 §03）</td><td>现成</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="scroll-hint">← 横向滑动看全部</p>
+
+  <div class="stack">
+    <div class="note calm"><strong>一个缓解事实：</strong>914 个假负全部落在已标注的 <code>comment_row</code> 框里。
+      YOLO 的对齐指派会把这些锚点按对齐度分给 <code>comment_row</code> 正样本，真正落到「背景」的只是其中一部分——
+      所以整体 mAP 常常看不出问题，代价主要记在 <code>level_badge</code> 的难例召回上。</div>
+    <div class="note"><strong>所以现在选 ① 是划算的：</strong>0.024% 像素的假负，换 14,202 个框和 0 个连坐。
+      但要把 <code>level_badge</code> 的 recall 单列监控；如果它是硬指标，先修上游的框检测（914 条是量框失败，
+      改标签治不了），再考虑 ③/④，而不是 ⑤。</div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="kicker">05 · 触发条件</div>
+    <div>
+      <h2>整帧口径的损失，是触发规则的函数</h2>
+      <p>「一个标的不对」到底算哪些？触发越严，整帧丢得越多；只认一半，损失就从 29.6% 降到 15.7%。
+      §03 那个 70.4% 不是整帧口径的固有属性，是最严触发下的下限。</p>
+    </div>
+  </div>
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>触发规则</th><th>受影响单元</th><th>保留帧</th><th>保留框</th></tr></thead>
+      <tbody>
+        <tr><td>等级标缺框 · 全算（实测）</td><td class="tnum">850</td><td class="tnum">2,062</td><td class="tnum bad">70.4%</td></tr>
+        <tr><td>只认其中 75%</td><td class="tnum">638</td><td class="tnum">2,255</td><td class="tnum">77.2%</td></tr>
+        <tr><td>只认其中 50%</td><td class="tnum">425</td><td class="tnum">2,453</td><td class="tnum">84.3%</td></tr>
+        <tr><td>只认其中 25%</td><td class="tnum">213</td><td class="tnum">2,656</td><td class="tnum">91.8%</td></tr>
+        <tr><td>等级标 + 冒号可疑<span class="sub">363 条评论（397 条记录）</span></td><td class="tnum">1,213</td><td class="tnum">1,766</td><td class="tnum bad">60.2%</td></tr>
+        <tr><td>人判「框画错了」q = 5%</td><td class="tnum">—</td><td class="tnum">—</td><td class="tnum">91.0%</td></tr>
+        <tr><td>人判「框画错了」q = 10%</td><td class="tnum">—</td><td class="tnum">—</td><td class="tnum">82.8%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="scroll-hint">← 横向滑动看全部</p>
+  <p style="color:var(--muted);font-size:.82rem;max-width:70ch;margin:10px 0 0">
+    75%/50%/25% 三行是「只有一部分缺框被认作错」的期望值（按每帧缺框数独立计算）；q 两行由真实的每帧评论数分布推算。</p>
+
+  <div class="stack">
+    <div class="note calm"><strong>换成可执行的判据：</strong>决定权在两个可测量的量——触发率 p（多少评论被判「标不对」）
+      和拥挤帧占比。这张数据表上，p ≥ 20% 且拥挤帧占 28.4% 时，整帧口径要丢掉三成以上的标签，
+      而逐条口径的假负只有 0.024% 像素、32.2% 的一个类实例。反过来，如果哪批素材的缺陷率降到 5% 以下、
+      且几乎都是单条帧，整帧口径的损失会缩到 ~9%，那时它才值得作为一个选项拿出来比较。</div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="kicker">06 · 例子</div>
+    <div>
+      <h2>三个真实帧，两种口径各会怎样</h2>
+      <p>坐标全部取自 <code>out/dataset_v1/review/index.jsonl</code>，昵称不显示；画面按真实比例绘制。</p>
+    </div>
+  </div>
+
+  <div class="figures">
+    <figure class="figure wide">
+      <div class="legend"><span><i class="b-roi" style="border-top-color:var(--accent)"></i>roi</span>
+        <span><i class="b-text" style="border-top-color:var(--muted);border-top-style:dashed"></i>正文</span>
+        <span><i class="b-colon" style="border-top-color:var(--ink)"></i>冒号</span>
+        <span><i class="b-badge" style="border-top-color:var(--warn)"></i>等级标</span>
+        <span><i class="b-miss" style="border-top-color:var(--warn)"></i>缺框（有读数没坐标）</span></div>
+      <svg viewBox="0 0 600 150" role="img" aria-label="12-01-13-00_f010946：两条评论，第二条等级标缺框">
+        <rect class="f-frame" x="6" y="10" width="576" height="112" rx="2"/>
+        <text class="s-label" x="6" y="7">12-01-13-00_f010946 · train · 图幅 720×1600，这里只画 y=1385–1525 这段评论区（按真实坐标缩放）</text>
+        <rect class="b-roi" x="31.6" y="22" width="534.4" height="25.6"/>
+        <rect class="b-text" x="78.8" y="22" width="168.8" height="25.6"/>
+        <rect class="b-colon" x="128.4" y="31.6" width="8" height="9.6"/>
+        <rect class="b-badge" x="55.6" y="26.8" width="28" height="14.4"/>
+        <text class="s-ink" x="270" y="40">① 几点发布会 · 4 框（含等级标 8）</text>
+
+        <rect class="b-roi" x="31.6" y="66" width="534.4" height="20.8"/>
+        <rect class="b-text" x="47.6" y="66" width="170.4" height="20.8"/>
+        <rect class="b-colon" x="142" y="66" width="19.2" height="20.8"/>
+        <rect class="b-miss" x="31.6" y="69" width="24" height="12"/>
+        <text class="s-warn" x="31.6" y="61">badge_text=4，无 badge_box</text>
+        <text class="s-ink" x="270" y="82">② 多少钱 · 3 框</text>
+      </svg>
+      <figcaption><b>逐条：</b>② 只是没有 <code>level_badge</code> 这一行，其余 7 个框全留；人若判 ② 的等级标不可信，把它挪进 <code>badge_bad/</code>，只丢这一行。
+      <b>整帧全或无：</b>② 的「4」没框 → 整帧作废 → 7 个框（全是对的）一起没。</figcaption>
+    </figure>
+
+    <figure class="figure">
+      <svg viewBox="0 0 460 58" role="img" aria-label="12-01-13-00_f014056：单条评论，等级标缺框">
+        <rect class="f-frame" x="6" y="10" width="432" height="33" rx="2"/>
+        <text class="s-label" x="6" y="7">12-01-13-00_f014056 · 单条评论（y=1390–1445）</text>
+        <rect class="b-roi" x="25.2" y="16" width="400.8" height="18.6"/>
+        <rect class="b-text" x="66.6" y="16" width="127.8" height="18.6"/>
+        <rect class="b-colon" x="105" y="23.2" width="6" height="7.2"/>
+        <rect class="b-miss" x="25.2" y="18" width="20" height="10"/>
+        <text class="s-warn" x="200" y="26">badge_text=5，无 badge_box</text>
+      </svg>
+      <figcaption><b>逐条：</b>3 个框全留，只少一行等级标。<b>整帧全或无：</b>3 个正确框一起丢。这样的单条帧有 <b>484 张</b>，全部会因等级标缺框被整帧删掉。</figcaption>
+    </figure>
+
+    <figure class="figure">
+      <svg viewBox="0 0 430 360" role="img" aria-label="13-00-13-49_f000000：一帧 11 条评论，5 条等级标缺框">
+        <rect class="f-frame" x="10" y="18" width="396" height="326" rx="2"/>
+        <text class="s-label" x="10" y="13">13-00-13-49_f000000 · 11 条同屏</text>
+        <g>
+          <rect class="b-roi" x="27.6" y="18" width="367.4" height="15.95"/>
+          <rect class="b-roi" x="27.6" y="46.6" width="367.4" height="17.05"/>
+          <rect class="b-roi" x="27.6" y="75.75" width="367.4" height="34.1"/>
+          <rect class="b-roi" x="27.6" y="121.4" width="367.4" height="16.5"/>
+          <rect class="b-roi" x="27.6" y="150.55" width="367.4" height="17.05"/>
+          <rect class="b-roi" x="27.6" y="181.35" width="367.4" height="15.4"/>
+          <rect class="b-roi" x="27.6" y="210.5" width="367.4" height="15.95"/>
+          <rect class="b-roi" x="27.6" y="239.1" width="367.4" height="16.5"/>
+          <rect class="b-roi" x="27.6" y="268.8" width="367.4" height="16.5"/>
+          <rect class="b-roi" x="27.6" y="298.5" width="367.4" height="15.4"/>
+          <rect class="b-roi" x="27.6" y="325.45" width="367.4" height="18.7"/>
+        </g>
+        <g>
+          <rect class="b-miss" x="27.6" y="121.4" width="20" height="16.5"/>
+          <rect class="b-miss" x="27.6" y="150.55" width="20" height="17.05"/>
+          <rect class="b-miss" x="27.6" y="181.35" width="20" height="15.4"/>
+          <rect class="b-miss" x="27.6" y="268.8" width="20" height="16.5"/>
+          <rect class="b-miss" x="27.6" y="298.5" width="20" height="15.4"/>
+        </g>
+        <rect class="b-badge" x="44.1" y="49.9" width="14.9" height="9.35"/>
+        <rect class="b-badge" x="40.25" y="242.4" width="22" height="9.35"/>
+        <rect class="b-badge" x="44.65" y="329.3" width="15.95" height="9.9"/>
+        <rect class="b-emoji" x="182.7" y="325.45" width="19.8" height="18.7"/>
+        <text class="s-warn" x="10" y="357">红色 = 5 条等级标缺框（读数在、坐标没有）· 整帧 37 个框</text>
+      </svg>
+      <figcaption><b>逐条：</b>5 条各少一行等级标，其余 37 个框不动。<b>整帧全或无：</b>一次否决 11 条评论、37 个框（这些框全是对的）。</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="kicker">07 · 训练</div>
+    <div>
+      <h2>两种口径各自错在哪</h2>
+      <p>逐条的错是「漏标成负例」，整帧的错是「连坐删监督」。前者的代价在 §04 量过（914 个实例、0.024% 像素），
+      后者的代价在 §03 量过（−29.6% 框）。这里说的是，为什么后者通常更贵。</p>
+    </div>
+  </div>
+
+  <ol class="points">
+    <li>
+      <div><b>检测的损失是逐框算的。</b><p>缺一个框，只让那一个目标在分类头里落成负样本；帧里其余框的回归和分类监督完全正常。整帧丢弃等于把正确的监督一起删掉，用一个局部错误换掉一整帧信号。</p></div>
+    </li>
+    <li>
+      <div><b>样本量先掉三成，框掉三成。</b><p>train 图 1,904 → 1,275（−33.0%），框 9,766 → 6,444（−34.0%）。检测模型在小样本上对「少 600 张图」的敏感度，通常比「每 5 个框里有 1 个漏标」更高。</p></div>
+    </li>
+    <li>
+      <div><b>丢掉的恰好是拥挤帧。</b><p>被删的帧 39.7% 是多人同屏，留下的只有 24.0%。真实直播一屏 2–6 条是常态，模型最该学的是「一屏多条、框要分开」；整帧口径把这个分布削薄了。</p></div>
+    </li>
+    <li>
+      <div><b>等级标的选择偏差。</b><p>触发删除的是「读数在、框没量出来」——遮挡、低对比的难例。整帧口径下它们被删，留下的等级标全是好读的：带等级标框的评论占比从 45.6% 升到 56.7%。模型在难例上的召回只会更差。</p></div>
+    </li>
+    <li>
+      <div><b>验证集被悄悄变简单。</b><p>test（微博）一条不丢，val 却丢了 174 帧（−33.5%）、884 个框（−33.7%）。val 与 test 的难度不再一致，用 val 选模型会系统性高估，上线才发现拥挤场景掉点。</p></div>
+    </li>
+  </ol>
+
+  <h3 style="margin-top:30px">触发条件换成人判错误时</h3>
+  <p style="color:var(--muted);font-size:.88rem;max-width:68ch;margin:.2rem 0 0">
+    整帧口径的保留率随触发规则变化：q = 5% 时保留 91.0%，q = 10% 时保留 82.8%（完整表见 §05）。
+    也就是说，上面四条判断成立的前提是「标签缺陷多、且集中在拥挤帧」；缺陷率降下去，整帧口径的代价也跟着降。</p>
+  <div class="stack">
+    <div class="note calm"><strong>A/B 已经跑完（§10），上面的推断基本被验证。</strong>账本（§03–05）是实测的；训练上的判断里，
+      「整体 mAP 更低」「拥挤帧掉得更多」都成立，「难例召回更差」方向也成立（但难例子集只有 64 个 badge 框）；
+      唯一反转的是 <code>level_badge</code> 的聚合 recall —— 整帧在保留的易读帧上更高，因为缺框难例被整批删掉了。
+      这恰好也是「验证集被悄悄变简单」那条的直接证据。</div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="kicker">08 · 建议</div>
+    <div>
+      <h2>保持逐条；整帧作废留一条命令</h2>
+      <p>删除单位 = 标签单位，这是唯一不会连坐的口径。人若真判定某一帧全废，也不必一张张删——用命令一次丢掉该帧全部评论。</p>
+    </div>
+  </div>
+
+  <ol class="points">
+    <li><div><b>默认逐条复核。</b><p>删哪条丢哪条；等级标已不进数据集，不再需要为它单独挪文件。</p></div></li>
+    <li><div><b>整帧全废时用 <code>--reject-frame</code>。</b><p>给帧名（<code>&lt;视频键&gt;_f&lt;帧号&gt;</code>），这一帧的全部评论一起记进 <code>rejected.jsonl</code>，幂等，和手删每张横条完全等价。</p></div></li>
+    <li><div><b>等级标缺框不再写进数据集。</b><p>2026-10-29 起 <code>level_badge</code> 这一类整体移除：914 个缺框实例、0.024% 像素的假负不值得用一类标签去换。要恢复，先修上游的框检测，再把 <code>(level_badge, badge_box)</code> 加回 <code>common.CLASSES</code>。</p></div></li>
+    <li><div><b>只有当缺陷率低到 5% 以下时，再回头看整帧口径。</b><p>那时它的损失从 29.6% 收到 ~9%，和逐条的差距变小；这也是 §05 那张表真正的用法——先量触发率，再选口径。</p></div></li>
+  </ol>
+
+  <div class="stack">
+    <div class="note calm"><strong>§10 的 A/B 没有推翻这个建议。</strong>整帧口径在五组评测上的整体 mAP50–95 全部更低；
+      它对 <code>comment_row</code> 的伤害在拥挤帧上最明显（recall 90.8% → 59.6%）。保持逐条，<code>--reject-frame</code> 只作为人工整帧作废的出口。</div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="kicker">09 · 复现</div>
+    <div>
+      <h2>命令与实验设计</h2>
+      <p>前三条就是日常跑法；最后一段是账本与 A/B 的口径。</p>
+    </div>
+  </div>
+
+  <pre class="codeblock"><span class="cm"># ① 出复核图（每条评论一张横条 + 等级标 4× 角标）</span>
+python3 -m livepipe.dataset review \
+    --runs out/风云T7_20260826_11 out/风云T7_20260826_11_02 out/征服8 \
+    --exclude 风云T7_20260826_11_02/seg7 --out out/dataset_v1
+
+<span class="cm"># ② 人审：删横条 / 整帧作废</span>
+python3 -m livepipe.dataset build --out out/dataset_v1 --reject-frame 13-00-13-49_f000000
+
+<span class="cm"># ③ 落盘 + 七道闸</span>
+python3 -m livepipe.dataset build --out out/dataset_v1</pre>
+
+  <pre class="codeblock" style="margin-top:12px"><span class="cm"># 对称账本：逐条的假负 vs 整帧全或无的损失，两行各算各的</span>
+python3 - &lt;&lt;'PY'
+import pathlib
+from livepipe.tools.dataset.sources import scan_runs, units_of, frame_groups
+from livepipe.tools.dataset.common import DEFAULT_SPLIT_RULES, normalize_split_rules, frame_name
+sides = scan_runs(["out/风云T7_20260826_11", "out/风云T7_20260826_11_02", "out/征服8"],
+                  exclude=["风云T7_20260826_11_02/seg7"])
+units = units_of(frame_groups(sides), normalize_split_rules(DEFAULT_SPLIT_RULES))
+recs = [r for u in units for r in u.recs]
+lab = sum(1 for r in recs if r.row.get("badge_box"))
+unl = sum(1 for r in recs if r.row.get("badge_text") and not r.row.get("badge_box"))
+print(f"逐条假负：{unl} 个等级标 / 可见 {lab + unl} = {unl / (lab + unl):.1%}")
+bad = {frame_name(u.vk, u.frame) for u in units
+       if any(r.row.get("badge_text") and not r.row.get("badge_box") for r in u.recs)}
+tot = keep = 0
+for p in pathlib.Path("out/dataset_v1/labels").glob("*/*.txt"):
+    n = len(p.read_text().splitlines()); tot += n
+    keep += 0 if p.stem in bad else n
+print(f"整帧全或无：丢 {len(bad)} 帧，保留 {keep}/{tot} 框 = {keep / tot:.1%}")
+PY</pre>
+
+  <div class="stack" style="margin-top:18px">
+    <div class="note calm"><strong>A/B 已按这个口径跑完，结果见 §10。</strong>
+      同一个 test（两种口径完全一致：442 图 / 1,813 框），只变 train/val；同模型同超参同 seed
+      （yolo11n @ 640，100 epoch）；除整体 mAP50–95 外，单列<b>拥挤帧</b>（一帧 ≥2 条评论）的 mAP
+      和 <code>level_badge</code> 的 recall。原始数字与复现脚本在 <code>out/ab/</code>：
+      <code>run_ab.py</code>、<code>summarize.py</code>、<code>result_a.json</code>、<code>result_b.json</code>、
+      <code>result_subsets.json</code>、<code>compare.md</code>、<code>VERDICT.md</code>。</div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="kicker">10 · A/B 实测</div>
+    <div>
+      <h2>整帧没有赢：五组评测，整体 mAP 全部更低</h2>
+      <p>2026-10-29 · yolo11n @ 640 · 100 epoch · seed 0 · 两臂各取 <code>best.pt</code>。
+      A = 逐条（<code>out/dataset_v1</code>），B = 整帧全或无（<code>out/ab/B</code>）。
+      共用 345 帧 val 选模；被 B 丢弃的 174 帧单独评，避免用变简单的 val 高估整帧口径。</p>
+    </div>
+  </div>
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>评测面</th><th>帧 / 框</th><th>mAP50–95 A → B</th><th>Precision A → B</th><th>Recall A → B</th><th>level_badge R A → B</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>共用 val</b><span class="sub">两臂选模集，抖音</span></td>
+          <td class="tnum">345 / 1,739</td>
+          <td class="tnum bad">51.16 → 50.28<span class="sub">−0.88</span></td>
+          <td class="tnum good">58.81 → 64.06</td>
+          <td class="tnum bad">58.38 → 56.30</td>
+          <td class="tnum good">43.89 → 48.77</td>
+        </tr>
+        <tr>
+          <td><b>完整 val</b><span class="sub">含 B 丢掉的 174 帧</span></td>
+          <td class="tnum">519 / 2,623</td>
+          <td class="tnum bad">47.66 → 46.03<span class="sub">−1.63</span></td>
+          <td class="tnum good">55.58 → 60.95</td>
+          <td class="tnum bad">55.17 → 52.47</td>
+          <td class="tnum good">40.10 → 44.37</td>
+        </tr>
+        <tr>
+          <td><b>被 B 丢弃的 174 帧</b><span class="sub">缺框难例</span></td>
+          <td class="tnum">174 / 884</td>
+          <td class="tnum bad">39.59 → 36.74<span class="sub">−2.85</span></td>
+          <td class="tnum good">42.27 → 51.25</td>
+          <td class="tnum bad">48.52 → 41.38</td>
+          <td class="tnum bad">21.88 → 18.75<span class="sub">−3.13</span></td>
+        </tr>
+        <tr>
+          <td><b>拥挤帧</b><span class="sub">一帧 ≥2 条，微博</span></td>
+          <td class="tnum">48 / 498</td>
+          <td class="tnum bad">2.49 → 1.24<span class="sub">−1.25</span></td>
+          <td class="tnum bad">4.67 → 3.75</td>
+          <td class="tnum bad">46.72 → 37.29</td>
+          <td class="tnum">0 → 0</td>
+        </tr>
+        <tr>
+          <td><b>test</b><span class="sub">微博，跨平台</span></td>
+          <td class="tnum">442 / 1,813</td>
+          <td class="tnum bad">1.30 → 0.52<span class="sub">−0.78</span></td>
+          <td class="tnum bad">2.42 → 1.41</td>
+          <td class="tnum bad">47.59 → 40.15</td>
+          <td class="tnum">0 → 0</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="scroll-hint">← 横向滑动看全部</p>
+
+  <div class="stack" style="margin-top:18px">
+    <div class="note calm"><strong>判定：保持逐条。</strong>五组评测里，整帧口径的整体 mAP50–95 全部更低；拥挤帧的
+      <code>comment_row</code> recall 从 90.8% 掉到 59.6%，与 §07「整帧优先删拥挤帧」的推断一致。整帧唯一的稳定优势是
+      precision（+5.4pp）和易读帧的等级标 recall（+4.9pp）—— 代价是 train 少 33% 帧。</div>
+    <div class="note"><strong>预注册预测分两半。</strong>「拥挤帧掉得更多」成立；「<code>level_badge</code> 难例召回更差」
+      方向成立但证据弱：被丢弃的 174 帧上 21.9% → 18.8%，只有 64 个 badge 框；完整 val 的聚合 badge recall 反而
+      +4.3pp，因为 B 在保留的易读帧上更高。这正是 §07「验证集被悄悄变简单」的直接证据。</div>
+    <div class="note"><strong>结论强度。</strong>train/val 100% 抖音、test 100% 微博，两臂 test mAP50 只有 0.011–0.029，
+      主判据在 test 上没有区分力；colon 类两臂全 0（中位框 10×12 px，640 输入下约 4×5 px），五类均值被拉低；
+      单 seed、每臂一次，&lt;1pp 的差异不能当结论。要真正比泛化，需往 train 掺微博或另划抖音留出集。</div>
+  </div>
+</section>
+
+<footer>
+  <p class="mono">数据：out/dataset_v1（3 个 run 的 14 个 comments.jsonl，4,237 条记录 → 3,989 个复核单元 → 2,865 帧 / 14,202 框，
+  排除复算段 风云T7_20260826_11_02/seg7）。统计脚本按同一份 <code>index.jsonl</code> 与标签文件计算，2026-10-29；
+  A/B 实测（§10）同样在 2026-10-29 完成，原始数字见 <code>out/ab/</code>。</p>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,347 @@
+// ============================================================================
+// CTCC 职业联赛（鄂尔多斯站）2026-08-08 · 快手直播（手机 App 竖屏 590×1280）
+//
+// 素材 = 「11-2026-08-08抖音CTCC职业联赛（8.8）」快手/ 下的**三段**录屏
+// （同一场直播、时间**不重叠**）：
+//   seg1  `3：05-3：59.mp4`   54.6min
+//   seg2  `4：00-5：00.mp4`   60.3min
+//   seg3  `5：00-5：31.mp4`   33.1min
+//   三段一次配全（input.videos 显式数组 = 时间顺序），每段在 output.dir 下开一个子目录
+//   （seg1/seg2/seg3），逐段步各跑一遍、跨段步（qualify/collect）整批跑一次。
+//   管线本身串行循环（这台机器并行 OCR 会 OOM）。
+//
+// 行版式（快手 App，590×1280；与抖音/视频号都不同）：
+//   `[✦N 粉丝团等级] [粉丝团] [榜N 观众榜] 昵称：正文`
+//   · 药丸簇**内联**在行首：粉丝团等级（蓝菱形+数字）≈x30~110、粉丝团药丸 ≈x145~260、
+//     观众榜 `榜N`（粉）≈x30~90；**没有**固定的左侧徽章列 —— 没药丸的评论
+//     昵称直接从 x≈30~32 起，带药丸的昵称被顶到 x≈82~90。
+//     ⚠ 所以 x_text 不能按「徽章列右沿」理解：它只用来丢**纯药丸碎片**（无冒号、纯数字/
+//       `榜N` 的块），真评论（带冒号）无论 x1 多大都保留（见 _in_badge_gutter 的冒号闸）。
+//   · 系统行：`恭喜X成为在线观众榜前N` / `X 送出粉丝团灯牌`（命中内置通知短语）、
+//     `X 加入`（由本档案的 overlay_cards 补 `加入$`）。
+//   · 昵称**没有打码**（`王77555` / `禹心若向阳`），认人只用昵称。
+//
+// 这块素材量到的（2026-11-02，seg2 十帧，590×1280）：
+//   ✅ 行距 45.0（相邻评论行中心差中位 45；分布 44~47）
+//   ✅ 相位 3（首行中心距 rect 顶；逐帧估不准时兜底）
+//   ✅ 评论行 y 范围 604~1111；rect y1=545（直播画面底 ~540）· y2=1135
+//      （输入栏 `说点什么..` 实测 1159~1188）· x1=0 / x2=590（x2_from=window）
+//   ✅ x_text 81：纯药丸碎片（`榜7` x≈35~78、无冒号）落在它左边被丢；
+//      带冒号的评论（x1 从 30 起）不受影响
+//   ✅ 表情表：快手官方 207 个（来源 live.kuaishou.com 页面内嵌的 emojiPanel，
+//      `livepipe/kuaishou_emoji_table.py` 建表）；App 渲染高 30px / 行距 45 ⇒
+//      height_ratio=0.667；真表情 NCC 0.845~0.964、纯文字最高 0.80（阈值跟着表走）。
+//      ⚠ 现有三段 rows.jsonl 是在表情关着时抽的（emojis 为空）—— 要让已有产出带表情，
+//      必须移走各段 rows.jsonl 后重跑 `--only panels,parse`（仅 `--only parse` 复算不会补）。
+//   ⚠ 已知残留：药丸簇被 OCR 并进昵称的读法会污染用户名（如
+//      `10粉丝团榜3灰太狼70947` / `④桐门刘_6`）—— 快手的药丸**没有左侧徽章列**可丢，
+//      也没有 `榜N/粉丝团/团名` 的通用文本判据，现有 badge_alias 的见证规则只认
+//      数字等级串，覆盖不到它们。交付时留意名单里的这类名字；要彻底归一需要给
+//      `_badge_renames` 增加「快手药丸 token」的见证规则（得先在多段素材上量）。
+//
+// 跑法（OCR 要带 rapidocr 的解释器）：
+//   P=/home/puyu/anaconda3/envs/vlx/bin/python
+//   ① 抽行（慢；三段合计约 2.5h）：
+//        export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+//        $P -m livepipe run 08-08CTCC_快手.json --only panels,parse
+//        ⚠ 中断了直接重跑同一条命令：<段目录>/rows.jsonl 已在 ⇒ 自动零 OCR 复算/续跑。
+//   ② 筛 + 判合格 + 出图 + 拼交付树（**要 key**，只走环境变量）：
+//        NLP_API_KEY=sk-xxxx $P -m livepipe run 08-08CTCC_快手.json \
+//            --only filter,qualify,export,collect
+//   ③ 先看后交：产物在
+//        out/11-2026-08-08抖音CTCC职业联赛（8.8）/快手/all_users_正面_3张以上/
+//
+// 校验（不跑、安全）：
+//   python3 -m livepipe check 08-08CTCC_快手.json
+//   python3 -m livepipe run   08-08CTCC_快手.json --dry-run
+// ============================================================================
+{
+  "version": 1,
+  "name": "CTCC职业联赛 2026-08-08（鄂尔多斯站）· 快手手机 App · 竖屏",
+
+  // -------------------------------------------------------------------------
+  // 平台档案：面板文件里只填平台名。`kuaishou` 是**新档案**（以前只有导出层的平台名映射，
+  // 没有解析用的行网格）—— 数字全部在本素材上量过，见下。
+  // -------------------------------------------------------------------------
+  "platforms": {
+    "kuaishou": {
+      "label": "快手直播（手机 App 竖屏；行首药丸簇内联，无固定徽章列）",
+      // 昵称末尾被检测框切掉 1~2px / 整个末字漏读 ⇒ 同一人被拆成两个账号，
+      // 按「同一条评论的两种读法同现」归一（normalize_username_alias，见 CONFIG.md）。
+      "username_alias": true,
+      "emoji": "kuaishou",              // → emoji.tables 的 kuaishou 表（207 个官方表情）
+
+      // 行距（像素）—— **实测**（2026-11-02，seg2 十帧）：相邻评论行中心差中位 45
+      //   （分布 44~47）。
+      "row_pitch": 45.0,
+
+      // 首行中心距面板顶（裁剪内坐标）—— 实测相位落在 3 附近（638−545=93，93 mod 45≈3）。
+      "y_phase": 3,
+
+      // 正文列左沿（裁剪内）—— **实测**：无药丸的评论昵称从 x≈30~32 起、带药丸的昵称
+      //   被顶到 x≈82~90、纯药丸碎片 `榜N` 在 x≈35~78。取 **81**：只让无冒号的纯药丸
+      //   碎块落进「徽章列」被丢；带冒号的评论无论 x1 多大都保留。
+      "x_text": 81,
+
+      // ROI 左沿（标注图/交付裁图圈的那一圈）—— 惯用徽章列宽；快手药丸簇最左 ~30，
+      //   81−58 = 23 能把整簇圈进去。
+      "badge_span": 58,
+
+      // 裁切右沿：**取窗口右沿**（App 评论列表满宽、不随内容伸缩）。
+      "x2_from": "window",
+
+      // 折行续行：快手的续行**贴左沿**（x1≈30），与首行同左沿 ⇒ 形状判据需要这个开关
+      //   才能把「x1 < x_text 的无冒号块」当续行候选，再由间距闸（0.15~0.73 行距）定去留。
+      //   （自标定在本素材 180s 窗口里没凑够缩进样本，所以显式写死。）
+      "wrap_indent": true,
+
+      // 评论列表上的浮层卡 / 系统行（只作用于**没有冒号**的行）：
+      //   `恭喜X成为在线观众榜前N` / `X 送出粉丝团灯牌` 已被内置通知短语收走；
+      //   这里补本素材实测到的几类（2026-11-04，seg1）：
+      //   · 进房行「X 加入」（整行以「加入」收尾）· 「点亮了」· 「X 点亮粉丝团」；
+      //   · 送礼浮层卡：`抓住机会，和主播互动吧～` / `1快币208快币` / `立刻送出（1快币）`
+      //     / `x30`（数量）/ `人气票`（页签）/ `免费票次日6点清空`
+      //     （卡片盖住整个评论列表时，这些字会被当匿名评论，见 frames/00307.2）；
+      //   · 系统行右侧的按钮块：`送票助我上榜吧去助力` / `去助力` / `去点赞`
+      //     （`X人在点赞主播 去点赞`、`送票助我上榜单吧 去助力` 的按钮被单独 OCR 成一行）；
+      //   · 赞助商横幅/主页卡：`CHERY` / `CHERY。技术奇瑞...关注` / `CHERY奇瑞汽车技术...
+      //     关注`（都以 `CHERY` 起头；真评论带「昵称：」，本条只吃无冒号行）；
+      //   · 系统通知被 OCR 读坏、漏过内置「在线观众」短语的残句（`成为在线…前N`）。
+      "overlay_cards": "加入\\s*$|点亮了|点亮粉丝团|送票助我上榜吧|去助力\\s*$|去点赞\\s*$|抓住机会|快币|免费票次日|^人气票$|^[xX×]\\s*\\d+$|成为在线|^CHERY",
+
+      // 带冒号的系统行：浮层判据只认无冒号行，拦不住「昵称：正文」形状的 UI 通知。
+      //   `主播拍了拍我的头像：美呆了！` 被切成「昵称=主播拍了拍我的头像 / 正文=美呆了！」
+      //   ⇒ 整行跳过（skip_phrases 只认整行、忽略空白，正文里出现同样短语不受影响）。
+      "skip_phrases": ["主播拍了拍我的头像：美呆了！"],
+
+      // 冒号像素检测阈值（见 parsing/ocr/colon.py）：快手气泡是深底白字，
+      //   默认阈值本来就能工作；这里与同批配置保持同一口径（不影响暗底）。
+      "colon_bg_max_v": 255,
+      "colon_v_delta": 30,
+
+      // OCR 把冒号吃掉时，按像素位置补回文本。
+      "colon_text_fix": true
+    }
+  },
+
+  // 表情：快手官方表情表（207 个），来源 live.kuaishou.com 页面内嵌的 emojiPanel。
+  //   建表（一次，约 1MB 图）：
+  //     python3 livepipe/kuaishou_emoji_table.py --out out/kuaishou_emoji
+  //   表里带实测阈值（height_ratio=0.667：App 把表情渲染成 30px、行距 45；真表情
+  //   NCC 0.845~0.964、纯文字最高 0.80）。`emoji_tables` 步的 build.enabled=true，
+  //   跑 `--only emoji_tables` 也会自动建/补齐（图已存在则缓存命中，不重复下载）。
+  "emoji": {
+    "enabled": true,
+    "tables": {
+      "kuaishou": {
+        "path": "out/kuaishou_emoji/kuaishou-emoji.json",
+        "build": {"enabled": true, "mode": "web", "out": "out/kuaishou_emoji",
+                  "src": null, "no_download": false, "no_sheet": false}
+      }
+    }
+  },
+
+  "input": {
+    // 三段素材：**显式数组**（段顺序 = 时间顺序）。
+    "videos": [
+      "/run/media/puyu/A1B7-2982/A1_正式录屏及产出/11-2026-08-08抖音CTCC职业联赛（8.8）/快手/3：05-3：59.mp4",
+      "/run/media/puyu/A1B7-2982/A1_正式录屏及产出/11-2026-08-08抖音CTCC职业联赛（8.8）/快手/4：00-5：00.mp4",
+      "/run/media/puyu/A1B7-2982/A1_正式录屏及产出/11-2026-08-08抖音CTCC职业联赛（8.8）/快手/5：00-5：31.mp4"
+    ],
+    "segment_names": null,              // 段名（= 子目录名）；null ⇒ seg1、seg2、seg3
+    "video": null,                      // 单段写法（与 videos 互斥，本件用不到）              --video
+    "rows": null,                       // 单段复算用；多段不用写（<段目录>/rows.jsonl 在就自动复算）
+    "text": null,                       // 纯文本行文件；"-" 读 stdin                            --text
+    "start": 0.0,                       // 起始时间（秒）                                      --start
+    "duration": null,                   // 处理多长（秒）；null = 整段                          --duration
+    "interval": 2.0,                    // 固定间隔抽样用（本件用 adaptive，此项不生效）          --interval
+    "max_frames": null,                 // 最多抽几帧；null = 不限                              --max-frames
+    "resume": true,                     // 断点续跑：rows.jsonl 已在就接着它跑（已处理帧跳过）   --resume
+
+    // 抽帧策略：手机 App 是平滑滚动 ⇒ 长录屏用 adaptive（静止段几乎不拍、滚动段不漏条）。
+    "sample": {
+      "mode": "adaptive",               //   interval / backoff / adaptive                     --sample-mode
+      "stride": 2,                      //   每 N 个解码帧估一次位移（1 = 每帧都估）
+      "safety_rows": 5.0,               //   累计位移 ≥ 这么多行 ⇒ 强制拍（上限 5）
+      "settle_frames": 3,               //   动过之后静止这么多帧 ⇒ 拍一次
+      "eps_px": 1.0,                    //   位移小于它算「没动」
+      "entry_thr": 8.0,                 //   底部入口行变化多少像素算「新评论弹进来」
+      "max_gap_s": 5.0,                 //   最长多久必须拍一次（0 = 不限）
+      "min_interval": 0.2,              //   两次拍摄的最小间隔（秒）
+      "max_interval": 6.0,              //   两次拍摄的最大间隔（秒）
+      "min_score": 0.3                  //   位移估计的匹配分下限
+    }
+  },
+
+  // -------------------------------------------------------------------------
+  // 面板：**手写**（评论列表位置已在每段首帧量好，不需要再跑模型定位）。
+  // rect 是**原图像素**的评论区窗口：[x1, y1, x2, y2]
+  //   · y1=545：评论列表顶；其上是直播画面（视频底 ~540）。
+  //   · y2=1135：输入栏 `说点什么..` 实测 1159~1188，切在它之上。
+  //   · x1=0 / x2=590：列表满宽（x2_from=window 取窗口右沿）。
+  //   · 三段同一台设备、同一版 App（590×1280）⇒ 共用一套 rect。
+  //   · 改了 rect 直接重跑即可：manual 下配置是唯一来源（与面板文件不一致时按配置重写）。
+  // -------------------------------------------------------------------------
+  "panels": {
+    "mode": "manual",                   // manual=手写面板直接写进 file（交付走 manual）
+    "file": null,                       // null ⇒ 每段各一个 <段目录>/panels.json（多段）
+    "files": null,                      // 也可显式一份一段地列出面板文件路径（顺序 = 段顺序）
+    "overwrite": false,                 // manual：配置与面板文件不一致就按配置重写；locate：已存在就不动
+    "auto": {                           // 自动定位参数（mode=locate/auto/batch 时用；本件用不到）
+      "method": "hybrid",
+      "at": 900,
+      "frames": 5,
+      "span": null,
+      "split_x": null,                  //   ⚠ null = **不切分**（竖屏单直播间是一列评论）
+      "pad_x": 60,
+      "pad_top": 80,
+      "pad_y": 16,
+      "sub_width": 500,                 //   ⚠ 竖屏整帧裁切必须降下来，否则 4bit 模型 CUDA OOM
+      "model": "nvidia/LocateAnything-3B",
+      "quant": "4bit",
+      "device": "cuda",
+      "platforms": {                    //   只在 mode=auto/builtin/batch 时用
+        "left": "kuaishou",             //   不切分后唯一的窗口叫 left
+        "right": null
+      },
+      "frame_width": 590
+    },
+    // mode=manual：手写面板，**一段一项**（顺序与 input.videos 的段顺序一致）。
+    // **配置是唯一来源**：段目录里的 panels.json 只是它的落盘副本。
+    "manual": [
+      {                                //   seg1  `3：05-3：59.mp4`  590×1280
+        "comments": {"rect": [20, 660, 590, 1135], "platform": "kuaishou"}
+      },
+      {                                //   seg2  `4：00-5：00.mp4`  590×1280
+        "comments": {"rect": [20, 660, 590, 1135], "platform": "kuaishou"}
+      },
+      {                                //   seg3  `5：00-5：31.mp4`  590×1280
+        "comments": {"rect": [20, 660, 590, 1135], "platform": "kuaishou"}
+      }
+    ],
+    "batch": {                          // mode=batch：稳定性研究（挑固定矩形用；不动 file）
+      "count": 30,
+      "start": 0.0,
+      "span": 600.0,
+      "anchor": "panel"
+    }
+  },
+
+  "parse": {
+    "sep": " ",                         // 续行拼接用的分隔符                                      --sep
+    "max_username_len": 24,             // 冒号前超过这个长度就不当用户名                          --max-username-len
+    "merge_continuation": true,         // 是否把「无用户名的行」并进上一条评论                   取反 --no-merge
+    "adjacency": true,                  // 「续行必须相邻」守卫                                  取反 --no-adjacency
+    "dedup": true,                      // 按滚动对齐跨帧去重出唯一评论表                        取反 --no-dedup
+    // ⚠ 关掉自标定：快手评论之间夹着大量系统行（恭喜/送出灯牌/加入…），
+    //   `calibrate_panels` 按「评论头行」中心估行距，间隔正好翻倍（实测 45.0 -> 90.8，
+    //   置信度 0.67 仍过闸）⇒ 相邻两行被当续行、表情按 0.667×90.8≈60px 扫不到。
+    //   本素材行距已实测 45.0（phase 3、wrap_indent、overlay_cards 也都写死），关掉最稳。
+    "calibrate": false,                 // 面板几何自标定（行距/浮层右界/续行；相位逐帧估）      取反 --no-calibrate
+    "right_pad": 0,                     // ROI 右边界距面板右边的余量；0 = 贴面板边圈住框外表情    --right-pad
+    "emoji_workers": 1                  // 表情扫描线程数；1=串行（结果逐字节确定），4~8 更快
+  },
+
+  "output": {
+    // 多段时这里是**段的父目录**：实际各写 <dir>/seg1、seg2、seg3；
+    // 跨段产物落在这儿：merged_users.json（qualify）；交付树见 collect.out。
+    // 按平台分目录：同素材另有「抖音/」「视频号/」，各用各的 output.dir，段目录不会撞。
+    "dir": "out/11-2026-08-08抖音CTCC职业联赛（8.8）/快手",  // 输出根目录                    --out
+    "write": true,                      // 是否写盘（comments.jsonl + summary.json 成对）
+    "rows": true,                       // 另存 rows.jsonl（**可回喂复算**）
+    "panels": true,                     // mode=auto 时把定位结果存成 panels.json
+    // frames：**抽样帧**一张图 frames/<t>_roi.jpg（≈0.55MB/张），不是每条评论一张。
+    "frames": true,                     // 取反 --no-frames
+    "print": false                      // 除写盘外也把评论打到 stdout                            --print
+  },
+
+  // 评论 → 合格用户：用户名 ≥min_positive 条**正面**评论（正面由大模型判定，表情也发），
+  // 并排除用户名命中关键词的官方侧账号。**要花钱**；key **只走环境变量**（本项目铁律）。
+  //
+  // ⚠ 本件是**三段素材**，交付要求「该账号 ≥3 条正面」是**按三段合计**判的 ⇒
+  //   这里 `min_positive: 1`（只出全量用户表），合格与否交给 `qualify` 步按合计判。
+  "filter": {
+    "enabled": true,                    // 打开才会调模型；只想抽评论就先 --skip filter
+    "source": null,                     // 评论来源；null ⇒ <段目录>/comments.jsonl
+    "out": null,                        // 合格用户 JSONL；null ⇒ <段目录>/users.jsonl
+    "cache": null,                      // 判定缓存；null ⇒ 三段共用 <output.dir>/judgments.jsonl
+    "min_positive": 1,                  // 单段阈值（**合计口径见上面 ⚠**；qualify 一开就自动取 stage_min）
+    "exclude_keywords": [               // 用户名含任一即排除（不区分大小写）
+      // ⚠ 沿用**奇瑞那条线**的表（品牌 + 4S + 车型 + 高管姓名）；CTCC 官方号 / 车队 /
+      //   裁判 / 赞助商还没按本场补。填错的代价是把真观众挡在名单外 ⇒ 等名单出来再逐条加。
+      "奇瑞", "4s", "店", "qq3", "汽车",
+      "尹同跃", "张国忠", "鲍思语", "王津华", "王孝伟", "胡敬源", "尹祥领",
+      "王来春", "李晶", "商文江", "杨棉之", "叶盛基", "路风", "黎汝雄",
+      "李学用", "张贵兵", "代立宏", "章红玉", "高新华", "戚士龙", "王琅"
+    ],
+    "nlp": {
+      "api_key": null,                  // **留 null**：key 只走环境变量（本项目铁律）
+      "api_key_env": "NLP_API_KEY",     // ← 环境变量的**名字**（把 key 写到这行永远取不到）
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "deepseek-v4.1-flash",   // ⚠ 模型名会随平台改，写错就是 404（不是 key 的问题）
+      "batch_size": 20,
+      "concurrency": 4,
+      "timeout": 60.0,
+      "retries": 3,
+      "limit": null,                    // 最多调多少批（控成本）
+      "prompt": null                    // null ⇒ 用 user_filter.DEFAULT_PROMPT
+    }
+  },
+
+  // -------------------------------------------------------------------------
+  // 跨段的两步（顺序有依赖：filter（逐段）→ qualify（跨段）→ export（逐段）→ collect（拼树））
+  // -------------------------------------------------------------------------
+
+  // 跨段判合格（**全局步**）：把三段的 users.jsonl 按**账号合计**算正面条数，≥min_positive
+  // 的才算合格，再把合格用户**回写**成每段的 users_qualified.jsonl 交给 export。
+  "qualify": {
+    "enabled": true,                    // 单段素材开着也无害（退化成「按本段判」）
+    "min_positive": 3,                  // 交付阈值（**跨段合计**）—— 与 08-09CTCC 参考语料一致
+    "stage_min": 1                      // 各段 filter/export 用的阈值（先出全量，合格留给这一步判）
+  },
+
+  // 逐段出交付图（**逐段步**）：读该段 users_qualified.jsonl，按**原帧**画绿框，一人一个目录
+  // `<昵称>-<本段条数>`（跨段同名目录由 collect 并成一个）。
+  "export": {
+    "enabled": true,
+    "base": "frame",                    // frame=原帧（参考语料形态）/ annotated=标注图      --base
+    "labels": "正面",                   // 只出正面评论                                        --labels
+    "min_positive": null,               // null ⇒ qualify.stage_min（合格已在 qualify 判完）
+    "min_scope": "platform",            // 平台内各自够数；三段同一平台 ⇒ 等同于按合计         --min-scope
+    "users": null,                      // null ⇒ <段目录>/users_qualified.jsonl
+    "color": "0,255,0", "width": 3,     // 绿框（对齐参考语料）
+    "pad": 0, "pad_ratio": 0.25, "quality": 90,
+    "force": true                       // 重跑覆盖上一轮的导出目录
+  },
+
+  // 拼最终交付树（**全局步**）：把三段的导出目录按账号身份并成一个目录、图号 1..N
+  // **跨段连续**，后缀取**合计**条数，顺带写 正面账号.txt + manifest.json。
+  // out 显式写死：output.dir 已经带 `/快手`，再让 collect 自动拼 `<平台目录>` 会变成
+  // …/快手/快手/…。
+  "collect": {
+    "enabled": true,
+    "stage_min": null,                  // 各段导出目录名里的数字；null ⇒ qualify.stage_min
+    "platform_dir": null,               // 交付树里的平台目录名；null ⇒ 从各段导出目录自动认（快手）
+    "out": "out/11-2026-08-08抖音CTCC职业联赛（8.8）/快手/all_users_正面_3张以上",
+    "force": true                       // 目标非空时整棵重来（否则报错退出）
+  },
+
+  "draw": {                             // 独立描框步骤（draw_boxes.py）；核心解析已自带逐帧标注图，默认关
+    "enabled": true,
+    "source": null,
+    "at": 8.0,
+    "window": 5.0,
+    "out": null,
+    "width": 5,
+    "quality": 90,
+    "labels": true
+  },
+
+  "steps": {
+    // 顺序**不能乱**：filter（逐段）→ qualify（跨段判合格）→ export（逐段）→ collect（拼树）。
+    // 逐段步（panels/parse/filter/export/draw）三段各跑一遍；全局步（emoji_tables/qualify/collect）整批一次。
+    "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
+              "export", "collect", "draw"],
+    "skip": ["draw"]                    // 独立描框用不上（emoji_tables 已开：快手表情表已建）
+  }
+}

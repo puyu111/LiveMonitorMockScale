@@ -1,0 +1,345 @@
+// ============================================================================
+// 风云A9L + OTA升级直播（渠道）2026-09-05 · 抖音直播
+// （手机 App 竖屏 720×1568 / 720×1560）→ 结构化评论
+//
+// 素材 = 「/home/puyu/work/data/2026-09-05风云A9L+OTA升级直播（渠道）」抖音/ 下的
+// **三段**录屏（同一场直播、时间**不重叠**，账号「风云新能源」）：
+//   seg1  `16：05-17：00.mp4`  55.5min  720×1568  25fps
+//   seg2  `17：01-17：20.mp4`  20.1min  720×1568  25fps
+//   seg3  `17：21-17：45.mp4`  23.5min  720×1560  41fps（与 seg1/2 不是同一次转录）
+//   三段一次配全（input.videos 显式数组 = 时间顺序），每段在 output.dir 下开一个
+//   子目录（seg1/seg2/seg3），逐段步各跑一遍、跨段步（qualify/collect）整批跑一次。
+//   管线本身串行循环（这台机器并行 OCR 会 OOM）。
+//
+// 行版式：`[◆N 粉丝团药丸] 昵称：正文`（与风云A9L 2026-08-07 / 10-31 抖音同族：
+//   药丸在昵称左边、独占徽章列）。本场昵称**打码**（`余***` / `健***` / `未***`）⇒
+//   account_key=nickname_level：整场按 (昵称, 等级标) 认人（等级标一致才算同一个人；
+//   读不到等级自成一档，不赌）。不写成 nickname_level_if_masked —— 这份素材里看起来
+//   「不打码」的 `大大` / `大大大` 其实是星号被 OCR 读成字的残渣（`大***` 的另一读法，
+//   等级 11 / 17 分明是不同的人），放开它们只按昵称认人反而会把陌生人并成一个账号。
+//   直播间右侧有**商品讲解卡**（`·讲解中` / `风云T11|风云A9L` / `双旗舰同进化` /
+//   `立即预约`），卡块左沿实测 **477** ⇒ x_ignore_from=460 把卡整块丢掉。
+//   开播头几分钟有整屏的「直播或礼物消费…」系统提示（无冒号）⇒ 按短语兜底。
+//
+// 这块素材量到的（2026-11-07，22 帧，720×1568 / 1560）：
+//   ✅ 行距 **53.5**（评论首行中心差 65 个样本：中位 53.5、四分位 52.75/54.0、
+//      stdev 1.28；三段一致 —— 与风云A9L 08-07 的 53.5 对得上）
+//   ✅ 相位 31（首行中心距 rect 顶，seg1/2 样本 30.5~33；逐帧还会重估，这个只兜底）
+//   ✅ x_text **96**（徽章列右沿）：药丸数字块 x∈[47,109]（`19` x=62~93、`22` x=52~109）、
+//      真昵称块 x1∈[95,104]、折行续行 x1≈37（`死的` x=37~93）⇒ 96 与 08-07 A9L 同一口径
+//   ✅ rect：视频区/评论区分界实测 **y=720/721**（seg1/2）、**716/717**（seg3，1560 高）；
+//      输入栏上沿 1374（seg1/2）/ 1396（seg3）；三段 x 方向同一台设备 ⇒ [0,·,620,·]
+//   ✅ 评论文字右沿最大 533（seg3 900s）⇒ rect x2=620 留余量；再往右是商品卡区间
+//   ✅ 浮层左界 460：卡块左沿 477（`·讲解中` 479）· 评论正文块 x1 都 <200 ⇒ 空带取 460
+//   ✅ 表情用抖音那套表（out/douyin_emoji/douyin-emoji.json，已建好）
+//   ⚠ 折行续行实测 0.76 行距（seg3 `死的`：40.5/53.5）⇒ wrap_gap_ratio 写 **0.85**
+//     （默认 0.73 会把它挡在门外；独立评论/通知行实测 0.92~1.06）
+//   ⚠ 开局提示卡/商品卡/通知碎片都放 overlay_cards（只作用于**没有冒号**的行）
+//
+// 跑法（OCR 要带 rapidocr 的解释器）：
+//   P=/home/puyu/anaconda3/envs/vlx/bin/python
+//   ① 抽行（慢；三段合计约 1.66h 录屏）：
+//        export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+//        $P -m livepipe run 09-05风云A9L渠道_抖音.json --only panels,parse
+//        ⚠ 中断了直接重跑同一条命令：<段目录>/rows.jsonl 已在 ⇒ 自动零 OCR 复算/续跑。
+//   ② 筛 + 判合格 + 出图 + 拼交付树（**要 key**，只走环境变量）：
+//        NLP_API_KEY=sk-xxxx $P -m livepipe run 09-05风云A9L渠道_抖音.json \
+//            --only filter,qualify,export,collect
+//   ③ 先看后交：产物在
+//        out/2026-09-05风云A9L+OTA升级直播（渠道）/抖音/all_users_正面_3张以上/
+//
+// 校验（不跑、安全）：
+//   python3 -m livepipe check 09-05风云A9L渠道_抖音.json
+//   python3 -m livepipe run   09-05风云A9L渠道_抖音.json --dry-run
+// ============================================================================
+{
+  "version": 1,
+  "name": "风云A9L+OTA升级直播（渠道）2026-09-05 · 抖音手机 App · 竖屏",
+
+  // -------------------------------------------------------------------------
+  // 平台档案：面板文件里只填平台名，行距 / 表情表 / 裁切策略 / 药丸闸都从这里取。
+  // 与风云A9L 08-07 / 10-31 抖音的 douyin_app 同一版式；本件的数字按本素材复核。
+  // -------------------------------------------------------------------------
+  "platforms": {
+    "douyin_app": {
+      "label": "抖音直播（手机 App 竖屏；行首 ◆N 粉丝团药丸在昵称左边）",
+      "emoji": "douyin",                // → emoji.tables 的 douyin 表（内置，表已建好）
+
+      // 交付认人口径（2026-11-08 用户定）：本场昵称整场打码 ⇒ **一律**按
+      //   (昵称, 等级标) 认人 —— 可见部分（星号前第一个字）逐字相同 + 等级标一致
+      //   才算同一个人；读不到等级自成一档，不赌。见 CONFIG.md 的 `account_key` 小节。
+      "account_key": "nickname_level",
+
+
+      // 行距（像素）—— **实测**（2026-11-07，22 帧）：相邻评论首行中心差
+      //   65 个样本、中位 53.5（四分位 52.75/54.0、stdev 1.28），三段一致。
+      "row_pitch": 53.5,
+
+      // 首行中心距面板顶（裁剪内坐标）—— 实测 seg1/2 落在 30.5~33；逐帧估不准时兜底。
+      "y_phase": 31,
+
+      // 正文列左沿 = 徽章列右沿（**裁剪内坐标**；rect x1=0 ⇒ 原图坐标）—— **实测**：
+      //   药丸数字块 x∈[47,109] · 真昵称 x1∈[95,104] · 折行续行 x1≈37。
+      //   取 **96**：药丸碎片整块落在左边被丢；续行 37 < 「贴左沿」门槛 96−58+8=46，
+      //   走整行正文那一支（不依赖 wrap_indent 自标定）。
+      "x_text": 96,
+
+      // ROI 左沿（标注图/交付裁图圈的那一圈）—— 徽章列宽：药丸墨迹左沿 ~47，
+      //   96−74 = 22 ⇒ 整颗药丸都进框。
+      "badge_span": 74,
+
+      // 裁切右沿：**按内容**。评论正文最长读到 533，rect x2=620 留余量；
+      //   再往右是商品卡区间（卡块由 x_ignore_from 丢，不进正文）。
+      "x2_from": "content",
+
+      // 行首**药丸数字被并进正文** ⇒ 同一人被读成好几个账号，按几何见证归一。
+      "badge_alias": true,
+
+      // 昵称**末尾**被检测框切掉 1~2px（或整个末字漏读）⇒ 同一人被拆成两个账号，
+      //   按「同一条评论的两种读法同现」归一（normalize_username_alias）。
+      "username_alias": true,
+
+      // 等级药丸与昵称被 OCR 并成一块时，把昵称拼回用户名。
+      "badge_name_recover": true,
+
+      // 折行续行间距比上限 —— 实测续行在首行下方 40.5px = **0.76 行距**。
+      //   取 0.85（仍远小于 1.0 ⇒ 占满一个行距的通知行照旧不并）。
+      //   ⚠ 默认 0.73 会把 0.76 的续行挡在门外（`死的` 这类残句会散成匿名行）。
+      "wrap_gap_ratio": 0.85,
+
+      // 直播间浮层的左界（裁剪内 x）—— **实测**写死：评论正文块 x1 都 <200、
+      //   商品讲解卡文字块最小 477（`·讲解中` 479 / `立即预约` 533）⇒ 空带 [200, 477)
+      //   取 **460**。卡只在部分时段出现，所以不交给自标定。
+      "x_ignore_from": 460,
+
+      // 评论列表上的浮层卡 / 提示卡（只作用于**没有冒号**的行）：
+      //   · 开播提示：`直播或礼物消费…` 整屏通知（首段 t≈0~5min）；
+      //   · 商品讲解卡（卡块大多已由 x_ignore_from 丢，这里按短语兜底）；
+      //   · 主题卡 / 关注通知 / 主播通知的碎片。
+      "overlay_cards": "本直播间已接入|三方管理工具|讲解中|风云T11|双旗舰同进化|立即预约|双车智能辅助驾驶|升级技术全解|直播或礼物消费|严禁出现违法|理性消费|谨防网络诈骗|实际下载应用以|吸烟酗酒|低俗色情|人身财产损失|严禁未成年人|诱导打赏|关注了主|赞了直播|加入了直播|^CHERY$",
+
+      // 冒号像素检测阈值（见 parsing/ocr/colon.py）：抖音气泡半透明、底偏亮，
+      //   默认 bg_max_v=110 会整类短路 ⇒ 放开背景亮度、把亮度差降到 30。
+      "colon_bg_max_v": 255,
+      "colon_v_delta": 30,
+
+      // OCR 把冒号吃掉时，按像素位置补回文本。
+      "colon_text_fix": true,
+
+      // 长表情评论折成多行：第二行没有 OCR 文字、落在两条已检出行之间
+      //   ⇒ 抽行时在空档里补扫（emoji_gap_sweep），parse 时把纯表情续行并进上一条
+      //   （merge_emoji_continuation）。两个都开才完整。
+      "merge_emoji_continuation": true,
+      "emoji_gap_sweep": true
+    }
+  },
+
+  // 表情表用内置的 `douyin`（out/douyin_emoji/douyin-emoji.json）
+  // ⇒ 这里一个字段都不用写：emoji.tables 的默认值就是它，emoji.enabled 默认 true。
+
+  "input": {
+    // 三段素材：**显式数组**（段顺序 = 时间顺序）。
+    "videos": [
+      "/home/puyu/work/data/2026-09-05风云A9L+OTA升级直播（渠道）/抖音/风云A9L+OTA升级直播丨抖音丨风云新能源丨16：03-17：44/16：05-17：00.mp4",
+      "/home/puyu/work/data/2026-09-05风云A9L+OTA升级直播（渠道）/抖音/风云A9L+OTA升级直播丨抖音丨风云新能源丨16：03-17：44/17：01-17：20.mp4",
+      "/home/puyu/work/data/2026-09-05风云A9L+OTA升级直播（渠道）/抖音/风云A9L+OTA升级直播丨抖音丨风云新能源丨16：03-17：44/17：21-17：45.mp4"
+    ],
+    "segment_names": null,              // 段名（= 子目录名）；null ⇒ seg1、seg2、seg3
+    "video": null,                      // 单段写法（与 videos 互斥，本件用不到）              --video
+    "rows": null,                       // 单段复算用；多段不用写（<段目录>/rows.jsonl 在就自动复算）
+    "text": null,                       // 纯文本行文件；"-" 读 stdin                            --text
+    "start": 0.0,                       // 起始时间（秒）                                      --start
+    "duration": null,                   // 处理多长（秒）；null = 整段                          --duration
+    "interval": 2.0,                    // 固定间隔抽样用（本件用 adaptive，此项不生效）          --interval
+    "max_frames": null,                 // 最多抽几帧；null = 不限                              --max-frames
+    "resume": true,                     // 断点续跑：rows.jsonl 已在就接着它跑（已处理帧跳过）   --resume
+
+    // 抽帧策略：手机 App 是平滑滚动 ⇒ 长录屏用 adaptive（静止段几乎不拍、滚动段不漏条）。
+    "sample": {
+      "mode": "adaptive",               //   interval / backoff / adaptive                     --sample-mode
+      "stride": 2,                      //   每 N 个解码帧估一次位移（1 = 每帧都估）
+      "safety_rows": 5.0,               //   累计位移 ≥ 这么多行 ⇒ 强制拍（上限 5）
+      "settle_frames": 3,               //   动过之后静止这么多帧 ⇒ 拍一次
+      "eps_px": 1.0,                    //   位移小于它算「没动」
+      "entry_thr": 8.0,                 //   底部入口行变化多少像素算「新评论弹进来」
+      "max_gap_s": 5.0,                 //   最长多久必须拍一次（0 = 不限）
+      "min_interval": 0.2,              //   两次拍摄的最小间隔（秒）
+      "max_interval": 6.0,              //   两次拍摄的最大间隔（秒）
+      "min_score": 0.3                  //   位移估计的匹配分下限
+    }
+  },
+
+  // -------------------------------------------------------------------------
+  // 面板：**手写**（评论列表位置已在每段首帧量好，不需要再跑模型定位）。
+  // rect 是**原图像素**的评论区窗口：[x1, y1, x2, y2]
+  //   · y1：视频区/评论区分界实测 720→721（seg1/2）、716→717（seg3），各留 8px；
+  //   · y2：输入栏上沿实测 1374（seg1/2）、1396（seg3），切在它之上；
+  //   · x1=0 / x2=620：列表满宽；正文右沿最长 533，620 留余量。
+  //   · 改了 rect 直接重跑即可：manual 下配置是唯一来源。
+  // -------------------------------------------------------------------------
+  "panels": {
+    "mode": "manual",                   // manual=手写面板直接写进 file（交付走 manual）
+    "file": null,                       // null ⇒ 每段各一个 <段目录>/panels.json（多段）
+    "files": null,                      // 也可显式一份一段地列出面板文件路径（顺序 = 段顺序）
+    "overwrite": false,                 // manual：配置与面板文件不一致就按配置重写
+    "auto": {                           // 自动定位参数（mode=locate/auto/batch 时用；本件用不到）
+      "method": "hybrid",
+      "at": 900,
+      "frames": 5,
+      "span": null,
+      "split_x": null,                  //   ⚠ null = **不切分**（竖屏单直播间是一列评论）
+      "pad_x": 60,
+      "pad_top": 80,
+      "pad_y": 16,
+      "sub_width": 500,                 //   ⚠ 竖屏整帧裁切必须降下来，否则 4bit 模型 CUDA OOM
+      "model": "nvidia/LocateAnything-3B",
+      "quant": "4bit",
+      "device": "cuda",
+      "platforms": {                    //   只在 mode=auto/builtin/batch 时用
+        "left": "douyin_app",           //   不切分后唯一的窗口叫 left
+        "right": null
+      },
+      "frame_width": 720
+    },
+    // mode=manual：手写面板，**一段一项**（顺序与 input.videos 的段顺序一致）。
+    "manual": [
+      {                                //   seg1  `16：05-17：00.mp4`  720×1568
+        "comments": {"rect": [0, 840, 620, 1372], "platform": "douyin_app"}
+      },
+      {                                //   seg2  `17：01-17：20.mp4`  720×1568
+        "comments": {"rect": [0, 840, 620, 1372], "platform": "douyin_app"}
+      },
+      {                                //   seg3  `17：21-17：45.mp4`  720×1560
+        "comments": {"rect": [0, 840, 620, 1394], "platform": "douyin_app"}
+      }
+    ],
+    "batch": {                          // mode=batch：稳定性研究（挑固定矩形用；不动 file）
+      "count": 30,
+      "start": 0.0,
+      "span": 600.0,
+      "anchor": "panel"
+    }
+  },
+
+  "parse": {
+    "sep": " ",                         // 续行拼接用的分隔符                                      --sep
+    "max_username_len": 24,             // 冒号前超过这个长度就不当用户名                          --max-username-len
+    "merge_continuation": true,         // 是否把「无用户名的行」并进上一条评论                   取反 --no-merge
+    "adjacency": true,                  // 「续行必须相邻」守卫                                  取反 --no-adjacency
+    "dedup": true,                      // 按滚动对齐跨帧去重出唯一评论表                        取反 --no-dedup
+    // 等级标**二次读数**：整屏 det+rec 把药丸读丢了时（`◆4 咕***` 实测漏读），按每行
+    //   正文框把药丸带裁出来、只跑识别、跨帧投票补回。交付按 (昵称, 等级标) 认人，漏读
+    //   一条就多一个 `(昵称, "")` 假账号（`咕___-7` 与 `咕___◆4-44` 被拆开）。
+    //   **不写这个键 = 与认人口径绑定**：本平台的 account_key=nickname_level ⇒ 自动开；
+    //   只看昵称（account_key=username）的配置自动关。要强制覆盖才显式写 true/false。
+    //   只补不改；要视频在原位，从 rows.jsonl 复算时也要几十秒/段。
+    // "badge_reread": true,            // 等级标二次读数                                         --badge-reread
+    // 关掉自标定：行距/相位/浮层界都已实测写死；自标定只在开头采 4 帧，
+    //   开场系统提示卡会把样本带偏（与 10-31 抖音 / A9L 08-07 同口径）。
+    "calibrate": false,                 // 面板几何自标定（行距/浮层右界/续行；相位逐帧估）      取反 --no-calibrate
+    "right_pad": 0,                     // ROI 右边界距面板右边的余量；0 = 贴面板边圈住框外表情    --right-pad
+    "emoji_workers": 8                  // 表情扫描线程数；只影响速度、不改变结果
+  },
+
+  "output": {
+    // 多段时这里是**段的父目录**：实际各写 <dir>/seg1、seg2、seg3；
+    // 跨段产物落在这儿：merged_users.json（qualify）；交付树见 collect.out。
+    "dir": "out/2026-09-05风云A9L+OTA升级直播（渠道）/抖音",
+    "write": true,                      // 是否写盘（comments.jsonl + summary.json 成对）
+    "rows": true,                       // 另存 rows.jsonl（**可回喂复算**）
+    "panels": true,                     // mode=auto 时把定位结果存成 panels.json
+    // frames：**抽样帧**一张图 frames/<t>_roi.jpg（≈0.55MB/张），不是每条评论一张。
+    "frames": true,                     // 取反 --no-frames
+    "print": false                      // 除写盘外也把评论打到 stdout                            --print
+  },
+
+  // 评论 → 合格用户：用户名 ≥min_positive 条**正面**评论（正面由大模型判定，表情也发），
+  // 并排除用户名命中关键词的官方侧账号。**要花钱**；key **只走环境变量**（本项目铁律）。
+  //
+  // ⚠ 本件是**三段素材**，交付要求「该账号 ≥3 条正面」是**按三段合计**判的 ⇒
+  //   这里 `min_positive: 1`（只出全量用户表），合格与否交给 `qualify` 步按合计判。
+  "filter": {
+    "enabled": true,                    // 打开才会调模型；只想抽评论就先 --skip filter
+    "source": null,                     // 评论来源；null ⇒ <段目录>/comments.jsonl
+    "out": null,                        // 合格用户 JSONL；null ⇒ <段目录>/users.jsonl
+    "cache": null,                      // 判定缓存；null ⇒ 三段共用 <output.dir>/judgments.jsonl
+    "min_positive": 1,                  // 单段阈值（**合计口径见上面 ⚠**；qualify 一开就自动取 stage_min）
+    "exclude_keywords": [               // 用户名含任一即排除（不区分大小写）
+      // ⚠ 沿用**奇瑞那条线**的表（品牌 + 4S + 车型 + 高管姓名）；本场官方号 / 主播 /
+      //   试驾员还没按本场补。填错的代价是把真观众挡在名单外 ⇒ 等名单出来再逐条加。
+      "奇瑞", "4s", "店", "qq3", "汽车",
+      "尹同跃", "张国忠", "鲍思语", "王津华", "王孝伟", "胡敬源", "尹祥领",
+      "王来春", "李晶", "商文江", "杨棉之", "叶盛基", "路风", "黎汝雄",
+      "李学用", "张贵兵", "代立宏", "章红玉", "高新华", "戚士龙", "王琅"
+    ],
+    "nlp": {
+      "api_key": null,                  // **留 null**：key 只走环境变量（本项目铁律）
+      "api_key_env": "NLP_API_KEY",     // ← 环境变量的**名字**（把 key 写到这行永远取不到）
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "deepseek-v4.1-flash",   // ⚠ 模型名会随平台改，写错就是 404（不是 key 的问题）
+      "batch_size": 20,
+      "concurrency": 4,
+      "timeout": 60.0,
+      "retries": 3,
+      "limit": null,                    // 最多调多少批（控成本）
+      "prompt": null                    // null ⇒ 用 user_filter.DEFAULT_PROMPT
+    }
+  },
+
+  // -------------------------------------------------------------------------
+  // 跨段的两步（顺序有依赖：filter（逐段）→ qualify（跨段）→ export（逐段）→ collect（拼树））
+  // -------------------------------------------------------------------------
+
+  // 跨段判合格（**全局步**）：把三段的 users.jsonl 按**账号合计**算正面条数，≥min_positive
+  // 的才算合格，再把合格用户**回写**成每段的 users_qualified.jsonl 交给 export。
+  "qualify": {
+    "enabled": true,                    // 单段素材开着也无害（退化成「按本段判」）
+    "min_positive": 3,                  // 交付阈值（**跨段合计**）—— 与 08-09CTCC 参考语料一致
+    "stage_min": 1                      // 各段 filter/export 用的阈值（先出全量，合格留给这一步判）
+  },
+
+  // 逐段出交付图（**逐段步**）：读该段 users_qualified.jsonl，按**原帧**画绿框，一人一个目录
+  // `<昵称>-<本段条数>`（跨段同名目录由 collect 并成一个）。
+  "export": {
+    "enabled": true,
+    "base": "frame",                    // frame=原帧（参考语料形态）/ annotated=标注图      --base
+    "labels": "正面",                   // 只出正面评论                                        --labels
+    "min_positive": null,               // null ⇒ qualify.stage_min（合格已在 qualify 判完）
+    "min_scope": "platform",            // 平台内各自够数；三段同一平台 ⇒ 等同于按合计         --min-scope
+    "users": null,                      // null ⇒ <段目录>/users_qualified.jsonl
+    "color": "0,255,0", "width": 3,     // 绿框（对齐参考语料）
+    "pad": 0, "pad_ratio": 0.25, "quality": 90,
+    "force": true                       // 重跑覆盖上一轮的导出目录
+  },
+
+  // 拼最终交付树（**全局步**）：把三段的导出目录按账号身份并成一个目录、图号 1..N
+  // **跨段连续**，后缀取**合计**条数，顺带写 正面账号.txt + manifest.json。
+  // out 显式写死：output.dir 已经带 `/抖音`，再让 collect 自动拼 `<平台目录>` 会变成
+  // …/抖音/抖音/…。
+  "collect": {
+    "enabled": true,
+    "stage_min": null,                  // 各段导出目录名里的数字；null ⇒ qualify.stage_min
+    "platform_dir": null,               // 交付树里的平台目录名；null ⇒ 从各段导出目录自动认（抖音）
+    "out": "out/2026-09-05风云A9L+OTA升级直播（渠道）/抖音/all_users_正面_3张以上",
+    "force": true                       // 目标非空时整棵重来（否则报错退出）
+  },
+
+  "draw": {                             // 独立描框步骤（draw_boxes.py）；核心解析已自带逐帧标注图，默认关
+    "enabled": true,
+    "source": null,
+    "at": 8.0,
+    "window": 5.0,
+    "out": null,
+    "width": 5,
+    "quality": 90,
+    "labels": true
+  },
+
+  "steps": {
+    // 顺序**不能乱**：filter（逐段）→ qualify（跨段判合格）→ export（逐段）→ collect（拼树）。
+    // 逐段步（panels/parse/filter/export/draw）三段各跑一遍；全局步（emoji_tables/qualify/collect）整批一次。
+    "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
+              "export", "collect", "draw"],
+    "skip": ["emoji_tables", "draw"]    // 表情表已建好（out/douyin_emoji/）；独立描框用不上
+  }
+}

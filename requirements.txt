@@ -1,0 +1,50 @@
+# LiveMonitorMockScale —— 全仓第三方依赖（livepipe + mock_scale）
+#
+# 装法：
+#   python3 -m venv .venv
+#   .venv/bin/pip install -U pip
+#   .venv/bin/pip install -r requirements.txt
+# 国内网慢就加镜像：
+#   .venv/bin/pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+#
+# 版本口径：下限 = 代码里实际用到的 API；本机实测环境是 conda env `vlx`
+# （Python 3.11 / torch 2.10 / transformers 4.57 / rapidocr_onnxruntime 1.4.4）。
+# 需要 Python >= 3.10（代码用了 `str | None` 这类新语法）。
+# 纯函数自检（`python -m livepipe check`）和配置生成不读这个文件，零依赖也能跑。
+
+# ---- 基础：图像 / 数值 / 表格 ----
+# openpyxl 只有撞库读 `.xlsx` 名单、写 `撞库结果.xlsx` 时才 import；
+# 名单是 csv/txt 的话可以不装。
+numpy>=1.24,<3
+# 上界 4.x：本仓库只在 4.10/4.11 上验过，OpenCV 5 的 API/行为没测过，别被 pip 装上去。
+opencv-python-headless>=4.8,<5
+Pillow>=10.0
+openpyxl>=3.1
+
+# ---- OCR：抽行（`parse` 步骤） ----
+# rapidocr_onnxruntime 会连带装 onnxruntime / pyclipper / Shapely / PyYAML / tqdm。
+#
+# ⚠️ 它的依赖里写死了**非 headless** 的 opencv-python。本工程不弹窗，装完若
+#    `import cv2` 报 `libGL.so.1: cannot open shared object file`，补一条重装：
+#      .venv/bin/pip install --force-reinstall --no-deps opencv-python-headless
+rapidocr_onnxruntime>=1.4,<2
+
+# ---- 面板定位模型（可选） ----
+# 只有 `panels` 步骤走「模型定位」才 import（livepipe/parsing/panels/model.py）。
+# 面板位置能靠 rect / OCR 兜底时这 5 个包都可以不装；它们体积最大（torch 装完约 2.5GB）。
+# 没有 NVIDIA GPU 想省体积，改用 CPU 轮子：
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch>=2.1
+# 上界 5.x：模型代码按 transformers 4 的 AutoModel / _attn_implementation 写的，
+# 本机实测 4.57；5.x 的行为没验过。
+transformers>=4.40,<5
+accelerate>=0.30
+safetensors>=0.4
+# 4bit / 8bit 量化加载才用；无 GPU 或跑 bf16 全量可删。
+bitsandbytes>=0.43 ; platform_system == "Linux"
+
+# ---- 不在 pip 里的两样 ----
+# * `locateanything_worker.py`：面板模型的加载器，仓库里没有，需从内部工程拷到仓库根目录
+#   （本机在 /home/puyu/github/eagle/Embodied/）。只走 OCR 定位时不需要。
+# * `ffmpeg`：只用于人工修素材（裁直播结束后的推荐页、去 rotation 显示矩阵），
+#   管线本身用 OpenCV 解码，不调用它。系统包：`sudo apt install ffmpeg`。

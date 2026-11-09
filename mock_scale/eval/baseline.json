@@ -1,0 +1,153 @@
+{
+ "schema_version": 1,
+ "label": "A-baseline · 73 张样本（机制基线）",
+ "scope": "sample-73",
+ "created": "2026-10-27T21:23:12",
+ "runs": [
+  "A",
+  "A2"
+ ],
+ "repeats": 12,
+ "fingerprint": {
+  "corpus_sha256": "a941ea3f57d3af21e381f667cf5d4aaf1b992e58d8a2e72f9faec514fd9b5117",
+  "corpus_files": 74,
+  "corpus_source": "/home/puyu/github/LiveMonitorMockScale/out/风云T7_20260826_11/抖音/all_users_正面_2张以上",
+  "code": "file:36e6b08d890e0142",
+  "workers": 8,
+  "seed": 20261010,
+  "arm": "A-baseline"
+ },
+ "wall_s": {
+  "plan": {
+   "n": 12,
+   "median": 4.532,
+   "p95": 4.553,
+   "min": 4.312,
+   "max": 4.555
+  },
+  "run": {
+   "n": 12,
+   "median": 4.066,
+   "p95": 4.09,
+   "min": 4.025,
+   "max": 4.131
+  },
+  "total": {
+   "n": 12,
+   "median": 8.599,
+   "p95": 8.626,
+   "min": 8.337,
+   "max": 8.658,
+   "cv_pct": 3.73
+  }
+ },
+ "noise": {
+  "cv_pct": 3.73,
+  "band_pct": 7.47,
+  "rule": "Δ > 2×CV 才算收益；带内写 no_difference",
+  "method": "CV = (max-min)/median，同臂多遍"
+ },
+ "counts": {
+  "measure": {
+   "n": 12,
+   "median": 73.0,
+   "p95": 73.0,
+   "min": 73.0,
+   "max": 73.0
+  },
+  "badge_calls": {
+   "n": 12,
+   "median": 57.0,
+   "p95": 57.0,
+   "min": 57.0,
+   "max": 57.0
+  },
+  "badge_found": {
+   "n": 12,
+   "median": 45.0,
+   "p95": 45.0,
+   "min": 45.0,
+   "max": 45.0
+  },
+  "jobs": {
+   "n": 12,
+   "median": 53.0,
+   "p95": 53.0,
+   "min": 53.0,
+   "max": 53.0
+  },
+  "ok": {
+   "n": 12,
+   "median": 53.0,
+   "p95": 53.0,
+   "min": 53.0,
+   "max": 53.0
+  },
+  "n_out": {
+   "n": 12,
+   "median": 53.0,
+   "p95": 53.0,
+   "min": 53.0,
+   "max": 53.0
+  },
+  "need_targets": {
+   "n": 12,
+   "median": 19.0,
+   "p95": 19.0,
+   "min": 19.0,
+   "max": 19.0
+  },
+  "blank_targets": {
+   "n": 12,
+   "median": 0.0,
+   "p95": 0.0,
+   "min": 0.0,
+   "max": 0.0
+  },
+  "run_counters": {
+   "cache_hit": 0.0,
+   "cache_miss": 0.0,
+   "badge_calls": 0.0,
+   "scan_px": 0.0,
+   "resume_reused": 0.0
+  }
+ },
+ "plan_timings_ms": {
+  "decode": {
+   "p50": 19.113,
+   "p95": 30.784
+  },
+  "locate": {
+   "p50": 11.744,
+   "p95": 18.745
+  },
+  "badge": {
+   "p50": 0.754,
+   "p95": 1.304
+  }
+ },
+ "run_timings_agg_s": {
+  "sprite": 1.26,
+  "render": 14.812,
+  "badge": 0.003,
+  "check": 9.483,
+  "save": 4.258
+ },
+ "definitions": {
+  "plan_timings_ms": "逐图该段耗时（ms），先按遍算 p50/p95，再跨遍取中位数",
+  "run_timings_agg_s": "全部 job 的该段耗时之和（CPU 秒）；除以 workers ≈ 墙钟"
+ },
+ "quality": {
+  "blank_rate": 0.0,
+  "level_consistent": null
+ },
+ "outputs": {
+  "count": 53,
+  "sha256": "e5febcdf3a74fbc17bcc8376bd516d29d45494007edfbdd32e4154253944ed1d"
+ },
+ "notes": [
+  "语料 = out/风云T7_20260826_11/抖音/all_users_正面_2张以上（73 张 / 27 户 / 74 文件）；全量 1,478 张语料本机缺失 ⇒ 本基线只用于机制验证与 bench 自检，不能当生产噪声带。",
+  "A / A2 同配置（placebo），6 轮交错（奇数轮 A→B、偶数轮 B→A）后合并算 CV；compare A vs A2 是评测台自身无偏性检查。",
+  "73 张样本上 plan≈4.5s / run≈4.1s，固定开销占比大；真实语料的相对噪声应当更小，语料到位后按同法重跑覆盖本文件。"
+ ]
+}

@@ -1,0 +1,35 @@
+{
+ "schema_version": 1,
+ "kind": "plan_diff",
+ "label": "D 关/开（--two-pass）",
+ "ok": true,
+ "problems": [],
+ "top_diff_keys": [],
+ "top_expected_keys": [
+  "fingerprint",
+  "source"
+ ],
+ "users": {
+  "changed_fields": {}
+ },
+ "jobs": {
+  "count_a": 53,
+  "count_b": 53,
+  "same_pair_field_diff_count": 0,
+  "same_pair_meta_diff_count": 0,
+  "groups_same_base_set": 19,
+  "groups_changed_base_set": 0,
+  "dropped_count": 0,
+  "added_count": 0,
+  "swapped_groups": 0
+ },
+ "outputs": {
+  "a": 53,
+  "b": 53,
+  "only_a_count": 0,
+  "only_b_count": 0,
+  "md5_changed": 0,
+  "md5_changed_explained": 0,
+  "md5_changed_unexplained_count": 0
+ }
+}

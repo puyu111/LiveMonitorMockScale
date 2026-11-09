@@ -1,0 +1,8 @@
+{
+  "name": "D-two-pass",
+  "workers": 8,
+  "seed": 20261010,
+  "cache": "cold",
+  "plan_flags": ["--two-pass"],
+  "run_flags": []
+}

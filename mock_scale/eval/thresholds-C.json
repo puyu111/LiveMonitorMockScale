@@ -1,0 +1,6 @@
+{
+  "_note": "C 档（等级配对）的预注册判据：只看语义栏 —— 配空率 / 等级一致率 / 产量 / plan 差异面。时间不是 C 的收益（C 只改配对，不省墙钟），E_out 也不判：C 换了底图，成品 md5 本来就该变，改为 eval/plandiff.py 的「逐张可归因」验收。",
+  "R_blank": { "kind": "blank", "max_over_baseline_pp": 1, "abs_max": 2 },
+  "R_lvl": { "kind": "ratio", "min": 0.7 },
+  "N_out": { "kind": "count", "min": "baseline" }
+}

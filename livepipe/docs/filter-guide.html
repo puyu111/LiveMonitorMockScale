@@ -1,0 +1,426 @@
+<title>句子过滤的四个入口</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+  /* 版式：单栏技术手册，72ch 正文；四类入口用编号+路径卡；证据数字用边注 */
+  :root {
+    color-scheme: light;
+    --paper: #f4f6f4;
+    --surface: #ffffff;
+    --surface-soft: #eef3f0;
+    --ink: #17211c;
+    --muted: #5c6b63;
+    --line: #dce3de;
+    --accent: #0e6b57;
+    --accent-ink: #ffffff;
+    --accent-soft: #e0efe9;
+    --drop: #a84a33;
+    --drop-soft: #f7e7e1;
+    --code-bg: #eef2ef;
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #0d1412;
+      --surface: #141d19;
+      --surface-soft: #18231e;
+      --ink: #e7ede9;
+      --muted: #9aada4;
+      --line: #26332d;
+      --accent: #6ad3b5;
+      --accent-ink: #08211a;
+      --accent-soft: #15332b;
+      --drop: #ff9d84;
+      --drop-soft: #3a201a;
+      --code-bg: #101914;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #0d1412;
+    --surface: #141d19;
+    --surface-soft: #18231e;
+    --ink: #e7ede9;
+    --muted: #9aada4;
+    --line: #26332d;
+    --accent: #6ad3b5;
+    --accent-ink: #08211a;
+    --accent-soft: #15332b;
+    --drop: #ff9d84;
+    --drop-soft: #3a201a;
+    --code-bg: #101914;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", "Noto Sans CJK SC", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 0 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+
+  header.hero {
+    padding-block: 56px 34px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 40px;
+    align-items: end;
+    border-bottom: 1px solid var(--line);
+  }
+  .kicker {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 14px;
+  }
+  h1 {
+    font-family: "IBM Plex Serif", "Noto Serif CJK SC", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(30px, 4.6vw, 46px);
+    line-height: 1.15;
+    letter-spacing: -.01em;
+    margin: 0 0 16px;
+    text-wrap: balance;
+  }
+  .lede { color: var(--muted); font-size: 17px; margin: 0; max-width: 34em; }
+  .hero-aside {
+    border-left: 2px solid var(--accent);
+    padding-left: 18px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .hero-aside strong { color: var(--ink); font-weight: 600; }
+  .hero-aside code { font-size: 12.5px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  .chip {
+    display: inline-flex; align-items: baseline; gap: 6px;
+    font-size: 13px; line-height: 1.3;
+    padding: 5px 10px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  .chip.drop { background: var(--drop-soft); color: var(--drop); border-color: color-mix(in srgb, var(--drop) 24%, transparent); }
+  .chip .n { font-family: "IBM Plex Mono", monospace; font-size: 12px; opacity: .8; }
+
+  main { padding-top: 44px; }
+  section { margin-bottom: 56px; }
+  h2 {
+    font-family: "IBM Plex Serif", "Noto Serif CJK SC", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(22px, 2.6vw, 28px);
+    line-height: 1.25;
+    margin: 0 0 10px;
+    text-wrap: balance;
+  }
+  h3 {
+    font-size: 15px; font-weight: 600; margin: 26px 0 8px;
+    letter-spacing: .01em;
+  }
+  p { margin: 0 0 12px; max-width: 46em; }
+  .muted { color: var(--muted); }
+  code {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .88em;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 4px;
+    word-break: break-word;
+  }
+  pre {
+    margin: 14px 0;
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  pre .c { color: var(--muted); }
+  pre .k { color: var(--accent); }
+  pre .d { color: var(--drop); }
+
+  .rule {
+    display: grid; grid-template-columns: 34px minmax(0, 1fr);
+    gap: 16px; padding: 22px 0;
+    border-top: 1px solid var(--line);
+  }
+  .rule:last-of-type { border-bottom: 1px solid var(--line); }
+  .rule .num {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px; color: var(--accent);
+    padding-top: 3px;
+  }
+  .rule .where {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px; color: var(--muted);
+    margin: 0 0 8px;
+    word-break: break-all;
+  }
+  .rule h2 { font-size: clamp(19px, 2.2vw, 23px); margin-bottom: 6px; }
+
+  .evidence {
+    margin: 16px 0 0;
+    border-left: 3px solid var(--accent);
+    background: var(--surface);
+    padding: 14px 18px;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: 14px;
+    color: var(--muted);
+    box-shadow: 0 1px 0 var(--line);
+  }
+  .evidence strong { color: var(--ink); font-weight: 600; }
+  .evidence .tag {
+    display: inline-block; font-family: "IBM Plex Mono", monospace;
+    font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--accent); margin-right: 8px;
+  }
+  .evidence.warn { border-left-color: var(--drop); }
+  .evidence.warn .tag { color: var(--drop); }
+
+  .tablewrap { overflow-x: auto; margin: 18px 0 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14px; }
+  th, td { text-align: left; padding: 11px 14px; vertical-align: top; border-bottom: 1px solid var(--line); }
+  th { font-weight: 600; font-size: 12.5px; letter-spacing: .04em; color: var(--muted); background: var(--surface-soft); }
+  tr:last-child td { border-bottom: none; }
+  td code { white-space: nowrap; }
+
+  .flow { margin: 22px 0 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; overflow-x: auto; }
+  .flow svg { display: block; width: 100%; min-width: 620px; height: auto; }
+  .flow .cap { font-size: 13px; color: var(--muted); margin-top: 10px; }
+
+  .split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; margin-top: 8px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 20px 22px;
+  }
+  .card h3 { margin-top: 0; }
+  .card ol, .card ul { margin: 8px 0 0; padding-left: 20px; }
+  .card li { margin-bottom: 6px; }
+  .note { font-size: 13.5px; color: var(--muted); }
+
+  footer {
+    margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line);
+    font-size: 13px; color: var(--muted);
+    display: flex; flex-wrap: wrap; gap: 8px 28px;
+  }
+
+  @media (max-width: 760px) {
+    header.hero { grid-template-columns: 1fr; gap: 24px; padding-block: 40px 26px; }
+    .hero-aside { border-left: 0; border-top: 1px solid var(--line); padding: 14px 0 0; }
+    .split { grid-template-columns: 1fr; }
+    .rule { grid-template-columns: 26px minmax(0, 1fr); gap: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div>
+      <p class="kicker">livepipe · 直播评论清洗</p>
+      <h1>句子过滤的四个入口</h1>
+      <p class="lede">直播里混着界面公告、顶部通知、系统动作和评论正文里的广告。它们由不同的层负责拦；加错地方不会生效。这张页把四个入口、判定条件和真实数据放在一起。</p>
+      <div class="chips">
+        <span class="chip"><span class="n">①②</span> 两个在配置里</span>
+        <span class="chip"><span class="n">③</span> 一个在内置表</span>
+        <span class="chip drop"><span class="n">④</span> 正文过滤还没有口子</span>
+      </div>
+    </div>
+    <aside class="hero-aside">
+      <p><strong>先记一句：</strong>没有冒号的行，是界面句；有冒号的行，是评论。所有过滤都绕这条分界。</p>
+      <p>配置都在 <code>风云A9L.json</code> 的 <code>platforms.&lt;档案&gt;</code> 下；内置表在 <code>livepipe/parsing/text/notices.py</code>。</p>
+    </aside>
+  </header>
+
+  <main>
+    <section aria-labelledby="map">
+      <h2 id="map">先看一句话会经过哪几道闸</h2>
+      <p class="muted">顺序是代码里的真实顺序：先剥粘在行首的通知，再判整行要不要丢，最后才切用户名和正文。</p>
+
+      <div class="flow">
+        <svg viewBox="0 0 940 330" role="img" aria-label="一行 OCR 文本经过通知剥离、整行分类、正文过滤的流程图">
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+            </marker>
+          </defs>
+          <rect x="12" y="128" width="188" height="74" rx="9" fill="var(--surface-soft)" stroke="var(--line)"/>
+          <text x="106" y="158" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="var(--ink)">一行 OCR 文本</text>
+          <text x="106" y="180" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">药丸 + 昵称 + 正文</text>
+
+          <rect x="242" y="112" width="196" height="106" rx="9" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.4"/>
+          <text x="340" y="140" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13.5" fill="var(--ink)">② 行首粘着通知？</text>
+          <text x="340" y="161" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)">notice_prefix_strip</text>
+          <text x="340" y="181" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11.5" fill="var(--muted)">剥掉前缀，留下评论</text>
+          <text x="340" y="199" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11.5" fill="var(--muted)">（剥完必须还有冒号）</text>
+
+          <rect x="480" y="34" width="212" height="102" rx="9" fill="var(--surface)" stroke="var(--line)"/>
+          <text x="586" y="62" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13.5" fill="var(--ink)">没有冒号的行</text>
+          <text x="586" y="84" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11.5" fill="var(--muted)">① overlay_cards</text>
+          <text x="586" y="103" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11.5" fill="var(--muted)">③ 内置系统行短语</text>
+          <text x="586" y="122" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--drop)">整行丢弃</text>
+
+          <rect x="480" y="178" width="212" height="102" rx="9" fill="var(--surface)" stroke="var(--line)"/>
+          <text x="586" y="206" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13.5" fill="var(--ink)">有冒号的行</text>
+          <text x="586" y="228" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11.5" fill="var(--muted)">切出用户名 / 正文</text>
+          <text x="586" y="247" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11.5" fill="var(--muted)">④ 正文过滤（待实现）</text>
+          <text x="586" y="266" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)">目前只能整条保留</text>
+
+          <rect x="740" y="118" width="188" height="72" rx="9" fill="var(--accent-soft)" stroke="var(--accent)"/>
+          <text x="834" y="148" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13.5" fill="var(--ink)">评论表</text>
+          <text x="834" y="169" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--accent)">comments.jsonl</text>
+
+          <line x1="200" y1="165" x2="240" y2="165" stroke="var(--muted)" stroke-width="1.3" marker-end="url(#ar)"/>
+          <line x1="438" y1="146" x2="478" y2="90" stroke="var(--muted)" stroke-width="1.3" marker-end="url(#ar)"/>
+          <line x1="438" y1="184" x2="478" y2="226" stroke="var(--muted)" stroke-width="1.3" marker-end="url(#ar)"/>
+          <line x1="692" y1="86" x2="738" y2="132" stroke="var(--muted)" stroke-width="1.3" marker-end="url(#ar)"/>
+          <line x1="692" y1="228" x2="738" y2="176" stroke="var(--muted)" stroke-width="1.3" marker-end="url(#ar)"/>
+          <line x1="438" y1="165" x2="740" y2="165" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="5 5" marker-end="url(#ar)"/>
+          <text x="500" y="158" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="var(--accent)">剥离后继续</text>
+
+          <text x="12" y="300" font-family="IBM Plex Sans, sans-serif" font-size="11.5" fill="var(--muted)">几何闸在更早一步：右侧商品卡（左沿实测 477）由 x_ignore_from=460 丢，不靠句子匹配。</text>
+        </svg>
+        <p class="cap">② 在切分之前跑；①③ 只认没有冒号的行；④ 还缺口子。</p>
+      </div>
+    </section>
+
+    <section aria-labelledby="table">
+      <h2 id="table">一眼对照</h2>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>句子长什么样</th><th>加在哪</th><th>生效条件</th><th>现状</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>公众号 奇瑞QQ &gt;</code><br><code>讲解中</code> · <code>新款上市</code></td>
+              <td>配置 <code>overlay_cards</code></td>
+              <td>该行没有冒号；正则匹配</td>
+              <td>已有，抖音/视频号档案都开着</td>
+            </tr>
+            <tr>
+              <td><code>非主驾开播 请注意驾驶安全</code> 粘在昵称左边</td>
+              <td>配置 <code>notice_prefix_strip</code></td>
+              <td>短语在前 12 字符内，剥完仍有冒号</td>
+              <td>已有</td>
+            </tr>
+            <tr>
+              <td><code>X*** 关注了主播</code><br><code>X*** 赞了直播</code></td>
+              <td>内置 <code>_NOTICE_RE</code>（代码）</td>
+              <td>该行没有冒号；命中内置短语</td>
+              <td>已有；素材独有的词写 <code>overlay_cards</code></td>
+            </tr>
+            <tr>
+              <td>评论正文里的广告 / 主播话术</td>
+              <td>暂无配置键</td>
+              <td>—</td>
+              <td class="muted">需要新增 <code>drop_content</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="rules">
+      <h2 id="rules">四个入口，逐个说</h2>
+
+      <article class="rule">
+        <div class="num">①</div>
+        <div>
+          <h2>界面句、公告、浮层卡</h2>
+          <p class="where">风云A9L.json → platforms.douyin_app → "overlay_cards"</p>
+          <p>取值是<strong>正则片段</strong>（<code>|</code> 分隔），也可以写 <code>true</code> 只用内置表。只对<strong>没有冒号</strong>的行生效：命中整行丢弃，并顺带丢掉紧跟其后的那一行（浮层卡折行后的续块）。</p>
+<pre><code><span class="c">// 追加句子直接往后接，正则元字符记得转义</span>
+"overlay_cards": "非主驾开播|吸烟酗酒|低俗色情|人身财产损失"
+                 "|严禁未成年人|诱导打赏<span class="d">|新车型上市|点击预约</span>"</code></pre>
+          <h3>真实例子</h3>
+          <p>视频号「奇瑞QQ」seg1 的 rows 里，<strong>68 行</strong>没有冒号且命中上述短语，例如 <code>非主驾开播请注意驾驶安全公众号奇瑞QQ&gt;</code>、<code>2027款风云A9L全球真C级旗舰</code>。风云T7 的开关差分：同一段 150s 切片只差这一个键，评论 <strong>13 条 → 5 条</strong>，去掉的 8 条全是浮层卡，真评论一条没少。</p>
+          <div class="evidence"><span class="tag">别混</span>右侧商品卡走的是几何闸 <code>x_ignore_from</code>，不是句子匹配。抖音素材的商品卡文字左沿实测 <strong>477</strong>，所以配 <strong>460</strong>；它比 overlay 更早一步生效。</div>
+          <div class="evidence warn"><span class="tag">注意</span>只能写<strong>素材专属</strong>的词；通用 UI 词进内置表要按项目惯例在既有语料上逐条 diff。改完用 rows 复算，不需要重跑 OCR。</div>
+        </div>
+      </article>
+
+      <article class="rule">
+        <div class="num">②</div>
+        <div>
+          <h2>粘在昵称左边的顶部通知</h2>
+          <p class="where">风云A9L.json → platforms.douyin_app → "notice_prefix_strip"</p>
+          <p>OCR 有时把顶部通知和第一行评论并成一句。这个键是<strong>正则</strong>：短语出现在行首 12 字符内、并且剥完剩下的部分<strong>还有冒号</strong>时才动手——保证剥的是通知、留下的是评论。</p>
+<pre><code>"notice_prefix_strip": "开播请注意驾驶安[全金]"
+<span class="c">// 安全 → 安金 是实测的 OCR 变体；新通知改这段正则即可</span></code></pre>
+          <h3>真实例子</h3>
+          <p>视频号「奇瑞QQ」seg1 有 <strong>327 行</strong>带这种粘连，例如 <code>非主驾开播请注意驾驶安全感激：家用车，靠谱最重要</code>、<code>粉丝鱼非主驾开播请注意驾驶安全鱼丸：第一次看这款车多了解一下</code>。开启后这些行的用户名恢复正常；复算后的交付树里，<code>非主驾开播…</code> 这类假账号为 <strong>0</strong>。</p>
+          <div class="evidence warn"><span class="tag">边界</span>没有冒号的通知行不归它管——那是 ①③ 的活。剥完只剩通知本身时它也不动，交给整行丢弃。</div>
+        </div>
+      </article>
+
+      <article class="rule">
+        <div class="num">③</div>
+        <div>
+          <h2>系统动作行</h2>
+          <p class="where">livepipe/parsing/text/notices.py → _NOTICE_RE</p>
+          <p>抖音自己发的通知：<code>赞了直播</code>、<code>为主播点赞</code>、<code>入了直播间</code>、<code>关注了主播</code>、<code>送出了…</code>、<code>在线观众</code> 等。和 ① 一样只认没有冒号的行。</p>
+<pre><code>_NOTICE_RE = re.compile(
+    r"赞了直播|为主播点赞|入了直播间|关注了主播|送出了?"
+    r"|在线观众|贡献用户|高等级用户"
+)</code></pre>
+          <h3>真实例子</h3>
+          <p>视频号「奇瑞QQ」seg1 有 <strong>17 行</strong>命中内置短语；抖音 seg1 有 <strong>10 行</strong>。内置表<strong>已知漏</strong> <code>分享了直播</code>：风云T7 的 150s 切片 5 条里漏 1 条（<code>贝***分享了直播</code>），111 条样本里漏 5 条。</p>
+          <div class="evidence warn"><span class="tag">做法</span>素材里遇到漏网的系统句，先写进 <code>overlay_cards</code>（素材级、零风险）。动 <code>_NOTICE_RE</code> 要走语料 diff，别为一个素材改全局。</div>
+        </div>
+      </article>
+
+      <article class="rule">
+        <div class="num">④</div>
+        <div>
+          <h2>评论正文里的句子（还没有口子）</h2>
+          <p class="where">现状：没有配置键；filter.exclude_keywords 只筛用户名</p>
+          <p>如果广告、抽奖、私信话术出现在<strong>有冒号的评论正文</strong>里，现在的 <code>overlay_cards</code> 和 <code>_NOTICE_RE</code> 都不会碰它——它们只处理没有冒号的行。想要按正文丢掉，需要加一个显式的 opt-in 键，作用在切分之后。</p>
+<pre><code><span class="c">// 提议的新键（尚未实现）：只对写了它的平台生效</span>
+"parse": {
+  "drop_content": "加微|私信|抽奖|点击下方链接"
+}</code></pre>
+          <div class="evidence"><span class="tag">设计</span>实现时会按项目惯例做成<strong>默认关</strong>：匹配即丢整条评论、日志里记丢了多少条；因为它会直接减少交付评论数，需要先在切片上对比。把要过滤的句子清单给我，可以按这个口径加上。</div>
+        </div>
+      </article>
+    </section>
+
+    <section aria-labelledby="check">
+      <h2 id="check">改完怎么验证</h2>
+      <div class="split">
+        <div class="card">
+          <h3>1. 只用现有行复算（不重跑 OCR）</h3>
+<pre><code>python -m livepipe run 风云A9L.json \
+  --only panels,parse</code></pre>
+          <p class="note">过滤发生在 parse 阶段；<code>&lt;段目录&gt;/rows.jsonl</code> 已在时是零 OCR 复算。抖音两段约 5–6 分钟（主要是重画标注图）。</p>
+        </div>
+        <div class="card">
+          <h3>2. 看句子和数量</h3>
+<pre><code>grep -c "新车型上市" \
+  out/…/抖音/seg1/comments.jsonl   <span class="c"># 期望 0</span></code></pre>
+          <p class="note">再对比过滤前后的评论数（日志里的「=> 解析: N 条评论」）。过滤只减评论，不改用户名。</p>
+        </div>
+      </div>
+      <div class="evidence warn" style="margin-top:18px"><span class="tag">顺序</span>过滤会改变评论集合；如果这批产物已经出过交付，要按顺序重跑 <code>--only filter,qualify,export,collect</code>（判定缓存可复用大部分），否则名单和交付图对不上。</div>
+    </section>
+
+    <footer>
+      <span>数据来自 2026-11-01 的风云A9L / 风云T7 实测：视频号「奇瑞QQ」「风云新能原」、抖音 seg1/seg2。</span>
+      <span>入口定义见 <code>livepipe/parsing/text/notices.py</code>、<code>livepipe/parsing/layout/paragraphs.py</code>；配置示例见 <code>风云A9L.json</code>。</span>
+    </footer>
+  </main>
+</div>

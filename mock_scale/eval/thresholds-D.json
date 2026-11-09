@@ -1,0 +1,7 @@
+{
+  "_note": "D 档（两遍量测）的预注册判据：只看「工作量只降不升」与「结论逐字段不变」。时间不是 D 的判据（省下的是计数，8 进程下折算到墙钟进不了噪声带）。",
+  "N_badge": { "kind": "count", "max_over_baseline": 0 },
+  "N_scan_px": { "kind": "count", "min_reduction_pct": 10 },
+  "N_out": { "kind": "count", "min": "baseline" },
+  "E_out": { "kind": "count", "max": 0 }
+}

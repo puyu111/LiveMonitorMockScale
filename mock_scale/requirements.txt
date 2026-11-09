@@ -1,0 +1,14 @@
+# mock_scale 独立实验 —— 本地确定性 inpainting 擦除用户名
+# （2026-10-27 由 test2 合并进 LiveMonitorMockScale；共用管线在 core/）
+#
+# 刻意只有三个依赖，**没有 dashscope** —— 本路线不调任何接口。
+# 对照：work/test 那套（API 路线）需要 dashscope + rapidocr + Pillow + opencv 全家桶，
+# 其中 rapidocr 还会拖进**非 headless** 的 opencv，装完必须
+# `pip install --force-reinstall --no-deps opencv-python-headless`，否则 import cv2 缺 libGL.so.1 直接崩。
+#
+# 这里用 opencv-python-headless：本实验只做 inpainting，不弹任何窗口，
+# 天然避开那个装包陷阱。
+
+numpy>=1.24
+opencv-python-headless>=4.8
+Pillow>=10.0
