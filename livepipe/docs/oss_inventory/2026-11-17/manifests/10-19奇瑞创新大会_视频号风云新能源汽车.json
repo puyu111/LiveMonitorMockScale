@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_视频号风云新能源汽车.json",
+  "generated_from": {
+    "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_视频号风云新能源汽车.json",
+    "oss_root": "/home/puyu/oss-bucket/直播data/录屏/10.19",
+    "disk_root": null,
+    "generated_at": "2026-11-17T00:00:00Z"
+  },
+  "segments": [
+    {
+      "seg": "seg1",
+      "disk": "/run/media/puyu/MyDisk/10.19/视频号/风云新能源汽车/9： 01~10： 45.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/风云新能源汽车/9： 01~10： 45.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3226733608,
+      "duration_s": 6239.082667,
+      "trim_s": null
+    },
+    {
+      "seg": "seg2",
+      "disk": "/run/media/puyu/MyDisk/10.19/视频号/风云新能源汽车/10： 45-12： 34.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/风云新能源汽车/10： 45-12： 34.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3227223254,
+      "duration_s": 6560.642333,
+      "trim_s": null
+    },
+    {
+      "seg": "seg3",
+      "disk": "/run/media/puyu/MyDisk/10.19/视频号/风云新能源汽车/12： 35-14： 30.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/风云新能源汽车/12： 35-14： 30.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3227447989,
+      "duration_s": 6912.832,
+      "trim_s": null
+    },
+    {
+      "seg": "seg4",
+      "disk": "/run/media/puyu/MyDisk/10.19/视频号/风云新能源汽车/14： 30-16： 13.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/风云新能源汽车/14： 30-16： 13.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3226645982,
+      "duration_s": 6192.585333,
+      "trim_s": null
+    },
+    {
+      "seg": "seg5",
+      "disk": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/wx_fy_16-13-17-00_live.mp4",
+      "oss": null,
+      "trimmed": true,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 1351518172,
+      "duration_s": 2821.710433,
+      "trim_s": [
+        0.0,
+        2821.710433
+      ]
+    }
+  ]
+}

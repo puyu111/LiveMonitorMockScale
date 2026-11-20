@@ -136,8 +136,16 @@ def _print_summary(report: dict, out: Path, elapsed: float, quiet: bool,
                  if r.get("accounts") else "")
         _log(f"[撞库] 标记图：{img['accounts']} 个账号目录 · {img['images']} 张 · "
              f"{img['bytes'] / 1048576:.1f} MB{extra} → {img['dir']}")
+        if img.get("unmatched_accounts"):
+            u_extra = (f" · 现补 {r.get('unmatched_accounts', 0)} 个（仅直播最近账号）"
+                       if r.get("unmatched_accounts") else "")
+            _log(f"[撞库] 未命中最近图：{img['unmatched_accounts']} 个账号目录 · "
+                 f"{img['unmatched_images']} 张 → {img['dir']}/未命中{u_extra}")
         if r.get("skipped"):
             _log(f"[撞库][warn] 有 {r['skipped']} 个「仅直播命中」补不了图，只看表格")
+        if r.get("unmatched_skipped"):
+            _log(f"[撞库][warn] 有 {r['unmatched_skipped']} 个「未命中最近账号」"
+                 f"补不了图，只看表格")
     elif files is not None:
         _log("[撞库] 标记图：--no-images，未导出")
     doc = (files or {}).get("html")

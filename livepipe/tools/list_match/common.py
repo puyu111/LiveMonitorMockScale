@@ -57,6 +57,9 @@ MIN_PARTIAL_LEN = 2
 #: 导出标记图 / 统计截图数时认的图片后缀（交付树里实测只有 .jpg；别的格式顺手带上）。
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 
+#: ``标记图/`` 下放「未命中的最近账号」的独立子目录，与命中图分开。
+UNMATCHED_IMG_DIR = "未命中"
+
 
 def platform_label(text: object) -> str | None:
     """表头 / 目录名 → 平台中文名；不认识则 ``None``（区分大小写不敏感）。"""

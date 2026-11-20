@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OSS P4 影子期与清盘审计</title>
+<style>
+:root{--bg:#f6f7f4;--card:#fff;--ink:#17201c;--muted:#5d6a63;--line:#dfe4df;
+--accent:#0f766e;--soft:#d8f0eb;--trim:#c2760a;--trimsoft:#fdf0d8;--bad:#c0392b;
+--codes:#eef1ee;--shadow:0 1px 2px rgba(20,40,30,.05),0 8px 24px rgba(20,40,30,.04)}
+@media(prefers-color-scheme:dark){:root{--bg:#101513;--card:#18201d;
+--ink:#e7ede9;--muted:#9fada6;--line:#2a3530;--accent:#57c7b8;--soft:#143630;
+--trim:#e2a33c;--trimsoft:#2f2413;--bad:#ef8074;--codes:#111815;--shadow:none}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);
+font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+"Microsoft YaHei",sans-serif;padding:0 18px 56px}
+main{max-width:1060px;margin:0 auto}header{padding:52px 0 24px}
+.eyebrow{font-size:12px;letter-spacing:.14em;color:var(--accent);font-weight:700}
+h1{font-size:clamp(28px,4vw,40px);margin:8px 0 10px;letter-spacing:-.01em}
+.lede{color:var(--muted);font-size:17px;max-width:780px;margin:0}
+.meta{color:var(--muted);font-size:13px;margin-top:12px}
+.verdict{margin:26px 0 28px;padding:20px 22px;background:var(--card);
+border:1px solid var(--line);border-left:4px solid var(--warn,#9a5a0a);border-radius:10px;
+box-shadow:var(--shadow)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+gap:12px;margin:0 0 36px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;
+padding:15px;box-shadow:var(--shadow)}
+.kpi b{display:block;font-size:25px;line-height:1.15}
+.kpi span{display:block;font-size:13px;margin-top:4px}
+.kpi em{display:block;font-size:11.5px;color:var(--muted);font-style:normal}
+section{margin:0 0 38px}h2{font-size:20px;margin:0 0 6px}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+padding:16px;box-shadow:var(--shadow);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;
+border-bottom:1px solid var(--line);padding:7px 8px;white-space:nowrap}
+td{border-bottom:1px solid var(--line);padding:7px 8px;vertical-align:top}
+tr:last-child td{border-bottom:0}.num{text-align:right;font-variant-numeric:tabular-nums}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+font-size:12px;word-break:break-all}
+.ok{color:var(--accent);font-weight:700}.bad{color:var(--bad);font-weight:700}
+.warn{color:#9a5a0a;font-weight:700}
+pre{background:var(--codes);border-radius:8px;padding:13px 14px;overflow:auto;
+font-size:12.5px;line-height:1.55;margin:0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+background:var(--codes);padding:1px 5px;border-radius:4px;font-size:12.5px}
+.note{background:var(--soft);border-radius:10px;padding:14px 16px;font-size:13.5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}.card{overflow-x:auto}table{min-width:560px}}
+footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);
+padding-top:14px}
+ul{margin:8px 0 0;padding-left:22px}li{margin:5px 0}
+</style></head><body><main>
+<header>
+  <p class="eyebrow">开发日志 · 2026-11-19 · 直播看管</p>
+  <h1>OSS P4：影子期开始，清盘先过覆盖审计</h1>
+  <p class="lede">P4 不是直接删：先开 7 天影子期，同时审计「每个本地文件在 OSS /
+  保留根里有没有副本」。今天没有删除任何东西；审计发现外置 out 有 136GB 结果
+  没有 OSS 副本、MyDisk 未挂载导致本地回滚不可用，已先把表情表迁到本地
+  assets、并把一段只在 staging 里的 2GB 孤儿录屏补进 OSS。</p>
+  <p class="meta">入口 <code>scripts/p4_cleanup.py</code> · 影子状态
+  <code>~/.livepipe_p4_shadow.json</code> · 审计摘要
+  <code>livepipe/docs/p4-audit-summary.json</code></p>
+  <p class="meta"><b>2026-11-19 更正：</b>项目 OSS 根实际是 <code>~/oss-bucket/web/1/奇瑞汽车/直播看管/</code>；文中 <code>~/oss-bucket/奇瑞汽车/…</code> 是当时写错的桶根前缀。相关对象已用 <code>scripts/oss_relocate_prefix.py</code> 服务端复制到 <code>web/1/…</code>，配置与工具默认根已改指。</p>
+  <p class="meta"><b>清盘前置：</b>删除本地素材前先确认每份配置的 <code>input.videos</code> 都已切到 OSS 且 <code>livepipe check</code> 通过——清盘后 livepipe 只能从 OSS 读；它不会自动下载，缺文件直接报错。未被 P1.5 覆盖的配置（如探秘局）要先按 P3 <code>oss_download.py baidu</code> 入库并 repoint。</p>
+</header>
+
+<div class="verdict">
+  <b>结论：影子期进行中（2026-11-19 → 2026-11-26），未删除任何本地文件。</b>
+  三个目标里只有 <b>staging</b>（63GB）在「允许丢批次元数据」的前提下通过覆盖审计；
+  外置 out 严格口径仍有 <b>136GB</b> 结果没有 OSS 副本，本地 out 仍有 <b>9.56GB</b>。
+  「inputs」策略下 82 段引用的 55 个 OSS 对象全部可读，所以 7 天后可以选择
+  「只保住 OSS 录屏、结果靠重跑」的清理方式，但需要显式确认。
+</div>
+
+<div class="kpis">
+  <div class="kpi"><b>7 天</b><span>影子期剩余</span><em>到 2026-11-26T02:06Z</em></div>
+  <div class="kpi"><b>62.99 GB</b><span>staging（审计通过）</span><em>55 个元数据文件除外</em></div>
+  <div class="kpi"><b>170.81 GB</b><span>外置 out</span><em>严格口径 136.09GB 无副本</em></div>
+  <div class="kpi"><b>13.29 GB</b><span>本地 out</span><em>严格口径 9.56GB 无副本</em></div>
+  <div class="kpi"><b>55 / 55</b><span>OSS 输入对象可读</span><em>82 段引用 · ffprobe 全部有效</em></div>
+</div>
+
+<section>
+  <h2>影子期：先看 7 天</h2>
+  <div class="card">
+    <table>
+      <tr><th>项</th><th>值</th></tr>
+      <tr><td>开始</td><td class="mono">2026-11-19T02:06:02Z</td></tr>
+      <tr><td>最早允许删除</td><td class="mono">2026-11-26T02:06:02Z</td></tr>
+      <tr><td>状态文件</td><td><code>~/.livepipe_p4_shadow.json</code></td></tr>
+      <tr><td>查看</td><td><code>python3 scripts/p4_cleanup.py shadow-status</code></td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>覆盖审计：严格口径 vs inputs 口径</h2>
+  <p class="sub">严格口径要求每个本地文件在「保留根」（OSS + 未选中的本地根）里有
+  同路径同字节或同文件名同字节副本；视频额外允许同字节数匹配。inputs 口径只要求
+  82 段引用的 OSS 录屏可读，结果是可重跑的。</p>
+  <div class="card">
+    <table>
+      <tr><th>目标</th><th class="num">文件 / 字节</th><th>严格口径</th>
+      <th>inputs 口径</th><th>结论</th></tr>
+      <tr><td>staging<br><span class="mono">~/livepipe_batches</span></td>
+      <td class="num">41,856 / 62.99GB</td>
+      <td><b class="ok">通过</b>：41,801 有副本；55 个批次元数据（2.88MB）用
+      <code>--allow-metadata</code> 忽略</td>
+      <td class="ok">通过</td>
+      <td><b class="ok">影子期满后可删</b></td></tr>
+      <tr><td>local_out<br><span class="mono">仓库 out/</span></td>
+      <td class="num">67,068 / 13.29GB</td>
+      <td><b class="bad">不通过</b>：49,175 / 9.56GB 无副本（10-01~03 的 remote
+      批次结果等）</td><td class="ok">通过</td>
+      <td class="warn">严格口径需先同步结果；inputs 口径可删</td></tr>
+      <tr><td>external_out<br><span class="mono">C0DE…/out</span></td>
+      <td class="num">474,223 / 170.81GB</td>
+      <td><b class="bad">不通过</b>：448,095 / 136.09GB 无副本（442k 张 jpg、29 个
+      media mp4 等）</td><td class="ok">通过</td>
+      <td class="warn">严格口径需先同步结果；inputs 口径可删</td></tr>
+    </table>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="note"><b>为什么 staging 先通过：</b>staging 里的视频/结果几乎都能在
+    外置 out、本地 out 或 OSS 找到同字节副本；唯一一个 2.01GB 孤儿录屏已补进 OSS
+    （见下）。剩下只有 batch.log / run.sh / 批次 JSON 这类可再生成的元数据。</div>
+    <div class="note"><b>为什么 out 不通过：</b>10-01~03 的远程批次结果只落在本地/
+    外置 out，OSS「直播产生结果」目前只有 10-04 视频号一个任务（P2 验收）。删 out
+    前要么把结果同步 OSS，要么接受「靠 OSS 录屏重跑」的 inputs 口径。</div>
+  </div>
+</section>
+
+<section>
+  <h2>输入可读性：82 段引用 → 55 个 OSS 对象</h2>
+  <div class="card">
+    <table>
+      <tr><th>检查</th><th>结果</th></tr>
+      <tr><td><code>p15_repoint.py --verify</code></td>
+      <td><b class="ok">22 份配置 / 82 段全部指向 OSS，目标在位且字节一致</b></td></tr>
+      <tr><td>ffprobe 55 个唯一 OSS 对象</td>
+      <td><b class="ok">55/55 读出有效时长，0 个不可读</b></td></tr>
+      <tr><td>livepipe check</td>
+      <td><b class="ok">22/22 通过</b>（表情表迁移后复验）</td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>为删除做的两件准备</h2>
+  <div class="card">
+    <table>
+      <tr><th>事项</th><th>结果</th></tr>
+      <tr><td><b>表情表迁出外置 out</b></td>
+      <td>4 套（douyin/wechat/kuaishou/weibo，18,200,771 B）复制到
+      <code>/home/puyu/livepipe_assets/out/</code>；22 份配置 <code>base_dir</code>
+      改为该目录，备份在
+      <code>~/.livepipe_p4_config_backup/20261119T021318Z/</code>；
+      <code>livepipe check</code> 22/22，douyin/wechat 表情表加载正常。
+      不迁的话，删外置 out 会把 livepipe 跑不了。
+      <br><b>2026-11-19 补充：</b>探秘局两份配置的 <code>base_dir</code> 又改到 OSS
+      <code>…/直播看管/素材</code>（表情表在 <code>&lt;base_dir&gt;/out/wechat_emoji/</code>），
+      本地不再依赖 <code>~/livepipe_assets</code>。</td></tr>
+      <tr><td><b>清单与备份持久化</b></td>
+      <td>P0 inventory（22 manifests + 汇总，288KB）复制到
+      <code>livepipe/docs/oss_inventory/2026-11-17/</code>；P1.5 配置备份复制到
+      <code>~/.livepipe_p4_audit/p1.5-backup-20261117T234234Z/</code>。这样删掉本地
+      out 后，<code>p4_cleanup.py</code> 仍能做 inputs 检查和回滚检查。</td></tr>
+      <tr><td><b>孤儿录屏补 OSS</b></td>
+      <td>staging 里唯一没有别处副本的
+      <code>18：13-19：31.mp4</code>（2,012,027,943 B / 4,723.41s）已用 P3 wrapper
+      写入 <code>直播录屏/2026-9-22…/9.22/视频号/奇瑞集团/18-13-19-31.mp4</code>，
+      耗时 334.8s，manifest 齐全；staging 审计从此只剩元数据。</td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>回滚检查：本地路径目前不可用</h2>
+  <div class="note">
+    <b>76 / 82 条本地视频路径不存在</b>（MyDisk 未挂载）。P1.5 备份
+    <code>out/p1.5/backup/20261117T234234Z/</code> 仍是切读前配置，但目前无法把
+    <code>input.videos</code> 指回本地文件；配置应继续指向 OSS。P4 删除本地 out 后，
+    “回滚到本地”只能理解为「用 OSS 录屏重新生成本地结果」，不是一条配置切换。
+  </div>
+</section>
+
+<section>
+  <h2>7 天后怎么执行</h2>
+  <p class="sub">先跑 plan 复核闸门；默认严格口径。要接受“结果可重跑”再加
+  <code>--policy inputs</code>。</p>
+  <pre><b># 只删 staging（审计已通过，需允许丢批次元数据）</b>
+python3 scripts/p4_cleanup.py plan --targets staging --allow-metadata
+python3 scripts/p4_cleanup.py apply --targets staging --allow-metadata --yes
+
+<b># 外置 out（inputs 口径；会删 170.81GB，结果靠 OSS 重跑）</b>
+python3 scripts/p4_cleanup.py plan --targets external_out --policy inputs
+python3 scripts/p4_cleanup.py apply --targets external_out --policy inputs --yes
+
+<b># 严格口径：先把结果同步 OSS，再删</b>
+python3 scripts/p4_cleanup.py plan --targets local_out,external_out --allow-metadata
+</pre>
+</section>
+
+<section>
+  <h2>没有做什么</h2>
+  <ul>
+    <li><b>没有删除任何本地文件：</b>影子期未满，且 out 覆盖审计未通过。</li>
+    <li><b>没有删除 MyDisk 原片：</b>MyDisk 未挂载；且删后本地回滚不可用。</li>
+    <li><b>没有把结果批量同步 OSS：</b>严格口径下 136GB/49k 文件仍需 P2 backfill；
+    本次只准备清盘工具和审计。</li>
+    <li><b>没有提交 git。</b></li>
+  </ul>
+</section>
+
+<footer>
+数据源：<code>~/.livepipe_p4_shadow.json</code>、
+<code>out/p4/audit-{staging,local_out,external_out}.json</code>、
+<code>livepipe/docs/p4-audit-summary.json</code>；审计副本
+<code>~/.livepipe_p4_audit/</code>。本次未删除任何本地文件。
+</footer>
+</main></body></html>

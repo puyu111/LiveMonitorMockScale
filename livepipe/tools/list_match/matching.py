@@ -86,12 +86,21 @@ def match_platform(
             best = None
             if scored:
                 top = scored[0]
+                acc = top[1]
                 best = {
-                    "account": top[1]["username"],
-                    "display": display_account(
-                        top[1]["username"], top[1].get("level")),
-                    "account_dir": top[1].get("dir") or "",
+                    "account": acc["username"],
+                    "display": display_account(acc["username"], acc.get("level")),
+                    "level": acc.get("level") or "",
+                    "account_dir": acc.get("dir") or "",
                     "score": round(float(top[0]), 4),
+                    "in_delivery": bool(acc.get("in_delivery")),
+                    "n_comments": acc.get("n_comments"),
+                    "n_positive": acc.get("n_positive"),
+                    "count": acc.get("count"),
+                    "segs": acc.get("segs") or {},
+                    "first_image": acc.get("first_image") or "",
+                    "dir_exists": bool(acc.get("path") is not None
+                                       and acc["path"].is_dir()),
                 }
             unmatched.append({
                 "list_name": e["name"],

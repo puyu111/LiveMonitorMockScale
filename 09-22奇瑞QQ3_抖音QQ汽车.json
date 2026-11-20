@@ -1,0 +1,229 @@
+// ============================================================================
+// 奇瑞QQ3摩登版上市（渠道七七）2026-09-22 · 抖音直播 · 账号「QQ汽车」
+// ============================================================================
+// 素材：/run/media/puyu/MyDisk/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/抖音/QQ汽车/ 下六段录屏（616×1280，15：34-23：18 一场）。
+// 输出：/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/抖音/QQ汽车/；合格账号交付树在 all_users_正面_3张以上/。
+//
+// ⚠ seg6 尾部是「2位相似主播正在直播 / 去直播广场继续看」，不是评论区。
+//   实测底部输入栏 `说点什么` 最后出现在 3867.9s ⇒ PyAV 无损流拷贝截到 3867.7s，
+//   副本 = /run/media/puyu/C0DE6A4BDE6A39B4/out/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/media/dy_qq_22-03-23-18_live.mp4。
+//   （判断直播结束只认底部输入栏；「直播已结束」字样会晚 2~3s。）
+//
+// 量到的版式（2026-11-11，12 帧 OCR，616×1280）：
+//   · 行距 45.5：连续单行评论首行中心差 44~47（两行评论 74~77 = 行距 + 续行 29.5）。
+//   · x_text 84：◆N 药丸块 x∈[33,~86] · 干净昵称 x1≈85~90 · 续行 x1≈29~43。
+//   · rect [0,665,616,1205]：视频底 ≈585，顶部渐变/系统行到 ≈660，首条评论顶 ≈680；
+//     输入栏 `说点什么...` 上沿 ≈1220。
+//   · 右侧商品讲解卡（`讲解中` / `QQ3 EV 42` / `立即预约`）x1≈408 ⇒ x_ignore_from=395。
+//   · 昵称不打码 ⇒ account_key=username（12 帧 0 个带 * 的行）。
+//
+// 跑法（OCR 要带 rapidocr 的解释器）：
+//   P=/home/puyu/anaconda3/envs/vlx/bin/python
+//   $P -m livepipe run 09-22奇瑞QQ3_抖音QQ汽车.json --only panels,parse
+//   NLP_API_KEY=sk-xxxx $P -m livepipe run 09-22奇瑞QQ3_抖音QQ汽车.json \
+//       --only filter,qualify,export,collect
+//
+// 校验：python3 -m livepipe check 09-22奇瑞QQ3_抖音QQ汽车.json
+//       python3 -m livepipe run   09-22奇瑞QQ3_抖音QQ汽车.json --dry-run
+// ============================================================================
+{
+  "base_dir": "/run/media/puyu/C0DE6A4BDE6A39B4",
+  "version": 1,
+  "name": "奇瑞QQ3摩登版上市（渠道七七）2026-09-22 · 抖音手机 App · 竖屏 · QQ汽车",
+
+  "platforms": {
+    "douyin_app": {
+      "label": "抖音直播（手机 App 竖屏 616×1280；行首 ◆N 粉丝团药丸在昵称左边）",
+      "emoji": "douyin",
+      "account_key": "username",
+      "row_pitch": 45.5,
+      "y_phase": 26,
+      "x_text": 84,
+      "badge_span": 50,
+      "x2_from": "content",
+      "x_ignore_from": 395,
+      "wrap_gap_ratio": 0.8,
+      "wrap_indent": true,
+      "badge_alias": true,
+      "username_alias": true,
+      "badge_name_recover": true,
+      "colon_bg_max_v": 255,
+      "colon_v_delta": 30,
+      "colon_text_fix": true,
+      "merge_emoji_continuation": true,
+      "emoji_gap_sweep": true,
+      "overlay_cards": "讲解中|立即预约|人已预约|QQ3 ?EV|和Ta的朋友们|^QQ$|^Shoe$|^人气榜$|礼物展馆|挑战榜|去直播广场|^主播$|吸烟酗酒|低俗色情|严禁未成年人|理性消费|诱导打赏|私下交易|人身财产损失|网络诈骗|温馨提示"
+    }
+  },
+
+  "emoji": {
+    "tables": {
+      "douyin": {"build": {"enabled": true}}
+    }
+  },
+
+  "input": {
+    "videos": [
+      "/run/media/puyu/MyDisk/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/抖音/QQ汽车/15：34-16：41.mp4",   // seg1 67.3min
+      "/run/media/puyu/MyDisk/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/抖音/QQ汽车/16：41-17：40.mp4",   // seg2 59.0min
+      "/run/media/puyu/MyDisk/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/抖音/QQ汽车/17：40-18：52.mp4",   // seg3 71.4min
+      "/run/media/puyu/MyDisk/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/抖音/QQ汽车/18：52-20：08.mp4",   // seg4 76.5min
+      "/run/media/puyu/MyDisk/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/抖音/QQ汽车/20：08-22：02.mp4",   // seg5 114.8min
+      "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/media/dy_qq_22-03-23-18_live.mp4",   // seg6 64.5min（原 74.5min 尾部是「相似主播」推荐页，已裁）
+    ],
+    "segment_names": null,
+    "video": null,
+    "rows": null,
+    "text": null,
+    "start": 0.0,
+    "duration": null,
+    "interval": 2.0,
+    "max_frames": null,
+    "resume": true,
+    "sample": {
+      "mode": "adaptive",
+      "stride": 2,
+      "safety_rows": 5.0,
+      "settle_frames": 3,
+      "eps_px": 1.0,
+      "entry_thr": 8.0,
+      "max_gap_s": 5.0,
+      "min_interval": 0.2,
+      "max_interval": 6.0,
+      "min_score": 0.3
+    }
+  },
+
+  "panels": {
+    "mode": "manual",
+    "file": null,
+    "files": null,
+    "overwrite": false,
+    "auto": {
+      "method": "hybrid",
+      "at": 900,
+      "frames": 5,
+      "span": null,
+      "split_x": null,
+      "pad_x": 60,
+      "pad_top": 80,
+      "pad_y": 16,
+      "sub_width": 500,
+      "model": "nvidia/LocateAnything-3B",
+      "quant": "4bit",
+      "device": "cuda",
+      "platforms": {
+        "left": "douyin_app",
+        "right": null
+      },
+      "frame_width": 616
+    },
+    "manual": [
+      {"comments": {"rect": [0, 665, 616, 1205], "platform": "douyin_app"}},
+      {"comments": {"rect": [0, 665, 616, 1205], "platform": "douyin_app"}},
+      {"comments": {"rect": [0, 665, 616, 1205], "platform": "douyin_app"}},
+      {"comments": {"rect": [0, 665, 616, 1205], "platform": "douyin_app"}},
+      {"comments": {"rect": [0, 665, 616, 1205], "platform": "douyin_app"}},
+      {"comments": {"rect": [0, 665, 616, 1205], "platform": "douyin_app"}}
+    ],
+    "batch": {
+      "count": 30,
+      "start": 0.0,
+      "span": 600.0,
+      "anchor": "panel"
+    }
+  },
+
+
+  "parse": {
+    "sep": " ",
+    "max_username_len": 24,
+    "merge_continuation": true,
+    "adjacency": true,
+    "dedup": true,
+    "calibrate": false,
+    "right_pad": 0,
+    "emoji_workers": 8
+  },
+
+  "output": {
+    "dir": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/抖音/QQ汽车",
+    "write": true,
+    "rows": true,
+    "panels": true,
+    "frames": true,
+    "print": false
+  },
+
+  "filter": {
+    "enabled": true,
+    "source": null,
+    "out": null,
+    "cache": null,
+    "min_positive": 1,
+    "exclude_keywords": [
+      "奇瑞", "4s", "店", "qq3", "汽车",
+      "尹同跃", "张国忠", "鲍思语", "王津华", "王孝伟", "胡敬源", "尹祥领",
+      "王来春", "李晶", "商文江", "杨棉之", "叶盛基", "路风", "黎汝雄",
+      "李学用", "张贵兵", "代立宏", "章红玉", "高新华", "戚士龙", "王琅"
+    ],
+    "nlp": {
+      "api_key": null,
+      "api_key_env": "NLP_API_KEY",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "deepseek-v4.1-flash",
+      "batch_size": 20,
+      "concurrency": 4,
+      "timeout": 60.0,
+      "retries": 3,
+      "limit": null,
+      "prompt": null
+    }
+  },
+
+  "qualify": {
+    "enabled": true,
+    "min_positive": 3,
+    "stage_min": 1
+  },
+
+  "export": {
+    "enabled": true,
+    "base": "frame",
+    "labels": "正面",
+    "min_positive": null,
+    "min_scope": "platform",
+    "users": null,
+    "color": "0,255,0",
+    "width": 3,
+    "pad": 0,
+    "pad_ratio": 0.25,
+    "quality": 90,
+    "force": true
+  },
+
+  "collect": {
+    "enabled": true,
+    "stage_min": null,
+    "platform_dir": null,
+    "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/抖音/QQ汽车/all_users_正面_3张以上",
+    "force": true
+  },
+
+  "draw": {
+    "enabled": false,
+    "source": null,
+    "at": 8.0,
+    "window": 5.0,
+    "out": null,
+    "width": 5,
+    "quality": 90,
+    "labels": true
+  },
+
+  "steps": {
+    "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
+              "export", "collect", "draw"],
+    "skip": ["emoji_tables", "draw"]
+  }
+}

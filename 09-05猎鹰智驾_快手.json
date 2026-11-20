@@ -40,7 +40,7 @@
 //   ✅ rect [0,726,720,1378]：y1=726 在视频区/评论区分界（实测 718）之下；
 //      y2=1378 在输入栏 `说点什么…`（实测 1405~1438，圆角条上沿 ~1384）之上；
 //      列表满宽 ⇒ x2_from=window
-//   ✅ 表情：快手官方 207 个（out/kuaishou_emoji/kuaishou-emoji.json，已建好）
+//   ✅ 表情：快手官方 207 个（/run/media/puyu/C0DE6A4BDE6A39B4/out/kuaishou_emoji/kuaishou-emoji.json，已建好）
 //
 // 跑法（OCR 要带 rapidocr 的解释器）：
 //   P=/home/puyu/anaconda3/envs/vlx/bin/python
@@ -52,13 +52,14 @@
 //        NLP_API_KEY=sk-xxxx $P -m livepipe run 09-05猎鹰智驾_快手.json \
 //            --only filter,qualify,export,collect
 //   ③ 先看后交：产物在
-//        out/2026-09-05猎鹰智驾瑞虎9羌塘无人区（渠道）/快手/all_users_正面_3张以上/
+//        /run/media/puyu/C0DE6A4BDE6A39B4/out/2026-09-05猎鹰智驾瑞虎9羌塘无人区（渠道）/快手/all_users_正面_3张以上/
 //
 // 校验（不跑、安全）：
 //   python3 -m livepipe check 09-05猎鹰智驾_快手.json
 //   python3 -m livepipe run   09-05猎鹰智驾_快手.json --dry-run
 // ============================================================================
 {
+  "base_dir": "/run/media/puyu/C0DE6A4BDE6A39B4",
   "version": 1,
   "name": "猎鹰智驾瑞虎9羌塘无人区（渠道）2026-09-05 · 快手手机 App · 竖屏",
 
@@ -137,14 +138,14 @@
   },
 
   // 表情：快手官方表情表（207 个），来源 live.kuaishou.com 页面内嵌的 emojiPanel。
-  //   表已建好（out/kuaishou_emoji/kuaishou-emoji.json）；`emoji_tables` 步在 steps.skip 里，
+  //   表已建好（/run/media/puyu/C0DE6A4BDE6A39B4/out/kuaishou_emoji/kuaishou-emoji.json）；`emoji_tables` 步在 steps.skip 里，
   //   换机器时把它移出 skip 即可自动建表（约 1MB 图）。
   "emoji": {
     "enabled": true,
     "tables": {
       "kuaishou": {
-        "path": "out/kuaishou_emoji/kuaishou-emoji.json",
-        "build": {"enabled": true, "mode": "web", "out": "out/kuaishou_emoji",
+        "path": "/run/media/puyu/C0DE6A4BDE6A39B4/out/kuaishou_emoji/kuaishou-emoji.json",
+        "build": {"enabled": true, "mode": "web", "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/kuaishou_emoji",
                   "src": null, "no_download": false, "no_sheet": false}
       }
     }
@@ -251,7 +252,7 @@
   "output": {
     // 多段时这里是**段的父目录**：实际各写 <dir>/seg1、seg2、seg3；
     // 跨段产物落在这儿：merged_users.json（qualify）；交付树见 collect.out。
-    "dir": "out/2026-09-05猎鹰智驾瑞虎9羌塘无人区（渠道）/快手",
+    "dir": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-09-05猎鹰智驾瑞虎9羌塘无人区（渠道）/快手",
     "write": true,                      // 是否写盘（comments.jsonl + summary.json 成对）
     "rows": true,                       // 另存 rows.jsonl（**可回喂复算**）
     "panels": true,                     // mode=auto 时把定位结果存成 panels.json
@@ -327,7 +328,7 @@
     "enabled": true,
     "stage_min": null,                  // 各段导出目录名里的数字；null ⇒ qualify.stage_min
     "platform_dir": null,               // 交付树里的平台目录名；null ⇒ 从各段导出目录自动认（快手）
-    "out": "out/2026-09-05猎鹰智驾瑞虎9羌塘无人区（渠道）/快手/all_users_正面_3张以上",
+    "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-09-05猎鹰智驾瑞虎9羌塘无人区（渠道）/快手/all_users_正面_3张以上",
     "force": true                       // 目标非空时整棵重来（否则报错退出）
   },
 
@@ -347,6 +348,6 @@
     // 逐段步（panels/parse/filter/export/draw）三段各跑一遍；全局步（emoji_tables/qualify/collect）整批一次。
     "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
               "export", "collect", "draw"],
-    "skip": ["emoji_tables", "draw"]    // 表情表已建好（out/kuaishou_emoji/）；独立描框用不上
+    "skip": ["emoji_tables", "draw"]    // 表情表已建好（/run/media/puyu/C0DE6A4BDE6A39B4/out/kuaishou_emoji/）；独立描框用不上
   }
 }

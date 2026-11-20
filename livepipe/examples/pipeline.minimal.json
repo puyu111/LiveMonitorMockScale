@@ -7,6 +7,7 @@
 // 默认 panels.auto.method=hybrid ⇒ 定位要用 LocateAnything（需要 GPU / conda env vlx）。
 {
   "version": 1,
+  // ⚠ 跑之前视频必须先到 OSS：本项目写 ~/oss-bucket/...（goofs 挂载），不接受百度/bypy 路径
   "input": { "video": "/home/puyu/work/data/抖音奇瑞汽车/抖音视频号.mp4" },  // 录屏 mp4
   "output": { "dir": "out/livepipe_minimal" }                              // 输出目录
 }

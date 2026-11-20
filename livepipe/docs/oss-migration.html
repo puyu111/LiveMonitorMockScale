@@ -1,0 +1,959 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>直播看管 OSS 化</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=Noto+Sans+SC:wght@400;500;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+/* 布局：单栏技术备忘录；桌面左侧目录吸顶，手机折叠为横向标签 */
+:root {
+  --bg: #f2f5f3;
+  --surface: #ffffff;
+  --surface-alt: #e8eeeb;
+  --ink: #17211f;
+  --ink-soft: #3c4b47;
+  --muted: #5f6f6a;
+  --line: #d5ded9;
+  --accent: #0a6b63;
+  --accent-soft: #d9efea;
+  --accent-line: #8ccfc5;
+  --warn: #9a5a0a;
+  --warn-soft: #f6ead6;
+  --danger: #a32a2a;
+  --danger-soft: #f6dedc;
+  --code-bg: #10201d;
+  --code-ink: #dfeee9;
+  --shadow: 0 1px 0 rgba(23, 33, 31, 0.04);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1413;
+    --surface: #131d1b;
+    --surface-alt: #1b2825;
+    --ink: #e6efec;
+    --ink-soft: #c2d0cb;
+    --muted: #99a8a3;
+    --line: #2a3935;
+    --accent: #5fd0c4;
+    --accent-soft: #17332f;
+    --accent-line: #2e6b63;
+    --warn: #f0a24b;
+    --warn-soft: #332412;
+    --danger: #f07878;
+    --danger-soft: #331a1a;
+    --code-bg: #07100e;
+    --code-ink: #d8ebe5;
+    --shadow: none;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1413;
+  --surface: #131d1b;
+  --surface-alt: #1b2825;
+  --ink: #e6efec;
+  --ink-soft: #c2d0cb;
+  --muted: #99a8a3;
+  --line: #2a3935;
+  --accent: #5fd0c4;
+  --accent-soft: #17332f;
+  --accent-line: #2e6b63;
+  --warn: #f0a24b;
+  --warn-soft: #332412;
+  --danger: #f07878;
+  --danger-soft: #331a1a;
+  --code-bg: #07100e;
+  --code-ink: #d8ebe5;
+  --shadow: none;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.72;
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.memo-head { max-width: 1120px; margin: 0 auto; padding-top: 42px; }
+.eyebrow {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+h1 {
+  font-family: "Space Grotesk", "Noto Sans SC", sans-serif;
+  font-size: clamp(32px, 5vw, 46px);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  margin: 0;
+  text-wrap: balance;
+}
+.lede {
+  max-width: 68ch;
+  margin: 16px 0 0;
+  color: var(--ink-soft);
+  font-size: 17px;
+  line-height: 1.7;
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 18px;
+  padding: 5px 10px;
+  border: 1px solid var(--accent-line);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.layout {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 52px;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding-block: 44px 96px;
+}
+.toc {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.toc p {
+  margin: 0 0 10px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.toc a {
+  display: block;
+  padding: 5px 0;
+  color: var(--muted);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  padding-left: 10px;
+}
+.toc a:hover { color: var(--accent); border-left-color: var(--accent); }
+article { min-width: 0; }
+section { padding-top: 8px; }
+h2 {
+  font-family: "Space Grotesk", "Noto Sans SC", sans-serif;
+  font-size: 24px;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  margin: 54px 0 16px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+  text-wrap: balance;
+}
+h3 {
+  font-size: 16.5px;
+  line-height: 1.4;
+  margin: 28px 0 10px;
+}
+p { max-width: 72ch; margin: 10px 0; }
+ul, ol { margin: 10px 0; padding-left: 1.3em; max-width: 72ch; }
+li { margin: 5px 0; }
+strong { font-weight: 700; }
+.verdict {
+  margin: 26px 0 8px;
+  padding: 18px 20px;
+  border: 1px solid var(--accent-line);
+  border-left: 4px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 6px;
+}
+.verdict p { margin: 0; max-width: 78ch; color: var(--ink); }
+.verdict .k {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 6px;
+}
+.facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin: 26px 0 10px;
+}
+.fact {
+  border-top: 2px solid var(--ink);
+  padding-top: 12px;
+}
+.fact .n {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  display: block;
+  font-variant-numeric: tabular-nums;
+}
+.fact .l {
+  display: block;
+  margin-top: 5px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.disk-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 20px 0 8px;
+}
+.disk {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 14px 15px;
+  box-shadow: var(--shadow);
+}
+.disk-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.disk-head b {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 18px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.meter {
+  height: 9px;
+  margin: 10px 0 8px;
+  background: var(--accent-soft);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.meter span { display: block; height: 100%; background: var(--ink-soft); border-radius: 4px 0 0 4px; }
+.disk-sub { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--muted); }
+.figure {
+  margin: 26px 0 8px;
+}
+.fig-scroll {
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+figure svg { display: block; width: 100%; min-width: 820px; height: auto; }
+figcaption {
+  margin-top: 8px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 78ch;
+}
+.svg-box { fill: var(--surface); stroke: var(--line); stroke-width: 1; }
+.svg-oss { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
+.svg-warn { fill: var(--warn-soft); stroke: var(--warn); stroke-width: 1.2; }
+.svg-danger { fill: var(--danger-soft); stroke: var(--danger); stroke-width: 1.2; }
+.svg-title {
+  font-family: "Space Grotesk", "Noto Sans SC", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  fill: var(--ink);
+}
+.svg-sub {
+  font-family: "IBM Plex Mono", "Noto Sans SC", monospace;
+  font-size: 10.5px;
+  fill: var(--muted);
+}
+.svg-label { font-family: "Noto Sans SC", sans-serif; font-size: 10.5px; fill: var(--muted); }
+.svg-arrow { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+.svg-arrowhead { fill: var(--muted); }
+.chart { margin: 22px 0 8px; }
+.bars { max-width: 760px; margin-top: 6px; }
+.bar-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) 56px;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+.bar-label { font-size: 12.5px; color: var(--ink-soft); text-align: right; }
+.bar-track { height: 10px; background: var(--surface-alt); border-radius: 4px; overflow: hidden; }
+.bar-fill { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+.bar-value {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.axis {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 4px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+}
+.axis-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) 56px;
+  gap: 12px;
+}
+.table-wrap { overflow-x: auto; margin: 16px 0 8px; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  line-height: 1.55;
+}
+th {
+  text-align: left;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--ink);
+  padding: 8px 12px 8px 0;
+  white-space: nowrap;
+}
+td {
+  border-bottom: 1px solid var(--line);
+  padding: 9px 12px 9px 0;
+  vertical-align: top;
+  font-variant-numeric: tabular-nums;
+}
+th:last-child, td:last-child { padding-right: 0; }
+td code, p code, li code {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.9em;
+  background: var(--surface-alt);
+  padding: 1px 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+pre {
+  margin: 16px 0 8px;
+  padding: 16px 18px;
+  background: var(--code-bg);
+  color: var(--code-ink);
+  border-radius: 6px;
+  overflow-x: auto;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12.2px;
+  line-height: 1.65;
+  tab-size: 2;
+}
+pre code { background: none; padding: 0; font-size: inherit; white-space: pre; }
+.note {
+  font-size: 12.5px;
+  color: var(--muted);
+  max-width: 78ch;
+}
+.tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.tag-ok { background: var(--accent-soft); color: var(--accent); }
+.tag-warn { background: var(--warn-soft); color: var(--warn); }
+.tag-bad { background: var(--danger-soft); color: var(--danger); }
+footer {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 22px 0 40px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; gap: 0; padding-top: 30px; }
+  .toc {
+    position: static;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--line);
+  }
+  .toc p { width: 100%; margin-bottom: 2px; }
+  .toc a { border-left: 0; padding: 2px 0; }
+  .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .disk-grid { grid-template-columns: 1fr; }
+  .bar-row { grid-template-columns: 112px minmax(0, 1fr) 48px; }
+  .axis-row { grid-template-columns: 112px minmax(0, 1fr) 48px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto !important; }
+}
+</style>
+<style>
+html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+</style>
+</head>
+<body>
+
+
+<header class="memo-head">
+  <p class="eyebrow">技术方案 · 2026-11-17 · 直播看管</p>
+  <h1>直播看管 OSS 化</h1>
+  <p class="lede">把下载、录屏、处理结果收敛到 OSS 一份；本地只保留一个任务的暂存。下面给出实测吞吐、目录契约、配置改法和迁移步骤。</p>
+  <span class="status">建议方案 · 待评审</span>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="目录">
+    <p>Contents</p>
+    <a href="#verdict">结论</a>
+    <a href="#now">现状与资产</a>
+    <a href="#target">目标架构</a>
+    <a href="#layout">目录与配置</a>
+    <a href="#env">环境基线</a>
+    <a href="#measured">实测边界</a>
+    <a href="#plan">实施计划</a>
+    <a href="#risks">风险清单</a>
+  </nav>
+
+  <article>
+    <div class="note" style="margin:0 0 18px">
+      <p><strong>2026-11-19 路径更正：</strong>项目 OSS 根是
+      <code>~/oss-bucket/web/1/奇瑞汽车/直播看管/</code>；本文早先写的
+      <code>~/oss-bucket/奇瑞汽车/…</code> 是桶根同名前缀（P1/P2 曾写错）。
+      <code>scripts/oss_relocate_prefix.py</code> 已用服务端 CopyObject 把
+      38 个 <code>_live</code> 对象（42.08GB）和 406,616 个结果对象（85.08GB）
+      复制到 <code>web/1/…</code>，21 份配置的 27 个裁尾路径已改指，
+      <code>livepipe check</code> 仍 22/22；源前缀保留到复核后删除。</p>
+      <p><strong>2026-11-18 实测核对（P1.5 已完成）：</strong>
+      22 份配置共 82 段已全部改读 OSS：55 段整段读
+      <code>直播data/录屏</code>（175.30GB），27 个裁尾副本读新契约根
+      <code>奇瑞汽车/直播看管/直播录屏/&lt;事件&gt;/_live</code>（40.07GB）。
+      <code>livepipe check</code> <strong>22/22</strong>；两个样片（裁尾 164.7s +
+      整段 3.2GB 中段 60s）实跑 rc=0。当前 OSS 存量：0930 事件根 52 个可用视频、
+      1019 事件根 30 个（补传前 50 + 30）。实测明细与逐段映射见
+      <a href="oss-p0-devlog.html">P0 开发日志</a>、
+      <a href="oss-p1-devlog.html">P1 补传日志</a>、
+      <a href="oss-p15-devlog.html">P1.5 切读日志</a>；清单
+      <code>out/oss_inventory/2026-11-17/</code>（P1 后 27 行 / 40.07GB），
+      切读备份 <code>out/p1.5/backup/20261117T234234Z/</code>。
+      <strong>P2 结果链路也已完成（2026-11-18）：</strong>
+      <code>scripts/oss_sync.py</code> 按大小 + SHA256 增量同步，已接进
+      <code>batch_local</code> / <code>batch_remote</code> 的收/回传步骤；
+      真实任务 10-04 视频号 664 文件 / 122.94MB 已写入
+      <code>直播产生结果</code>，对象数、字节、SHA256 全部一致，重跑 100% 跳过
+      （<a href="oss-p2-devlog.html">P2 开发日志</a>）。
+      <strong>P3 下载链路也已完成（2026-11-19）：</strong>
+      <code>scripts/oss_download.py</code> 让下载器直写 OSS <code>.part</code>，成功后
+      校验字节/时长、改名并写 manifest，失败不留正式文件；3.2GB 单文件直写通过
+      （536s / 约 6.0MB/s），百度来源 bypy 目录 → 暂存 → OSS 也通过
+      （<a href="oss-p3-devlog.html">P3 开发日志</a>）。
+      <strong>P4 影子期已开始（2026-11-19 → 2026-11-26），尚未删除任何本地文件：</strong>
+      表情表已迁到 <code>~/livepipe_assets</code>，staging 覆盖审计已通过；外置 out
+      严格口径仍有 136GB 结果没有 OSS 副本，需先同步或选择「结果靠重跑」的 inputs 口径
+      （<a href="oss-p4-devlog.html">P4 审计日志</a>）。
+      <strong>切读只改输入路径；原片与本地结果都还在。</strong></p>
+    </div>
+    <section id="verdict">
+      <div class="verdict">
+        <span class="k">Recommendation</span>
+        <p><strong>录屏由 dypy 直接写进 OSS，结果先落本地 NVMe 再同步 OSS。</strong>录屏是单个大文件顺序写，goofys 正好擅长；结果是几千个小文件 + 逐帧 append，才需要本地暂存。补传 40.07GB 的 27 个裁尾副本（外加 2 个缺失整段）后，存量 22 份配置可以全部切过去。</p>
+        <p class="note"><b>2026-11-19 更新：</b>新配置已把 <code>output.dir</code> / <code>collect.out</code>
+        直接写到 OSS 的 <code>直播产生结果/…</code>，本地不留结果（探秘局两份已切）。
+        <code>base_dir</code> 也可写 OSS：探秘局用 <code>…/直播看管/素材</code>，表情表在
+        <code>&lt;base_dir&gt;/out/wechat_emoji/</code>（加载 109 模板约 2.5s）。
+        实测 20s 切片：rows / frames / comments / summary 直写正常；goofs 不支持
+        append，<code>rows.jsonl</code> 续跑已改为「重写已有行再继续」。存量批次仍用
+        本地结果 + <code>oss_sync.py</code> 回填。</p>
+      </div>
+      <div class="facts">
+        <div class="fact"><span class="n">224.8 GB</span><span class="l">已在 OSS 的录屏<br>0930 批次 131.6 + 1019 批次 93.2</span></div>
+        <div class="fact"><span class="n">82 段</span><span class="l">配置里的视频引用<br>55 段命中 + 27 裁尾副本</span></div>
+        <div class="fact"><span class="n">40.07 GB</span><span class="l">27 个裁尾副本已补入<br>21 个 <code>_live</code> + 6 个 1019 media</span></div>
+        <div class="fact"><span class="n">233 GB</span><span class="l">本地可直接释放<br>外置 out 161 + 暂存 59 + 本地 out 13</span></div>
+      </div>
+    </section>
+
+    <section id="now">
+      <h2>现状：同一批素材，四份副本</h2>
+      <p>《全球车的中国路》的 300GB 素材现在同时存在于录屏源、MyDisk、批处理暂存和外置 out。任何一处空间不足，整条队列就停；回传还要再复制一次。问题不在存储单价，而在<strong>副本数量和回传路径</strong>。</p>
+
+      <div class="disk-grid" role="img" aria-label="三块磁盘的已用与可用空间：本机 328G 已用 116G 可用；外置盘 161G 已用 39G 可用；MyDisk 261G 已用 38G 可用。">
+        <div class="disk">
+          <div class="disk-head"><span>本机 NVMe</span><b>116G 可用</b></div>
+          <div class="meter"><span style="width:70%"></span></div>
+          <div class="disk-sub">328G / 468G 已用</div>
+        </div>
+        <div class="disk">
+          <div class="disk-head"><span>外置 out 盘</span><b>39G 可用</b></div>
+          <div class="meter"><span style="width:81%"></span></div>
+          <div class="disk-sub">161G / 199G 已用</div>
+        </div>
+        <div class="disk">
+          <div class="disk-head"><span>MyDisk 素材盘</span><b>38G 可用</b></div>
+          <div class="meter"><span style="width:88%"></span></div>
+          <div class="disk-sub">261G / 299G 已用</div>
+        </div>
+      </div>
+
+      <figure class="figure">
+        <div class="fig-scroll">
+          <svg viewBox="0 0 1000 250" role="img" aria-label="当前链路：录屏源经 SMB 复制到 MyDisk，再复制到批处理暂存，rsync 回传到外置 out，再复制到本地 out，同一批素材共四份。">
+            <defs>
+              <marker id="arrow-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" class="svg-arrowhead"></path>
+              </marker>
+            </defs>
+            <rect class="svg-box" x="10" y="52" width="150" height="78" rx="5"></rect>
+            <text class="svg-title" x="85" y="82" text-anchor="middle">直播源</text>
+            <text class="svg-sub" x="85" y="101" text-anchor="middle">手机录屏 / SMB</text>
+
+            <rect class="svg-warn" x="200" y="52" width="160" height="78" rx="5"></rect>
+            <text class="svg-title" x="280" y="82" text-anchor="middle">MyDisk</text>
+            <text class="svg-sub" x="280" y="101" text-anchor="middle">261GB · 剩 38GB</text>
+
+            <rect class="svg-danger" x="400" y="52" width="180" height="78" rx="5"></rect>
+            <text class="svg-title" x="490" y="82" text-anchor="middle">批处理暂存</text>
+            <text class="svg-sub" x="490" y="101" text-anchor="middle">59GB · 曾剩 3.9GB</text>
+
+            <rect class="svg-box" x="620" y="52" width="150" height="78" rx="5"></rect>
+            <text class="svg-title" x="695" y="82" text-anchor="middle">外置 out</text>
+            <text class="svg-sub" x="695" y="101" text-anchor="middle">161GB · 剩 39GB</text>
+
+            <rect class="svg-box" x="810" y="52" width="180" height="78" rx="5"></rect>
+            <text class="svg-title" x="900" y="82" text-anchor="middle">本地 out（回传）</text>
+            <text class="svg-sub" x="900" y="101" text-anchor="middle">13GB</text>
+
+            <line class="svg-arrow" x1="160" y1="91" x2="194" y2="91" marker-end="url(#arrow-a)"></line>
+            <text class="svg-label" x="177" y="42" text-anchor="middle">SMB</text>
+            <text class="svg-label" x="177" y="150" text-anchor="middle">1.3–5.9</text>
+            <text class="svg-label" x="177" y="164" text-anchor="middle">MB/s</text>
+
+            <line class="svg-arrow" x1="360" y1="91" x2="394" y2="91" marker-end="url(#arrow-a)"></line>
+            <text class="svg-label" x="377" y="42" text-anchor="middle">复制</text>
+
+            <line class="svg-arrow" x1="580" y1="91" x2="614" y2="91" marker-end="url(#arrow-a)"></line>
+            <text class="svg-label" x="597" y="42" text-anchor="middle">rsync 回传</text>
+
+            <line class="svg-arrow" x1="770" y1="91" x2="804" y2="91" marker-end="url(#arrow-a)"></line>
+            <text class="svg-label" x="787" y="42" text-anchor="middle">再复制</text>
+
+            <text class="svg-label" x="500" y="196" text-anchor="middle">同一批 300GB 素材，4 个位置各存一份；最先满的是批处理暂存盘。</text>
+          </svg>
+        </div>
+        <figcaption>现在的复制链。外置 out 和本地 out 是同一批产物的两份；批处理暂存是第三份，素材原片是第四份。</figcaption>
+      </figure>
+
+      <h3>两条硬瓶颈</h3>
+      <ul>
+        <li><strong>下载慢。</strong>SMB 链路实测 1.3–5.9MB/s，22.8GB 要 2–3 小时；中断是常态，现有脚本靠 <code>.part</code> 断点续传。</li>
+        <li><strong>磁盘满。</strong>10-03 和 10-06 组装时本地只剩 3.9–5.9GB，队列报“空间不足”；迁移 out 后才腾出 116GB。</li>
+      </ul>
+
+      <h3>已有资产：录屏已经在 OSS</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>位置</th><th>文件数</th><th>大小</th><th>用途</th></tr></thead>
+          <tbody>
+            <tr><td>OSS <code>2026-0930-1006《全球车的中国路》</code></td><td>51（50 可用）</td><td>131.6GB</td><td>全量录屏，按 <code>MM.DD/平台/子目录</code></td></tr>
+            <tr><td>OSS <code>2026-1019-1024《全球创新大会》</code></td><td>30</td><td>86.8GB</td><td>全量录屏，按 <code>10.19/平台/账号</code></td></tr>
+            <tr><td>OSS <code>返图记录补充</code></td><td>127</td><td>0.07GB</td><td>交付图补充</td></tr>
+            <tr><td>OSS <code>直播产生结果</code></td><td>0</td><td>0</td><td>空，待写入</td></tr>
+            <tr><td>外置 out 盘</td><td>474,223</td><td>161GB</td><td>历史产物，已迁到 C0DE6 盘</td></tr>
+            <tr><td>本机 <code>livepipe_batches</code></td><td>—</td><td>59GB</td><td>本地组装暂存</td></tr>
+            <tr><td>MyDisk</td><td>—</td><td>261GB</td><td>素材原片 + 裁尾</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">0930 的 161GB 素材 = OSS 131.6GB 全量 + <code>_live</code> 29GB 裁尾；10.19 的 87GB 与 OSS 86.8GB 基本相等。也就是说，补传裁尾后，MyDisk 上这两批原片可以整体释放。</p>
+    </section>
+
+    <section id="target">
+      <h2>目标：OSS 单一副本，本地只留一个任务</h2>
+      <p>录屏只存 OSS 一份，<strong>dypy 的直播下载输出直接指向 goofys 挂载点</strong>：先写 <code>&lt;名&gt;.part</code>，关闭后校验大小与时长，再 rename 成正式文件。计算节点通过 goofys 只读访问；结果先写本地 NVMe，任务完成后按文件大小和校验和同步到 OSS。这样下载不再落本地再传一遍，结果又避开了 goofys 小文件慢、长文件缓冲不可控的问题。</p>
+
+      <figure class="figure">
+        <div class="fig-scroll">
+          <svg viewBox="0 0 1000 360" role="img" aria-label="目标链路：dypy 直播直接写 OSS 录屏的 .part 文件，关闭后校验并 rename，登记 manifest；计算节点通过 goofys 只读录屏，结果写本地 NVMe，完成后 oss_sync 到 OSS 直播产生结果。">
+            <defs>
+              <marker id="arrow-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" class="svg-arrowhead"></path>
+              </marker>
+            </defs>
+
+            <text class="svg-label" x="10" y="24">① 入库</text>
+            <rect class="svg-box" x="10" y="40" width="170" height="78" rx="5"></rect>
+            <text class="svg-title" x="95" y="70" text-anchor="middle">dypy 直播</text>
+            <text class="svg-sub" x="95" y="89" text-anchor="middle">直写 .part</text>
+
+            <rect class="svg-oss" x="250" y="40" width="220" height="78" rx="5"></rect>
+            <text class="svg-title" x="360" y="70" text-anchor="middle">OSS 直播录屏</text>
+            <text class="svg-sub" x="360" y="89" text-anchor="middle">直写 · 单一副本</text>
+
+            <rect class="svg-box" x="540" y="40" width="200" height="78" rx="5"></rect>
+            <text class="svg-title" x="640" y="70" text-anchor="middle">校验 + rename</text>
+            <text class="svg-sub" x="640" y="89" text-anchor="middle">size + duration</text>
+
+            <rect class="svg-box" x="810" y="40" width="180" height="78" rx="5"></rect>
+            <text class="svg-title" x="900" y="70" text-anchor="middle">manifest</text>
+            <text class="svg-sub" x="900" y="89" text-anchor="middle">登记清单</text>
+
+            <line class="svg-arrow" x1="180" y1="79" x2="244" y2="79" marker-end="url(#arrow-b)"></line>
+            <text class="svg-label" x="212" y="30" text-anchor="middle">直写 9–12.5 MB/s</text>
+            <line class="svg-arrow" x1="470" y1="79" x2="534" y2="79" marker-end="url(#arrow-b)"></line>
+            <text class="svg-label" x="502" y="30" text-anchor="middle">close → rename</text>
+            <line class="svg-arrow" x1="740" y1="79" x2="804" y2="79" marker-end="url(#arrow-b)"></line>
+            <text class="svg-label" x="772" y="30" text-anchor="middle">登记</text>
+
+            <text class="svg-label" x="10" y="190">② 计算与结果</text>
+            <rect class="svg-oss" x="10" y="208" width="180" height="78" rx="5"></rect>
+            <text class="svg-title" x="100" y="238" text-anchor="middle">OSS 直播录屏</text>
+            <text class="svg-sub" x="100" y="257" text-anchor="middle">只读挂载</text>
+
+            <rect class="svg-box" x="230" y="208" width="180" height="78" rx="5"></rect>
+            <text class="svg-title" x="320" y="238" text-anchor="middle">计算节点</text>
+            <text class="svg-sub" x="320" y="257" text-anchor="middle">goofys 只读</text>
+
+            <rect class="svg-box" x="450" y="208" width="170" height="78" rx="5"></rect>
+            <text class="svg-title" x="535" y="238" text-anchor="middle">本地 NVMe</text>
+            <text class="svg-sub" x="535" y="257" text-anchor="middle">结果 1–3GB</text>
+
+            <rect class="svg-box" x="660" y="208" width="150" height="78" rx="5"></rect>
+            <text class="svg-title" x="735" y="238" text-anchor="middle">oss_sync</text>
+            <text class="svg-sub" x="735" y="257" text-anchor="middle">size + sha256</text>
+
+            <rect class="svg-oss" x="850" y="208" width="140" height="78" rx="5"></rect>
+            <text class="svg-title" x="920" y="238" text-anchor="middle">OSS 结果</text>
+            <text class="svg-sub" x="920" y="257" text-anchor="middle">直播产生结果</text>
+
+            <line class="svg-arrow" x1="190" y1="247" x2="224" y2="247" marker-end="url(#arrow-b)"></line>
+            <text class="svg-label" x="207" y="198" text-anchor="middle">冷读 6.6 MB/s</text>
+            <line class="svg-arrow" x1="410" y1="247" x2="444" y2="247" marker-end="url(#arrow-b)"></line>
+            <text class="svg-label" x="427" y="198" text-anchor="middle">写本地</text>
+            <line class="svg-arrow" x1="620" y1="247" x2="654" y2="247" marker-end="url(#arrow-b)"></line>
+            <text class="svg-label" x="637" y="198" text-anchor="middle">完成</text>
+            <line class="svg-arrow" x1="810" y1="247" x2="844" y2="247" marker-end="url(#arrow-b)"></line>
+            <text class="svg-label" x="827" y="198" text-anchor="middle">8.5–9.4 MB/s</text>
+
+            <text class="svg-label" x="500" y="330" text-anchor="middle">撞库、返图直接读 OSS；本地只读挂载，不再回传。</text>
+          </svg>
+        </div>
+        <figcaption>目标链路。关键变化是 dypy 直写 OSS、入库只留一份录屏、计算不再 rsync 回传、结果在任务边界同步。箭头上的数字是本机 2026-11-17 实测，远端同区域需复测。</figcaption>
+      </figure>
+
+      <h3>为什么录屏直写、结果不直写</h3>
+      <p>录屏是单个 3GB 顺序写，goofys 实测 9.4–12.5MB/s，直写不会多一份副本；128MB 文件 rename 只要 0.15 秒，所以 <code>.part</code> 收尾很便宜。结果是一个任务约 6,000 个小文件，直接写只有 10–13 个/秒，要多花 8–10 分钟；更麻烦的是 <code>rows.jsonl</code> 逐帧 append，长文件持续 flush 的请求放大没有实测边界。所以结果先落本地、完成即同步。</p>
+      <p class="note"><b>2026-11-19 实测修正：</b>用户要求结果也不落本地。已把探秘局两份配置的
+      <code>output.dir</code> / <code>collect.out</code> 指到 OSS；20s 切片直写 rows/frames/comments
+      全部正常，写+flush 不触发整文件重传。真正的坑是 goofs 不支持 <code>open("a")</code>：
+      <code>rows.jsonl</code> 续跑已改为重写已有行；小文件逐张写仍比本地慢（约 10–13 个/秒）。</p>
+    </section>
+
+    <section id="layout">
+      <h2>目录契约与配置改法</h2>
+      <p>存量的 <code>2026-0930-1006…</code> 和 <code>2026-1019-1024…</code> 目录保持只读，不改名；新下载统一进 <code>直播录屏</code>，结果进 <code>直播产生结果</code>，两边都用同一套 <code>事件/日期/平台/账号</code> 层级。</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>类型</th><th>OSS 路径</th><th>真实例子</th></tr></thead>
+          <tbody>
+            <tr><td>存量录屏</td><td><code>&lt;事件&gt;/&lt;MM.DD&gt;/&lt;平台&gt;/&lt;子目录&gt;/*.mp4</code></td><td><code>…/10.01/视频号/1/SVID_20261001_100011_1.mp4</code></td></tr>
+            <tr><td>新录屏</td><td><code>直播录屏/&lt;事件&gt;/&lt;MM.DD&gt;/&lt;平台&gt;/&lt;账号&gt;/&lt;开始&gt;-&lt;结束&gt;.mp4</code></td><td><code>直播录屏/2026-11-01…/11.01/抖音/奇瑞汽车/10-00-11-16.mp4</code></td></tr>
+            <tr><td>裁尾副本</td><td><code>直播录屏/&lt;事件&gt;/_live/&lt;名&gt;.mp4</code></td><td><code>…/_live/1001_wechat_12-43-14-00_0-2854.mp4</code></td></tr>
+            <tr><td>结果</td><td><code>直播产生结果/&lt;事件&gt;/&lt;MM.DD&gt;/&lt;平台&gt;/&lt;账号&gt;/segN/…</code></td><td><code>…/10.01/视频号/奇瑞汽车/seg1/comments.jsonl</code></td></tr>
+            <tr><td>返图</td><td><code>返图记录补充/&lt;事件&gt;/&lt;平台&gt;-&lt;账号&gt;/&lt;昵称-序号&gt;/*.jpg</code></td><td>沿用现有 <code>视频号-奇瑞汽车/麦穗-42/*.jpg</code></td></tr>
+            <tr><td>清单</td><td>与录屏同目录的 <code>&lt;文件名&gt;.manifest.json</code></td><td>记录字节、时长、trim 区间、sha256</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>录屏由 dypy 直接写挂载点。唯一要求是输出路径落在 OSS 上，扩展名先写 <code>.part</code>；收尾脚本再改名并登记清单。</p>
+
+      <pre><code># dypy 的下载参数以它自己的 --help 为准；这里只约束 --out 的落点
+OSS=/home/puyu/oss-bucket/web/1/奇瑞汽车/直播看管
+dypy 直播 &lt;参数&gt; --out "$OSS/直播录屏/$EVENT/$DAY/$PLATFORM/$ACCOUNT/$NAME.mp4.part"
+
+# 收尾：close 后校验 size / duration，rename 成正式名，写 manifest
+python3 -m livepipe oss ingest --src "$OSS/直播录屏/$EVENT/$DAY/$PLATFORM/$ACCOUNT/$NAME.mp4.part" \
+  --event "$EVENT" --day "$DAY" --platform "$PLATFORM" --account "$ACCOUNT"</code></pre>
+
+      <p>配置改动很小：<code>base_dir</code> 继续指向本地（表情表、临时文件不动），只把 <code>input.videos</code> 和 <code>output.dir</code> 写成 OSS 绝对路径。用 10-01 视频号做探针，把 seg3 指到对应整段后，4 段 OSS 路径通过 <code>livepipe check</code>；裁尾副本已补传，切读时按原配置就能切换。</p>
+
+      <p class="note"><b>运行前置（2026-11-19 起）：</b>livepipe <b>不会自动下载</b>素材。跑 <code>livepipe run</code> 之前，<code>input.videos</code> 指向的视频必须已经在 OSS：百度来源先用 <code>scripts/oss_download.py baidu</code> 直写 OSS（不落本地暂存），裁尾副本走 <code>cp → .part → python3 -m livepipe oss ingest</code>；然后 <code>livepipe check</code> 通过再跑。配置里不接受百度/bypy 路径（livepipe 用 OpenCV 反复 seek，百度路径没有文件句柄）。</p>
+
+      <pre><code>{
+  // 本地表情表、缓存仍然按旧 base_dir 解析
+  "base_dir": "/run/media/puyu/C0DE6A4BDE6A39B4",
+
+  "input": {
+    "videos": [
+      "/home/puyu/oss-bucket/web/1/奇瑞汽车/直播看管/2026-0930-1006《全球车的中国路》/10.01/视频号/1/SVID_20261001_100011_1.mp4",
+      "/home/puyu/oss-bucket/web/1/奇瑞汽车/直播看管/2026-0930-1006《全球车的中国路》/10.01/视频号/1/SVID_20261001_100011_2.mp4",
+      "/home/puyu/oss-bucket/web/1/奇瑞汽车/直播看管/2026-0930-1006《全球车的中国路》/10.01/视频号/1/SVID_20261001_100011_3.mp4",
+      "/home/puyu/oss-bucket/web/1/奇瑞汽车/直播看管/2026-0930-1006《全球车的中国路》/10.01/视频号/2/SVID_20261001_143515_2.mp4"
+    ]
+  },
+
+  "output": {
+    "dir": "/home/puyu/oss-bucket/web/1/奇瑞汽车/直播看管/直播产生结果/2026-0930-1006《全球车的中国路》/10.01/视频号"
+  }
+}</code></pre>
+
+      <p>存量 27 个裁尾段有两条路：先把裁尾副本补传到 OSS（40.07GB，最省事），或给 <code>input.videos</code> 增加对象写法，让 livepipe 按段裁尾，不再生成副本。</p>
+
+      <pre><code>// 建议的 livepipe 扩展：每段自带 start / duration
+"videos": [
+  { "path": "…/SVID_20261001_100011_3.mp4", "start": 0, "duration": 2854.41 }
+]</code></pre>
+
+      <p>后者只需要改 <code>config/paths.py</code> 的展开和 <code>segments()</code>，约 20 行；收益是以后每个新批次都不再产生 <code>_live</code> 副本，OSS 上只有原片一份。存量批次仍然建议补传裁尾，避免动正在跑的生产配置。</p>
+    </section>
+
+    <section id="env">
+      <h2>环境基线：任意机器都能复现</h2>
+      <p>程序不假设固定在本机。下载机、计算节点、评审机只需要 Python 3.8+、FUSE3、<strong>bypy 1.8.9</strong> 和 <strong>goofys 0.24.0</strong>，以及两个凭据目录。bypy 管百度网盘，goofys 管 OSS，两者不要混用。</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>角色</th><th>需要装什么</th><th>拿什么数据</th></tr></thead>
+          <tbody>
+            <tr><td>下载机</td><td>dypy、bypy、goofys</td><td>直播直写 OSS；百度 <code>/直播录屏</code> 拉取</td></tr>
+            <tr><td>计算节点</td><td>goofys、conda 环境（rapidocr / torch）</td><td>只读 OSS 录屏，结果写本地 NVMe</td></tr>
+            <tr><td>评审 / 撞库</td><td>goofys</td><td>只读 OSS 结果与返图</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>bypy：百度网盘侧</h3>
+      <ul>
+        <li>本机 <code>bypy 1.8.9</code>；配额 <strong>14.103TB</strong>，已用 1.479TB。远端 <code>/直播录屏</code> 已有 <code>10.20上午</code>、<code>10.20下午</code>、<code>10.21</code>–<code>10.25</code>、<code>11.10、11.12风云T7直播</code>。</li>
+        <li>安装：<code>python3 -m pip install --user bypy==1.8.9</code>；首次 <code>bypy info</code> 按提示授权。</li>
+        <li>批量机器：直接复制已授权的 <code>~/.bypy/bypy.json</code>（0600），不要进 git。</li>
+        <li>拉取（2026-11-19 起）：<code>scripts/oss_download.py baidu --remote /直播录屏/&lt;目录&gt; --dest-rel &lt;OSS 相对目录&gt;</code> 直写 OSS；按 PCS <code>Range</code> 顺序流式写 <code>.part</code>，<code>--resume</code> 断点续传。</li>
+        <li>边界：bypy 不是 OSS 客户端；它的 20MB 分块下载在 goofys 上大文件会失败。百度来源改由 <code>scripts/oss_download.py baidu</code> 用 bypy 授权/列目录、PCS 单请求 <code>Range</code> 顺序流式直写 OSS（不落本地暂存），失败保留 <code>.part</code> 可续传。</li>
+      </ul>
+
+      <h3>goofys：OSS 侧</h3>
+      <ul>
+        <li>本机是 23MB 静态二进制，<code>0.24.0</code>；依赖 <code>/dev/fuse</code> 和 fuse3（本机 3.18.2）。</li>
+        <li>凭据放 <code>~/.aws/credentials</code> 默认 profile，<code>chmod 600</code>；不要把密钥写进配置 JSON。</li>
+        <li>挂载：<code>goofys -f -o allow_other --endpoint http://oss-cn-beijing.aliyuncs.com --subdomain static-cantotimes-com ~/oss-bucket</code>。用 <code>allow_other</code> 时要在 <code>/etc/fuse.conf</code> 打开 <code>user_allow_other</code>。</li>
+        <li>远端无 GUI：scp 凭据目录 + systemd 托管；不要再用明文 SSH 密码。</li>
+      </ul>
+
+      <pre><code>#!/usr/bin/env bash
+set -euo pipefail
+
+# 1) 系统依赖（Debian/Ubuntu；其它发行版换成 dnf/yum）
+sudo apt-get install -y fuse3 python3-pip
+
+# 2) goofys：静态二进制，无运行时依赖
+curl -L -o /tmp/goofys \
+  https://github.com/kahing/goofys/releases/download/v0.24.0/goofys
+sudo install -m 755 /tmp/goofys /usr/local/bin/goofys
+
+# 3) bypy
+python3 -m pip install --user bypy==1.8.9
+
+# 4) 凭据：从受控位置复制，chmod 600，绝不进仓库
+install -D -m 600 /secure/bypy.json      ~/.bypy/bypy.json
+install -D -m 600 /secure/aws_credentials ~/.aws/credentials
+
+# 5) 挂载 + 自检（systemd 里同样用 -f）
+mkdir -p ~/oss-bucket
+goofys -f -o allow_other --endpoint http://oss-cn-beijing.aliyuncs.com \
+  --subdomain static-cantotimes-com ~/oss-bucket &amp;
+
+bypy info
+findmnt -T ~/oss-bucket
+</code></pre>
+
+      <h3>一次性健康检查</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>检查</th><th>命令</th><th>通过标准</th></tr></thead>
+          <tbody>
+            <tr><td>bypy 授权</td><td><code>bypy info</code></td><td>打印 Quota / Used，不是授权链接</td></tr>
+            <tr><td>百度目录</td><td><code>bypy list /直播录屏</code></td><td>看到 <code>10.20上午</code> 等目录</td></tr>
+            <tr><td>OSS 挂载</td><td><code>findmnt -T ~/oss-bucket</code></td><td><code>fuse</code>，源为 <code>static-cantotimes-com</code></td></tr>
+            <tr><td>写吞吐</td><td><code>dd if=/dev/zero of=~/oss-bucket/.../_health/64m.bin bs=1M count=64</code></td><td>9–12.5MB/s，完成后删除</td></tr>
+            <tr><td>rename</td><td><code>mv _health/64m.bin _health/64m.mp4</code></td><td>小于 1 秒（服务端完成）</td></tr>
+            <tr><td>软链边界</td><td><code>ln -s a b</code></td><td>预期失败（ENOSYS），不要依赖软链</td></tr>
+            <tr><td>凭据权限</td><td><code>stat -c %a ~/.bypy/bypy.json ~/.aws/credentials</code></td><td><code>600</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="note">两个凭据目录是唯一需要人工搬运的东西。新机器先跑这一页的健康检查，再跑 <code>livepipe check</code>；两者都过，才允许接生产队列。</p>
+    </section>
+
+    <section id="measured">
+      <h2>实测边界</h2>
+      <p>下面的数字来自本机 2026-11-17 的探针：goofys 0.24.0，阿里云北京，单线程。远端同区域没有复测，不能直接套用。</p>
+
+      <figure class="chart">
+        <figcaption>本机单线程吞吐（MB/s）。SMB 是现有下载链路，goofys 是目标链路；写随文件大小在 9.4–12.5 之间。</figcaption>
+        <div class="bars" role="img" aria-label="吞吐对比：SMB 下载低 1.3、高 5.9；OSS SDK 单 PUT 5.8；goofys 冷读 6.6；goofys 写 256MB 9.4、128MB 12.5 MB/s。">
+          <div class="bar-row"><span class="bar-label">SMB 下载（低）</span><span class="bar-track"><span class="bar-fill" style="width:9%"></span></span><span class="bar-value">1.3</span></div>
+          <div class="bar-row"><span class="bar-label">SMB 下载（高）</span><span class="bar-track"><span class="bar-fill" style="width:42%"></span></span><span class="bar-value">5.9</span></div>
+          <div class="bar-row"><span class="bar-label">OSS SDK 单 PUT</span><span class="bar-track"><span class="bar-fill" style="width:41%"></span></span><span class="bar-value">5.8</span></div>
+          <div class="bar-row"><span class="bar-label">goofys 冷读</span><span class="bar-track"><span class="bar-fill" style="width:47%"></span></span><span class="bar-value">6.6</span></div>
+          <div class="bar-row"><span class="bar-label">goofys 写（256MB）</span><span class="bar-track"><span class="bar-fill" style="width:67%"></span></span><span class="bar-value">9.4</span></div>
+          <div class="bar-row"><span class="bar-label">goofys 写（128MB）</span><span class="bar-track"><span class="bar-fill" style="width:89%"></span></span><span class="bar-value">12.5</span></div>
+          <div class="axis-row"><span></span><div class="axis"><span>0</span><span>2</span><span>4</span><span>6</span><span>8</span><span>10</span><span>12</span><span>14 MB/s</span></div><span></span></div>
+        </div>
+      </figure>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>探针</th><th>结果</th><th>对方案的含义</th></tr></thead>
+          <tbody>
+            <tr><td>128MB 顺序写</td><td>10.3s · 12.5MB/s</td><td>goofys 写上限；3.2GB 单文件约 4–6 分钟</td></tr>
+            <tr><td>256MB 顺序写</td><td>27.3s · 9.4MB/s</td><td>大文件持续写会掉到 9–10MB/s；20–40GB/天约 35–70 分钟</td></tr>
+            <tr><td>128MB 文件 rename</td><td>0.15s</td><td>服务端完成，<code>.part</code> 关闭后改名不重传</td></tr>
+            <tr><td><code>os.replace</code> 覆盖</td><td>0.19s</td><td>临时文件替换正式文件可用</td></tr>
+            <tr><td>100 个 4KB 小文件</td><td>10.1s · 10 个/秒</td><td>87.9k 个结果文件约 1.9 小时；优先打包或本地写</td></tr>
+            <tr><td>256MB 冷读</td><td>38.6s · 6.6MB/s</td><td>259GB 素材串行约 11 小时；已记录的 OCR 工时 76 小时，读不是瓶颈</td></tr>
+            <tr><td>OSS SDK 单 PUT 128MB</td><td>22.1s · 5.8MB/s</td><td>比 goofys 写还慢，不作为大文件主路径</td></tr>
+            <tr><td>multipart init / part</td><td><span class="tag tag-ok">OK</span></td><td>可以分片上传</td></tr>
+            <tr><td>multipart list / abort</td><td><span class="tag tag-bad">403</span></td><td><code>oss2.resumable_upload</code> 会失败；失败分片无法 abort，会留孤儿分片</td></tr>
+            <tr><td>文件 rename / os.replace</td><td><span class="tag tag-ok">OK</span></td><td>原子写临时文件可行</td></tr>
+            <tr><td>非空目录 rename</td><td><span class="tag tag-ok">OK</span></td><td>结果目录整理可行</td></tr>
+            <tr><td>symlink</td><td><span class="tag tag-bad">ENOSYS</span></td><td>1,113 个 <code>.撞库合并</code> 软链不能搬上 OSS</td></tr>
+            <tr><td>hardlink</td><td><span class="tag tag-bad">EPERM</span></td><td>不能靠硬链去重，改用 manifest 引用</td></tr>
+            <tr><td>utime / mtime</td><td><span class="tag tag-warn">忽略</span></td><td>同步脚本不能用 mtime 判断新旧，必须用大小 + 校验和</td></tr>
+            <tr><td>statvfs</td><td><span class="tag tag-warn">1PB</span></td><td>挂载点的“剩余空间”是假的，不能用它做容量闸</td></tr>
+            <tr><td>flush 后异常退出</td><td><span class="tag tag-ok">189KB 可读</span></td><td><code>rows.jsonl</code> 不会因进程崩溃立刻丢；长文件仍建议本地写</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="note">另外两条运维事实：当前 goofys 以 <code>-f</code> 跑在 <code>pts/10</code>，终端断开挂载就没了；<code>stat/type cache</code> 默认 60 秒，刚写入的对象可能一分钟内列不出来。生产环境应改成 systemd 托管，并在校验脚本里接受这个延迟。</p>
+    </section>
+
+    <section id="plan">
+      <h2>实施计划</h2>
+      <p>按“先盘点、再切读、再切写、最后清盘”的顺序做，每一步都可以单独回滚。</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>阶段</th><th>动作</th><th>验收</th></tr></thead>
+          <tbody>
+            <tr><td><strong>P0</strong> 盘点与清单</td><td>扫描 OSS 与本地，按字节大小 + 时长生成 22 份配置的映射清单</td><td>82/82 段有归属；实测 53 整段 + 2 待补，27 段裁尾；缺口逐段定位（P1 后 55/0）</td></tr>
+            <tr><td><strong>P1</strong> 补传</td><td>上传 27 个裁尾副本 + 2 个缺失整段，共 29 个对象、46.52GB（只写 OSS，不动配置）</td><td>29/29 在目标且字节一致；清单自动切 P1：55 整段 / 0 缺失 / 27 行；<code>--verify-uploads</code> 27/27 字节一致</td></tr>
+            <tr><td><strong>P1.5</strong> 切读<br><span style="font-size:12px;color:var(--accent)">已完成 2026-11-18</span></td><td>把 22 份配置的 <code>input.videos</code> 指到 OSS 绝对路径（<code>base_dir</code> 仍指本地）</td><td><code>livepipe check</code> 22/22 通过；抽 2 个任务实跑通过</td></tr>
+            <tr><td><strong>P2</strong> 结果链路<br><span style="font-size:12px;color:var(--accent)">已完成 2026-11-18</span></td><td>新增 <code>oss_sync.py</code>（size + sha256，跳过软链，失败重试）；改 <code>batch_local</code> / <code>batch_remote</code> 的回传步骤</td><td>一个任务本地产物与 OSS 对象数/字节一致；重跑跳过 100%</td></tr>
+            <tr><td><strong>P3</strong> 下载链路<br><span style="font-size:12px;color:var(--accent)">已完成 2026-11-19</span></td><td>dypy 直播直写 OSS 的 <code>&lt;名&gt;.part</code>；百度来源由 bypy 授权/列目录 + PCS 单请求流式直写 OSS（不落本地暂存），关闭后 rename + manifest</td><td>单文件 3.2GB 直写完成可读；bypy 拉一个目录后 size/duration 匹配；失败不留正式文件</td></tr>
+            <tr><td><strong>P4</strong> 清盘与回滚<br><span style="font-size:12px;color:var(--warn)">影子期进行中 2026-11-19 → 11-26</span></td><td>影子运行 7 天；确认 OSS 可读后删除外置 out 161GB、暂存 59GB、本地 out 13GB；MyDisk 原片在 OSS 校验后清理</td><td>本地剩余 ≥100GB；回滚只需把配置路径指回本地</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>同步规则</h3>
+      <ul>
+        <li><strong>只按内容判断：</strong>目标存在且大小相同则跳过；关键批次再比 sha256。不要用 mtime，goofys 会丢。</li>
+        <li><strong>排除项：</strong>软链、<code>*.lock</code>、<code>*.part</code>、正在写的临时文件。软链树留在本地，或重建成真实目录再上传。</li>
+        <li><strong>失败策略：</strong>单文件重试 3 次；仍失败就留下本地文件和 <code>*.failed</code> 标记，不阻塞其他文件。上传完成后才允许删除本地。</li>
+        <li><strong>并发：</strong>大文件 2–4 路；小文件先打包成 tar/zip 再传，避免 10 个/秒的元数据开销。</li>
+      </ul>
+
+      <p class="note">入库脚本只做收尾：<code>python3 -m livepipe oss ingest --src &lt;OSS .part 路径&gt; --event … --day … --platform … --account …</code>，负责 close、校验、rename、manifest。dypy 的直播下载参数不写死在这层里，换下载器只改 wrapper 的第一段。</p>
+    </section>
+
+    <section id="risks">
+      <h2>风险清单</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>风险</th><th>证据</th><th>对策</th></tr></thead>
+          <tbody>
+            <tr><td>直写失败</td><td><code>.part</code> 写一半进程退出；multipart abort 403，可能留孤儿分片</td><td>只认正式名；<code>.part</code> 关闭后 rename；校验 size/duration；桶生命周期 AbortIncompleteMultipartUpload；失败重下</td></tr>
+            <tr><td>写吞吐封顶</td><td>goofys 9.4–12.5MB/s；dypy 若更快会被拖慢</td><td>先测 dypy 单文件；极慢网再退回“本地下载 → 后台上传”兜底</td></tr>
+            <tr><td>软链丢失</td><td>1,113 个 <code>.撞库合并</code> 软链；goofys 返回 ENOSYS</td><td>不上传软链；撞库时重建虚拟树，或继续在本地跑</td></tr>
+            <tr><td>mtime 不可信</td><td><code>utime</code> 被忽略</td><td>同步用 size + sha256；rsync 加 <code>--size-only</code> 或 <code>--checksum</code></td></tr>
+            <tr><td>小文件慢</td><td>10–13 个/秒；结果 87.9k 文件</td><td>结果先本地写；交付树按账号打包后再传</td></tr>
+            <tr><td>multipart 权限</td><td>list/abort 返回 403，失败分片留孤儿</td><td>改用 goofys 或修复桶策略；给流水线单独的 RAM 用户</td></tr>
+            <tr><td>挂载单点</td><td>goofys 以 <code>-f</code> 跑在 pts/10</td><td>systemd 托管 + 健康检查；断挂时队列暂停而不是写本地</td></tr>
+            <tr><td>容量假象</td><td>statvfs 返回 1PB</td><td>容量闸只看本地盘；OSS 用对象计数/清单核对</td></tr>
+            <tr><td>长文件缓冲</td><td><code>rows.jsonl</code> 逐帧 append + flush</td><td>本地断点文件；完成后再同步 OSS</td></tr>
+            <tr><td>凭据扩散</td><td>SSH 密码明文写在 <code>batch_jobs*.json</code>；OSS 密钥在 <code>oss_upload.json</code></td><td>改环境变量/密钥管理；流水线用户只给前缀级权限；轮换</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>真实映射样例</h3>
+      <p>55 个整段全部按字节大小命中；下面是 10-01 视频号的四段，其中 seg3 是裁尾引用。</p>
+      <pre><code>{
+  "config": "10-01_全球车的中国路_视频号.json",
+  "segments": [
+    {
+      "seg": "seg1",
+      "disk": "…/10.01/视频号/1/10：00-11：16.mp4",
+      "oss":  "…/10.01/视频号/1/SVID_20261001_100011_1.mp4",
+      "bytes": 3225832995,
+      "duration_s": 4578.624
+    },
+    {
+      "seg": "seg3",
+      "disk": "…/_live/1001_wechat_12-43-14-00_0-2854.mp4",
+      "source_oss": "…/10.01/视频号/1/SVID_20261001_100011_3.mp4",
+      "bytes": 2005390060,
+      "duration_s": 2854.414,
+      "trim_s": [0, 2854.4]
+    },
+    {
+      "seg": "seg4",
+      "disk": "…/10.01/视频号/2/15：52-17：23.mp4",
+      "oss":  "…/10.01/视频号/2/SVID_20261001_143515_2.mp4",
+      "bytes": 3226400041,
+      "duration_s": 5528.394
+    }
+  ]
+}</code></pre>
+      <p class="note">校验口径：字节数相同只能说明“很像”，最终清单再补 sha256；裁尾段同时记录源对象与 trim 区间，方便以后不再生成副本。</p>
+    </section>
+  </article>
+</div>
+
+<footer>
+  数据来源：本机 2026-11-17 实测（goofys 0.24.0、阿里云 OSS 北京）、<code>bypy info</code>、<code>batch_jobs*.state*.json</code>、OSS 挂载点扫描、<code>livepipe check</code> 试跑。
+</footer>
+
+</body>
+</html>

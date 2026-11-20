@@ -14,12 +14,17 @@ _WS = re.compile(r"\s+")
 PLATFORM_CN = {
     "douyin": "抖音",
     "douyin_app": "抖音",       # 抖音**手机 App**竖屏（livepipe/风云T7.json 起的档案名）
+    "douyin_app_480": "抖音",   # 抖音 App 480p 小窗（09-07猎鹰智驾_抖音.json 起的档案名）
     "wechat": "视频号",
     "wechat_app": "视频号",     # 视频号**手机 App**竖屏（livepipe/ctcc.json 起的档案名）
     "weixin": "视频号",
     "weibo": "微博",
+    "weibo_app": "微博",        # 微博**手机 App**竖屏（09-22奇瑞QQ3_微博奇瑞QQ.json 起的档案名）
     "kuaishou": "快手",
     "kuaishou_app": "快手",     # 快手**手机 App**（mock_scale 的档案名；livepipe 配置用 kuaishou）
+    "kuaishou_480": "快手",     # 快手 480p 小窗（09-07猎鹰智驾_快手.json 起的档案名）
+    "kuaishou_720": "快手",     # 快手 720p 中窗（09-09/09-10猎鹰智驾_快手.json 起的档案名）
+    "kuaishou_large": "快手",   # 快手全屏大窗（09-06~09-10猎鹰智驾_快手.json 起的档案名）
     "xiaohongshu": "小红书",
     "bilibili": "B站",
 }

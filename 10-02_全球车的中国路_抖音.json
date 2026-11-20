@@ -1,0 +1,265 @@
+// ============================================================================
+// 奇瑞「全球车的中国路」2026-10-02 · 抖音直播
+// （手机 App 竖屏 590/592×1280）→ 结构化评论
+//
+// 素材 = 「/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/」下
+// 按**画面实际平台**归到本配置的 5 段录屏（账号「奇瑞汽车」）:
+//   seg1  `10.02/抖音/10：32-11：53.mp4`  82.1min（整段直播）
+//   seg2  `10.02/抖音/11：54-13：27.mp4`  93.8min（整段直播）
+//   seg3  `10.02/抖音/13：28-14：08.mp4`  原片 40.4min，直播到 170s 结束，其后是「直播已结束」推荐流 ⇒ 裁到 0–165s
+//   seg4  `10.02/快手/1/14：30-16：00.mp4`  89.6min（整段直播）
+//   seg5  `10.02/快手/1/16：00-17：40.mp4`  原片 100.4min，直播到 5438s 结束，其后是「直播已结束」推荐流 ⇒ 裁到 0–5432s
+//
+// 来源目录：「10.02/快手/1」、「10.02/抖音」。
+// ⚠ 本批素材目录名与实际平台**有错位**（例如 9.30「快手/」里是视频号录屏、
+//   「视频号/」里是快手录屏；10.02「快手/1」里是抖音录屏）。本配置已按画面
+//   实际平台重新归档；裁剪副本在 `_live/`（stream copy，不重编码）。
+//
+// 量到的几何（2026-11-16，手机 App）：行距见 platforms 段；
+//   每段 rect 见 panels.manual（OCR 在直播段内的多帧上量的）。
+//
+// 跑法（OCR 要带 rapidocr 的解释器）：
+//   P=/home/puyu/anaconda3/envs/vlx/bin/python
+//   export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+//   $P -m livepipe run 10-02_全球车的中国路_抖音.json --only panels,parse
+//   # 中断后重跑同一条命令：<段目录>/rows.jsonl 已在 ⇒ 零 OCR 续跑
+//   NLP_API_KEY=sk-xxxx $P -m livepipe run 10-02_全球车的中国路_抖音.json \
+//       --only filter,qualify,export,collect
+// 产物：/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-0930-1006全球车的中国路/10-02/抖音/
+// 校验：python3 -m livepipe check <本文件>
+// ============================================================================
+{
+  "base_dir": "/home/puyu/livepipe_assets",
+  "version": 1,
+  "name": "全球车的中国路 2026-10-02 · 抖音手机 App · 竖屏",
+
+  // -------------------------------------------------------------------------
+  // 平台档案：面板文件里只填平台名，行距 / 表情表 / 裁切策略 / 药丸闸都从这里取。
+  // 与 10-31 抖音同一版式（590×1280 手机 App）；本件数字按本素材复核。
+  // -------------------------------------------------------------------------
+  "platforms": {
+    "douyin_app": {
+      "label": "抖音直播（手机 App 竖屏；行首 ◆N 粉丝团药丸在昵称左边）",
+      "emoji": "douyin",                // → emoji.tables 的 douyin 表（已建好）
+
+      // 本批昵称基本不打码（只有少量系统行进房名带星号）⇒ 只看昵称。
+      "account_key": "username",
+
+      // 行距 —— **实测**（2026-11-16，多帧）：相邻评论首行中心差众数 44.0。
+      "row_pitch": 44.0,
+
+      // 首行中心距面板顶（裁剪内坐标）—— 逐帧重估，这里只兜底。
+      "y_phase": 12,
+
+      // 正文列左沿 = 徽章列右沿 —— **实测**：药丸数字块 x∈[41,82]、
+      //   真昵称 x1≈82~88、折行续行 x1≈30~34。取 86：
+      //   纯药丸碎片落在左边被丢；带冒号的正文（含药丸并进正文的读法）保留；
+      //   「贴左沿」门槛 86−50 = 36 盖住续行。
+      "x_text": 86,
+
+      // ROI 左沿：徽章列宽（86−74 = 12，整颗药丸进框）。
+      "badge_span": 74,
+
+      // 裁切右沿：按内容（正文右沿 ≤480，右侧是商品讲解卡）。
+      "x2_from": "content",
+
+      // 行首药丸数字被并进正文 ⇒ 同一人被读成多个账号，按几何见证归一。
+      "badge_alias": true,
+      // 昵称末尾被检测框切掉 1~2px / 末字漏读 ⇒ 按「同一条评论的两种读法同现」归一。
+      "username_alias": true,
+      "badge_name_recover": true,
+
+      // 直播间浮层的左界 —— **实测**写死：评论侧块左沿 ≤110、
+      //   商品讲解卡文字块最小 390（`·讲解中` / `立即预约` / `预约同款好车`）⇒ 取 380。
+      "x_ignore_from": 380,
+
+      // 浮层卡 / 提示卡（只作用于**没有冒号**的行）。商品卡大多已被 x_ignore_from 丢，
+      //   这里按短语兜底；开场反诈提示卡是本场抖音 App 版文案。
+      "overlay_cards": "本直播间已接入|三方管理工具|讲解中|全球车的中国路|奇瑞风云QQ国庆接力巡礼大美山河|预约同款好车|人已预约|立即预约|吸烟酗酒|低俗色情|人身财产损失|严禁未成年人|诱导打赏|关注了主|赞了直播|加入了直播|^CHERY$",
+
+      // 冒号像素检测：抖音气泡半透明、底偏亮 ⇒ 放开背景亮度、把亮度差降到 30。
+      "colon_bg_max_v": 255,
+      "colon_v_delta": 30,
+      // OCR 把冒号吃掉时按像素位置补回。
+      "colon_text_fix": true,
+
+      // 长表情评论折成多行：空档补扫 + 纯表情续行并进上一条。
+      "merge_emoji_continuation": true,
+      "emoji_gap_sweep": true
+    }
+  },
+
+  // 表情表用内置的 `douyin`（/run/media/puyu/C0DE6A4BDE6A39B4/out/douyin_emoji/douyin-emoji.json）。
+  // 远程跑时开 build：上传脚本只传表 JSON、不传 img/，缺图会静默跳过表情识别。
+  "emoji": {
+    "enabled": true,
+    "tables": {
+      "douyin": {"build": {"enabled": true}}
+    }
+  },
+
+  "input": {
+    // 段顺序 = 时间顺序；每段在 output.dir 下开一个 segN 子目录。
+    "videos": [
+      "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.02/抖音/10：32-11：53.mp4",
+      "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.02/抖音/11：54-13：27.mp4",
+      "/home/puyu/oss-bucket/web/1/奇瑞汽车/直播看管/直播录屏/2026-0930-1006《全球车的中国路》/_live/1002_douyin_13-28-14-08_0-164.mp4",
+      "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.02/快手/1/14：30-16：00.mp4",
+      "/home/puyu/oss-bucket/web/1/奇瑞汽车/直播看管/直播录屏/2026-0930-1006《全球车的中国路》/_live/1002_douyin_16-00-17-40_0-5432.mp4"
+    ],
+    "segment_names": null,
+    "video": null,
+    "rows": null,
+    "text": null,
+    "start": 0.0,
+    "duration": null,
+    "interval": 2.0,
+    "max_frames": null,
+    "resume": true,
+
+    // 手机 App 平滑滚动 ⇒ adaptive（静止段几乎不拍、滚动段不漏条）。
+    "sample": {
+      "mode": "adaptive",
+      "stride": 2,
+      "safety_rows": 5.0,
+      "settle_frames": 3,
+      "eps_px": 1.0,
+      "entry_thr": 8.0,
+      "max_gap_s": 5.0,
+      "min_interval": 0.2,
+      "max_interval": 6.0,
+      "min_score": 0.3
+    }
+  },
+
+  // 面板：**手写**（评论区位置已逐段量好；同一设备同一 App 版式）。
+  // rect 是原图像素 [x1, y1, x2, y2]；mode=manual 下配置是唯一来源。
+  "panels": {
+    "mode": "manual",
+    "file": null,
+    "files": null,
+    "overwrite": false,
+    "auto": {
+      "method": "hybrid",
+      "at": 900,
+      "frames": 5,
+      "span": null,
+      "split_x": null,                  // null = 不切分（竖屏单直播间一列评论）
+      "pad_x": 60,
+      "pad_top": 80,
+      "pad_y": 16,
+      "sub_width": 500,
+      "model": "nvidia/LocateAnything-3B",
+      "quant": "4bit",
+      "device": "cuda",
+      "platforms": {"left": "douyin_app", "right": null},
+      "frame_width": 590
+    },
+    "manual": [
+      {  //   seg1  `10：32-11：53.mp4`  590×1280 · 整段直播
+        "comments": {"rect": [0, 635, 590, 1200], "platform": "douyin_app"}
+      },
+      {  //   seg2  `11：54-13：27.mp4`  590×1280 · 整段直播
+        "comments": {"rect": [0, 628, 590, 1200], "platform": "douyin_app"}
+      },
+      {  //   seg3  `13：28-14：08.mp4`  590×1280 · 直播 0-165s（裁后）
+        "comments": {"rect": [0, 630, 590, 1200], "platform": "douyin_app"}
+      },
+      {  //   seg4  `14：30-16：00.mp4`  590×1280 · 整段直播
+        "comments": {"rect": [0, 628, 590, 1200], "platform": "douyin_app"}
+      },
+      {  //   seg5  `16：00-17：40.mp4`  590×1280 · 直播 0-5432s（裁后）
+        "comments": {"rect": [0, 631, 590, 1200], "platform": "douyin_app"}
+      }
+    ],
+    "batch": {"count": 30, "start": 0.0, "span": 600.0, "anchor": "panel"}
+  },
+
+  "parse": {
+    "sep": " ",
+    "max_username_len": 24,
+    "merge_continuation": true,
+    "adjacency": true,
+    "dedup": true,
+    // 自标定关掉：行距/相位/续行/浮层界已按本素材实测写死（同 10-31 / 09-12 口径）。
+    "calibrate": false,
+    "right_pad": 0,
+    "emoji_workers": 8
+  },
+
+  "output": {
+    // 多段时这是段的父目录：实际写 <dir>/seg1、seg2…；跨段产物也落在这里。
+    "dir": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-0930-1006全球车的中国路/10-02/抖音",
+    "write": true,
+    "rows": true,
+    "panels": true,
+    "frames": true,
+    "print": false
+  },
+
+  // 评论 → 合格用户。**要花钱**；key 只走环境变量（项目铁律）。
+  // 多段素材先逐段出全量（min_positive=1），跨段合计交给 qualify。
+  "filter": {
+    "enabled": true,
+    "source": null,
+    "out": null,
+    "cache": null,
+    "min_positive": 1,
+    "exclude_keywords": [
+      "奇瑞", "4s", "店", "qq3", "汽车",
+      "尹同跃", "张国忠", "鲍思语", "王津华", "王孝伟", "胡敬源", "尹祥领",
+      "王来春", "李晶", "商文江", "杨棉之", "叶盛基", "路风", "黎汝雄",
+      "李学用", "张贵兵", "代立宏", "章红玉", "高新华", "戚士龙", "王琅"
+    ],
+    "nlp": {
+      "api_key": null,                  // 留 null：key 只走环境变量
+      "api_key_env": "NLP_API_KEY",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "deepseek-v4.1-flash",
+      "batch_size": 20,
+      "concurrency": 4,
+      "timeout": 60.0,
+      "retries": 3,
+      "limit": null,
+      "prompt": null
+    }
+  },
+
+  // 跨段判合格：按账号**合计**正面条数，≥3 条回写到每段 users_qualified.jsonl。
+  "qualify": {
+    "enabled": true,
+    "min_positive": 3,
+    "stage_min": 1
+  },
+
+  // 逐段出交付图：读 users_qualified.jsonl，按原帧画绿框，一人一个目录。
+  "export": {
+    "enabled": true,
+    "base": "frame",
+    "labels": "正面",
+    "min_positive": null,
+    "min_scope": "platform",
+    "users": null,
+    "color": "0,255,0", "width": 3,
+    "pad": 0, "pad_ratio": 0.25, "quality": 90,
+    "force": true
+  },
+
+  // 拼最终交付树：同名账号合并、图号跨段连续。
+  "collect": {
+    "enabled": true,
+    "stage_min": null,
+    "platform_dir": null,
+    "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-0930-1006全球车的中国路/10-02/抖音/all_users_正面_3张以上",
+    "force": true
+  },
+
+  "draw": {"enabled": true, "source": null, "at": 8.0, "window": 5.0,
+           "out": null, "width": 5, "quality": 90, "labels": true},
+
+  "steps": {
+    "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
+              "export", "collect", "draw"],
+    "skip": ["emoji_tables", "draw"]
+  }
+}

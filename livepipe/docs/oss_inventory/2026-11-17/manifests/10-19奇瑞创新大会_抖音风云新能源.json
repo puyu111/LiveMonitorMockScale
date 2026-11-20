@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_抖音风云新能源.json",
+  "generated_from": {
+    "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_抖音风云新能源.json",
+    "oss_root": "/home/puyu/oss-bucket/直播data/录屏/10.19",
+    "disk_root": null,
+    "generated_at": "2026-11-17T00:00:00Z"
+  },
+  "segments": [
+    {
+      "seg": "seg1",
+      "disk": "/run/media/puyu/MyDisk/10.19/抖音/风云新能源/SVID_20261019_090202_1.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/风云新能源/SVID_20261019_090202_1.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3226173522,
+      "duration_s": 4951.244,
+      "trim_s": null
+    },
+    {
+      "seg": "seg2",
+      "disk": "/run/media/puyu/MyDisk/10.19/抖音/风云新能源/SVID_20261019_090202_2.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/风云新能源/SVID_20261019_090202_2.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3226610624,
+      "duration_s": 5552.066667,
+      "trim_s": null
+    },
+    {
+      "seg": "seg3",
+      "disk": "/run/media/puyu/MyDisk/10.19/抖音/风云新能源/SVID_20261019_090202_3.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/风云新能源/SVID_20261019_090202_3.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3226905306,
+      "duration_s": 5828.525,
+      "trim_s": null
+    },
+    {
+      "seg": "seg4",
+      "disk": "/run/media/puyu/MyDisk/10.19/抖音/风云新能源/SVID_20261019_090202_4.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/风云新能源/SVID_20261019_090202_4.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3227018611,
+      "duration_s": 5878.012,
+      "trim_s": null
+    },
+    {
+      "seg": "seg5",
+      "disk": "/run/media/puyu/MyDisk/10.19/抖音/风云新能源/SVID_20261019_090202_5.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/风云新能源/SVID_20261019_090202_5.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3226169563,
+      "duration_s": 5132.507667,
+      "trim_s": null
+    },
+    {
+      "seg": "seg6",
+      "disk": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/dy_fy_16-38-17-00_live.mp4",
+      "oss": null,
+      "trimmed": true,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 747125465,
+      "duration_s": 1369.938189,
+      "trim_s": [
+        0.0,
+        1369.938189
+      ]
+    }
+  ]
+}

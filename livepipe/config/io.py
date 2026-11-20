@@ -133,8 +133,12 @@ def _parse_json(text: str, src: Path) -> Any:
                 f"配置文件去掉注释后仍不是合法 JSON：{src}\n  {e_jsonc}") from e_jsonc
 
 
-def load(path: str | Path) -> dict:
-    """读 JSON/JSONC 配置 → 校验 → 补默认值 → 展开路径。返回可直接喂管线的 dict。"""
+def load(path: str | Path, *, check_videos: bool = True) -> dict:
+    """读 JSON/JSONC 配置 → 校验 → 补默认值 → 展开路径。返回可直接喂管线的 dict。
+
+    ``check_videos=False`` 时不校验 ``input.videos`` 指向的文件/目录存在 ——
+    ``verify`` 只核对已落盘产物，素材盘没挂载也应能读配置。
+    """
     src = Path(path)
     if not src.exists():
         raise ConfigError(f"找不到配置文件：{src}")
@@ -151,7 +155,7 @@ def load(path: str | Path) -> dict:
     cfg["_path"] = str(src)
     _check_keys(raw, DEFAULTS)
 
-    cfg = _resolve_paths(cfg)
+    cfg = _resolve_paths(cfg, check_videos=check_videos)
     # panels.mode 不写（None）⇒ 自动：面板文件已在就复用，没有就定位。这样「跑一次定位、
     # 填好 platform、再跑」全程不用手改 mode —— 存在性自己说明该走哪条路。
     # 多段时没有单一的面板文件（每段一个 <段目录>/panels.json）⇒ 看**每一段**在不在。

@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_视频号奇瑞汽车.json",
+  "generated_from": {
+    "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_视频号奇瑞汽车.json",
+    "oss_root": "/home/puyu/oss-bucket/直播data/录屏/10.19",
+    "disk_root": null,
+    "generated_at": "2026-11-17T00:00:00Z"
+  },
+  "segments": [
+    {
+      "seg": "seg1",
+      "disk": "/run/media/puyu/MyDisk/10.19/视频号/奇瑞汽车/8： 59~12： 06.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/奇瑞汽车/8： 59~12： 06.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3231844071,
+      "duration_s": 11250.564989,
+      "trim_s": null
+    },
+    {
+      "seg": "seg2",
+      "disk": "/run/media/puyu/MyDisk/10.19/视频号/奇瑞汽车/12： 07~15： 21.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/奇瑞汽车/12： 07~15： 21.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3232176089,
+      "duration_s": 11669.173689,
+      "trim_s": null
+    },
+    {
+      "seg": "seg3",
+      "disk": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/wx_qr_15-21-17-00_live.mp4",
+      "oss": null,
+      "trimmed": true,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 1741127534,
+      "duration_s": 5946.605189,
+      "trim_s": [
+        0.0,
+        5946.605189
+      ]
+    }
+  ]
+}

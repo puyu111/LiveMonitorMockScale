@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OSS P2 结果链路开发日志</title>
+<style>
+:root{--bg:#f6f7f4;--card:#fff;--ink:#17201c;--muted:#5d6a63;--line:#dfe4df;
+--accent:#0f766e;--soft:#d8f0eb;--trim:#c2760a;--trimsoft:#fdf0d8;--bad:#c0392b;
+--codes:#eef1ee;--shadow:0 1px 2px rgba(20,40,30,.05),0 8px 24px rgba(20,40,30,.04)}
+@media(prefers-color-scheme:dark){:root{--bg:#101513;--card:#18201d;
+--ink:#e7ede9;--muted:#9fada6;--line:#2a3530;--accent:#57c7b8;--soft:#143630;
+--trim:#e2a33c;--trimsoft:#2f2413;--bad:#ef8074;--codes:#111815;--shadow:none}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);
+font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+"Microsoft YaHei",sans-serif;padding:0 18px 56px}
+main{max-width:1060px;margin:0 auto}header{padding:52px 0 24px}
+.eyebrow{font-size:12px;letter-spacing:.14em;color:var(--accent);font-weight:700}
+h1{font-size:clamp(28px,4vw,40px);margin:8px 0 10px;letter-spacing:-.01em}
+.lede{color:var(--muted);font-size:17px;max-width:780px;margin:0}
+.meta{color:var(--muted);font-size:13px;margin-top:12px}
+.verdict{margin:26px 0 28px;padding:20px 22px;background:var(--card);
+border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;
+box-shadow:var(--shadow)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+gap:12px;margin:0 0 36px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;
+padding:15px;box-shadow:var(--shadow)}
+.kpi b{display:block;font-size:25px;line-height:1.15}
+.kpi span{display:block;font-size:13px;margin-top:4px}
+.kpi em{display:block;font-size:11.5px;color:var(--muted);font-style:normal}
+section{margin:0 0 38px}h2{font-size:20px;margin:0 0 6px}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+padding:16px;box-shadow:var(--shadow);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;
+border-bottom:1px solid var(--line);padding:7px 8px;white-space:nowrap}
+td{border-bottom:1px solid var(--line);padding:7px 8px;vertical-align:top}
+tr:last-child td{border-bottom:0}.num{text-align:right;font-variant-numeric:tabular-nums}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+font-size:12px;word-break:break-all}
+.ok{color:var(--accent);font-weight:700}.bad{color:var(--bad);font-weight:700}
+pre{background:var(--codes);border-radius:8px;padding:13px 14px;overflow:auto;
+font-size:12.5px;line-height:1.55;margin:0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+background:var(--codes);padding:1px 5px;border-radius:4px;font-size:12.5px}
+.note{background:var(--soft);border-radius:10px;padding:14px 16px;font-size:13.5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}.card{overflow-x:auto}table{min-width:560px}}
+footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);
+padding-top:14px}
+ul{margin:8px 0 0;padding-left:22px}li{margin:5px 0}
+</style></head><body><main>
+<header>
+  <p class="eyebrow">开发日志 · 2026-11-18 · 直播看管</p>
+  <h1>OSS P2 结果链路：本地收完，增量同步到「直播产生结果」</h1>
+  <p class="lede">新增 <code>scripts/oss_sync.py</code>：结果先落本地，任务收尾后按
+  大小（可选 SHA256）增量同步到 OSS。已接进 <code>batch_local.py</code> /
+  <code>batch_remote.py</code> 的「收 / 回传」步骤；用一个真实任务（10-04 视频号，
+  664 个文件 / 122.94 MB）完成对象数、字节和 SHA256 三层验收。</p>
+  <p class="meta">入口 <code>scripts/oss_sync.py</code> · 自检
+  <code>scripts/selftest_oss_sync.py</code> · 批处理
+  <code>~/脚本/ssh/{batch_local,batch_remote}.py</code> · 实跑报告
+  <code>/tmp/p2_sync_report.json</code> / <code>/tmp/p2_verify_sha.json</code></p>
+  <p class="meta"><b>2026-11-19 更正：</b>项目 OSS 根实际是 <code>~/oss-bucket/web/1/奇瑞汽车/直播看管/</code>；文中 <code>~/oss-bucket/奇瑞汽车/…</code> 是当时写错的桶根前缀。相关对象已用 <code>scripts/oss_relocate_prefix.py</code> 服务端复制到 <code>web/1/…</code>，配置与工具默认根已改指。</p>
+</header>
+
+<div class="verdict">
+  <b>结论：P2 完成。</b>真实任务 10-04 视频号的 664 个结果文件 / 122,937,029 B
+  已同步到
+  <code>直播产生结果/2026-0930-1006《全球车的中国路》/10.04/视频号</code>；
+  <code>--verify-only</code> 664/664、0 不一致、0 多出，SHA256 复验也全部一致。
+  重跑同步 <b>上传 0 / 跳过 664</b>，批处理 state 记
+  <code>oss_state=synced</code>。
+</div>
+
+<div class="kpis">
+  <div class="kpi"><b>664</b><span>结果文件</span><em>122,937,029 B</em></div>
+  <div class="kpi"><b>442</b><span>续传上传</span><em>90.01 MB / 83.7s</em></div>
+  <div class="kpi"><b>664 / 664</b><span>对象数 + 字节一致</span><em>0 多出</em></div>
+  <div class="kpi"><b>SHA256</b><span>全量复验</span><em>0 不一致 / 111.2s</em></div>
+  <div class="kpi"><b>0</b><span>重跑上传</span><em>664 跳过</em></div>
+</div>
+
+<section>
+  <h2>链路：本地写、任务边界同步</h2>
+  <p class="sub">结果不直写 OSS：小文件直写只有 10–13 个/秒，长文件 append 也不可控；
+  任务产物先写本地，收尾时整体同步一次。</p>
+  <div class="card">
+    <table>
+      <tr><th>阶段</th><th>谁做</th><th>动作</th></tr>
+      <tr><td>1. 跑</td><td>livepipe runner</td><td>产物写
+      <code>&lt;batch&gt;/out/&lt;场次&gt;/&lt;平台&gt;/</code>（本地）</td></tr>
+      <tr><td>2. 收 / 回传</td><td><code>batch_local</code> /
+      <code>batch_remote</code></td><td>复制 / rsync 到
+      <code>&lt;local_out_root&gt;/&lt;场次&gt;/&lt;平台&gt;/</code>，按字节核对</td></tr>
+      <tr><td>3. 结果同步</td><td><code>oss_sync.py</code></td>
+      <td>大小相同跳过；不同则直接写 OSS 正式名；可开 SHA256</td></tr>
+      <tr><td>4. 登记</td><td>批处理 state</td>
+      <td><code>oss_state=synced</code> + 文件数 / 字节 / 上传与跳过数</td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>工具行为</h2>
+  <div class="card">
+    <table>
+      <tr><th>项</th><th>行为</th></tr>
+      <tr><td>增量判据</td><td>目标存在且大小相同 → 跳过；<code>--sha256</code> 再比内容哈希</td></tr>
+      <tr><td>跳过项</td><td>符号链接（goofys 不支持）、<code>.</code> 开头的文件/目录、
+      <code>*.part</code> / <code>*.lock</code> / <code>*.failed</code>；可
+      <code>--exclude</code> / <code>--include-hidden</code></td></tr>
+      <tr><td>写入</td><td>直接写正式名，close 后核对字节；失败重试 3 次并清理旧
+      <code>.part</code>（结果文件小，失败可重跑）</td></tr>
+      <tr><td>并发</td><td>默认 4；goofys 小文件元数据瓶颈，再高不提速</td></tr>
+      <tr><td>模式</td><td><code>--dry-run</code> / <code>--verify-only</code>
+      （严格核对多出文件，<code>--allow-extra</code> 放宽）/ <code>--report</code></td></tr>
+      <tr><td>机读</td><td>结尾一行 <code>OSS_SYNC_RESULT {json}</code>；批处理据此登记</td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>批处理接线</h2>
+  <p class="sub">两个脚本共用一套字段；没配 <code>oss_results_root</code> 时完全保持原行为。</p>
+  <pre><code>{
+  "oss_results_root": "/home/puyu/oss-bucket/奇瑞汽车/直播看管/直播产生结果",
+  "oss_sync": {"enabled": "auto", "workers": 4, "retries": 3,
+               "sha256": false, "exclude": []},
+  "tasks": [{
+    "name": "10-04_全球车的中国路_视频号",
+    "oss_result": "2026-0930-1006《全球车的中国路》/10.04/视频号"
+  }]
+}</code></pre>
+  <div class="card" style="margin-top:14px">
+    <table>
+      <tr><th>行为</th><th>说明</th></tr>
+      <tr><td>自动同步</td><td><code>transfer_task</code> 核对通过后立即调用；
+      失败不会把任务打回 <code>transfer_failed</code>，本地产物仍有效</td></tr>
+      <tr><td><code>--oss-only</code></td><td>只处理 state 里已 <code>transferred</code>
+      的任务；<code>--force</code> 重新核对（同尺寸仍跳过）</td></tr>
+      <tr><td>state 字段</td><td><code>oss_state / oss_dst / oss_files / oss_bytes /
+      oss_uploaded / oss_skipped / oss_at</code></td></tr>
+      <tr><td>落点推导</td><td>任务级 <code>oss_result</code> 优先；不写则按
+      <code>local_out</code> 相对 <code>local_out_root</code> 镜像</td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>验收：一个真实任务</h2>
+  <p class="sub">源：<code>10-04_全球车的中国路_视频号</code> 的本地批次产物；
+  目标：OSS <code>直播产生结果</code> 的对应事件目录。</p>
+  <div class="card">
+    <table>
+      <tr><th>步骤</th><th>命令 / 输入</th><th>结果</th></tr>
+      <tr><td>同步（续传）</td><td><code>oss_sync.py --src … --dst …</code></td>
+      <td><b class="ok">664 个文件 / 122.94 MB</b>；上传 442 / 90.01 MB，
+      跳过 222（前面中断已传）；失败 0；83.7s；1.07 MB/s</td></tr>
+      <tr><td>对象 + 字节</td><td><code>--verify-only</code></td>
+      <td><b class="ok">664/664，字节全对，0 不一致，0 多出</b>（34.3s）</td></tr>
+      <tr><td>SHA256</td><td><code>--verify-only --sha256</code></td>
+      <td><b class="ok">664/664 哈希一致，0 不一致</b>（111.2s，两端各读 122.94 MB）</td></tr>
+      <tr><td>重跑跳过</td><td>再跑一次同步</td>
+      <td><b class="ok">上传 0，跳过 664，失败 0</b>（0.0s，goofys stat 热）</td></tr>
+      <tr><td>批处理接线</td><td><code>batch_local.py … --apply --oss-only</code></td>
+      <td><b class="ok">rc=0</b>；state 记 <code>oss_state=synced</code>、
+      <code>oss_files=664</code>、<code>oss_uploaded=0</code>、<code>oss_skipped=664</code></td></tr>
+    </table>
+  </div>
+  <p class="sub" style="margin:10px 0 0">目标目录最终 664 个对象、122,937,029 B，
+  与源逐一对上；目录里没有残留 <code>.part</code>。</p>
+</section>
+
+<section>
+  <h2>踩到并修掉的坑：goofys rename 遇到 <code>+</code> 目录 404</h2>
+  <div class="grid2">
+    <div class="note"><b>现象</b><br>
+      首批 3 个文件失败，全部在
+      <code>all_users_正面_3张以上/+1八重樱-3/</code>：
+      <code>RenameOp: no such file or directory</code>，goofys 日志是 S3
+      <code>NoSuchKey</code>。同一文件顺序重试仍失败；直接写正式名正常。</div>
+    <div class="note"><b>处理</b><br>
+      结果同步改成直接写正式名（结果文件小、失败可重跑），不再依赖 rename；
+      自检新增「含 <code>+</code> 的目录」用例。P1 的大文件上传仍走
+      <code>.part → rename</code>，不受影响。</div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <table>
+      <tr><th>自检</th><th>结果</th></tr>
+      <tr><td><code>python3 scripts/selftest_oss_sync.py</code></td>
+      <td><b class="ok">33 项全过</b>（增量 / 重跑 / 哈希 / 软链 / 隐藏 / dry-run /
+      verify / extras / <code>+</code> 目录）</td></tr>
+      <tr><td><code>python3 selftest_batch_local.py</code></td>
+      <td><b class="ok">57 项全过</b>（新增 <code>--oss-only</code> 端到端 + 重跑跳过）</td></tr>
+      <tr><td><code>python3 selftest_batch_remote.py</code></td>
+      <td><b class="ok">45 项全过</b>（原有上传/回传逻辑 + <code>--oss-only</code> 未受影响）</td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>没有做什么</h2>
+  <ul>
+    <li><b>没有让 batch_remote 真连服务器：</b>回传后的同步走的是同一段本地逻辑与
+    同一套字段；离线自检覆盖，真实 SSH 队列未在本次跑。</li>
+    <li><b>没有改 P1.5 的读路径：</b>结果同步只写
+    <code>直播产生结果</code>，录屏输入路径不变。</li>
+    <li><b>没有删本地结果：</b>P4 影子期结束前保留本地副本。</li>
+    <li><b>没有打包交付树：</b>小文件逐个同步；如果后续任务对象数到 1 万以上，再评估
+    「交付树按账号打包」。</li>
+    <li><b>没有提交 git：</b>仓库内脚本/文档留在工作区；批处理脚本在
+    <code>~/脚本/ssh/</code>，不在仓库内。</li>
+  </ul>
+</section>
+
+<section>
+  <h2>怎么复现</h2>
+  <pre><b># 单任务同步 / 核对</b>
+python3 scripts/oss_sync.py --src &lt;本地结果&gt; --dst &lt;OSS结果&gt; --dry-run
+python3 scripts/oss_sync.py --src &lt;本地结果&gt; --dst &lt;OSS结果&gt;
+python3 scripts/oss_sync.py --src &lt;本地结果&gt; --dst &lt;OSS结果&gt; --verify-only --sha256
+
+<b># 批处理里只补 OSS 同步</b>
+cd ~/脚本/ssh
+python3 batch_local.py  batch_jobs.local.json  --apply --oss-only
+python3 batch_remote.py batch_jobs.json        --apply --oss-only
+
+<b># 离线自检</b>
+python3 scripts/selftest_oss_sync.py
+python3 ~/脚本/ssh/selftest_batch_local.py
+python3 ~/脚本/ssh/selftest_batch_remote.py
+</pre>
+</section>
+
+<footer>
+数据源：<code>/tmp/p2_sync_report.json</code>（同步）、
+<code>/tmp/p2_verify.json</code>（对象+字节）、
+<code>/tmp/p2_verify_sha.json</code>（SHA256）、
+<code>~/脚本/ssh/batch_jobs.p2test.state.json</code>（批处理状态）。
+本次只做结果链路，未删本地、未改录屏读路径、未提交 git。
+</footer>
+</main></body></html>

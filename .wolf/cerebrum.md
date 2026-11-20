@@ -7,17 +7,46 @@
   （2026-11-06 明确选择「原样导出不加字」。）
 - 撞库范围要**全**：不能只看交付树（≥3 张），发过**任意一条**评论（正面/负面/中性）的人
   也要能撞出来（2026-11-09 用户明确：「池子不按正面评论，按全部评论」）。
+- 未命中的最近账号也要**出图**，放在 `标记图/未命中/` 单独归档（2026-11-15 用户：
+  「未命中名单最近匹配度的，在标记图单独的文件夹展出」），方便看图判断是阈值卡掉还是没拍到。
 - 文档要随功能同步改：`livepipe/README.md`、`livepipe/全流程说明.md`、`tools/<名>/doc.py`。
+- 大型任务按**多 agent** 跑：计划 → 并行开发 → 独立评审 + 使用逻辑审查；报告里的 P0 /
+  CONFIRMED 要回炉改到合理，再出开发日志。日志要求：简洁明了、图文结合、具体例子、
+  真实数据，产物是可直接打开的 HTML（2026-11-17 OSS P0）。
+- **百度素材不要落本地暂存，直接下载到 OSS**（2026-11-19 用户明确：「本地暂存不要存
+  直接下载到oss」）。用 `scripts/oss_download.py baidu`（bypy 授权/列目录 + PCS 单请求
+  顺序流式写 `.part`）；不要再引入本地 staging 目录。
 
 ## Learnings（项目经验）
 
+- OSS 前缀核对/清理走 `oss2` 直连（`oss_relocate_prefix.py` / `oss_purge_prefix.py`），
+  不要走 goofys：406k 对象全量 list 一轮十几分钟，且挂载点 `ls` 有元数据缓存滞后。
+  删除前必须先证明目标前缀有同名同字节副本；`batch_delete_objects` 1000 键/批。
+  ⚠ 自动模式会以「Cloud Storage Mass Delete」拦截批量删除 —— 准备好脚本与核对报告后
+  把命令交给用户批准执行，不要换工具绕过（2026-11-19 桶根 `奇瑞汽车/直播看管` 清空）。
+
+- 分批迁移的验收脚本要**同时接受补传前/补传后两套基线**，按实际数字自动切 phase；
+  否则 P1 做完反而 EXIT 1。P0 与 P1 的清单行数/字节也不同（29 行 46.52GB vs 27 行
+  40.07GB），不能只改 full_mapped（2026-11-17 OSS P0）。
+
+- 交付材料（`交付清单.txt` + `summary.json`）的目标根是 **`out/<场次>/<平台>/all_users_正面_3张以上`**，
+  不是 `/home/puyu/交付/`（那是另一份独立拷贝）。09-22 是 `<平台>/<子账号>/all_users_…` 布局，
+  每个子账号都要单独出材料；`seg*/…all_users_正面_1张以上` 是分片中间产物，`.撞库合并/` 是隐藏虚拟树，都不算交付目录。
 - 交付树只是「合格账号」视图；**直播全量账号在 `seg*/comments.jsonl`**（parse 产物，全部评论，
   撞库池子就用它）；`seg*/users.jsonl` 是 filter 产物、只有 ≥min_positive 条正面的账号，
   只在没有 comments.jsonl 时兜底。跨段合并键是 `(username, level)`，别只按昵称。
 - 素材盘路径会变：`summary.json` 里的绝对视频路径失效时用 `match --video-map 旧前缀=新前缀`。
+- 腾讯文档填数（canvas 表格）：CDP 合成的 Ctrl+V / Ctrl+C 在该页不生效；可靠做法是先用
+  左上角「名称框」（`input.bar-label`）输入单元格地址回车定位，再点公式栏
+  （`div.formula-input`，contenteditable）输入值、回车提交（回车后自动下移一格）。
+  每格写完回读公式栏 `textContent` 校验。2026-11-19 用此法填了「视频统计」I/J/K/M/P 五列。
 - 同一批视频的取帧口径由 `summary.json` 的 `sample_mode` 决定；`adaptive` 必须顺序解码（bug-264）。
   补图复用 `export_user_images`，不要另写取帧。
 - 自检是零第三方依赖的纯函数测试；涉及文件系统的用 `tempfile.TemporaryDirectory()`。
+- `livepipe verify` 的「X 比 Y 旧」类警告 = qualify/export/collect 分批跑的 mtime 交错，
+  不是数据坏；verify 的硬核对（merged 与各段合格表并集一致、交付树包含全部合格账号、
+  计数一致）过了就是自洽。想全绿只需重跑 `--only qualify,export,collect`（不要 filter，
+  filter 要花 NLP 调用）。09-13 抖音重跑后计数不变（78 / 1017）证实了这一点。
 - 跑真实补图很慢（本批单段 18~67s，整批 426s）；只是核对表格时先 `--no-images`。
 - 同一个人的昵称会在**不同段**里读成不同样子（`+1八重樱` / `八重樱`）：解析层的别名归一
   只在段内取证，跨段必须在 `qualify` 合计前再归一（`tools/merge_segments/align.py`）。
@@ -79,8 +108,199 @@
   每档都要独立量 `row_pitch / x_text / badge_span / rect`，不能按宽高比缩放套用。
   一个小 diff 的经验：480 档抖音行距 35.6、x_text 66、badge_span 36；
   快手 480 档行距 36.8、x_text 95、badge_span 72、x_ignore_from 350。
+- **评论区顶部有虚化/渐隐带时，rect y1 宁可再低一点**（2026-11-10 用户明确要求
+  「框要低一点因为有的评论区顶部有虚化」）：只渲染半截的顶部行 OCR 会读成碎片并变成
+  匿名评论，交付图也会带上模糊行。按素材量出「分界 → 渐隐带底」，y1 取渐隐带
+  再往下 10~20px（09-09 猎鹰：视频号 592×1280 分界≈717、渐变到≈745 ⇒ y1=760；
+  抖音 720×1560 渐变到≈770 ⇒ y1=790；快手 720 y1=770、1968 y1=1600）。
+- **找直播终点别用「直播已结束」四个字**（2026-09-13 艾瑞泽8CTCC 实测）：结束页会先黑屏、
+  或直接先渲染「猜你喜欢」推荐流，四个字要晚 2~3s 才出现 ⇒ 按它裁会把结束页一起带进来
+  （第一版抖音多切 0.3s、快手多切 2.6s，末帧已经是推荐页）。可靠判据是**底部输入栏**
+  （`说点什么` / `聊一聊`）还在不在：它在 ⇒ 还在直播；用它对分界点做 0.5s 二分。
+- **录屏可能「中途」上下翻转，而且没有 rotation 元数据**（2026-09-08 快手晚场首段实测）：
+  同一个 mp4 前 260s 正立、之后整段倒置，`ffprobe` 显示 rotation=0。整文件加
+  `-display_rotation 180` 会把前段也翻倒。做法：先用横/竖投影逐文件采样 8~13 帧定位
+  翻转点，再在翻转后的第一个关键帧处 `-c copy` 拆成 `a_upright.mp4` + `b_rot180.mp4`
+  （`-display_rotation 180` 写 rotation=-180，OpenCV 默认自动应用）。配置里拆成两段。
+  每批素材先做这个方向扫描，别等 OCR 读不出后段才发现。
+- **PyAV 做无损裁剪/取末帧的两个 API 坑**（2026-11-10）：PyAV 18 没有
+  `out.add_stream(template=in_stream)`，要 `out.add_stream_from_template(in_stream)`；
+  超大分辨率（1968×3150）上 `cv2.VideoCapture.set(CAP_PROP_POS_FRAMES, …)` 会返回
+  False，改用 `container.seek(int(t*av.time_base))` 再逐帧解码取最后一帧。
+  详见 buglog 2026-11-10 两条。
+
+- **素材文件夹名可能把平台写错**（09-08 抖音文件夹写成「9.8快手…」，09-10 视频号文件夹
+  写成「9.10快手…」）：`input.videos` 一律按 `find` 出来的**真实路径**写，文件头注明
+  「目录名误写成 X，内容是 Y」，别按平台名拼路径。
+- **快手大档的「粉丝农场」小游戏卡**（2026-11-10 seg4 实测）：绿色农场卡从 x≈660 起盖住
+  评论列右半边，卡面文字最小左沿 751、真评论被裁在 x2≈665 ⇒ `x_ignore_from=700`；
+  overlay_cards 另补 `粉丝农场|暂未加团|预存亲密值|加粉丝团送|Lv.\d+扩建|一键种菜|偷菜|
+  一键施肥|种子`。720 档的同类通知碎片还有 OCR 变体 `官方扶持|^来白|丝团灯牌|团灯牌`。
+- **快手 `N粉丝团` 药丸会连昵称一起被 OCR 并框**（2026-11-10）：`4粉丝团清风徐来` 的
+  文字框 x1=126 > x_text=105，前缀就留在用户名里，同一个人被拆成多种读法；`badge_alias`
+  只在同一句有干净读法时归一。配置层没有开关，全量后按 users.jsonl 的 `*粉丝团*` 核对，
+  量大再扩展 `_FAN_BADGE_RE` 支持 `粉丝团`。
+
+- **一天可能有多场直播，场次末段不止一个**（2026-11-11 09-15）：本批上午、下午各一场，
+  每个平台的**上午末段和下午末段**都带「直播已结束」页。别只检查 input.videos 的最后一段；
+  按文件名的时间段把每场结尾那一段都跑一遍输入栏二分（09-15 共裁 6 段）。
+- **wrap_gap_ratio 要按续行/独立行两簇的实测间距夹，不要照抄同赛事旧配置**（2026-11-11
+  09-14 视频号）：本批续行 22.5~26.5px（0.54~0.63 行距）、独立行 34.5~42.5px
+  （0.82~1.01），0.85 会把 34.5px 的独立行误并 ⇒ 取 **0.75**。同赛事 09-13 的 0.85
+  能用，只是因为那批续行 25.5px、独立行从 0.95 起。
+- **fan_badge_x_max 比的是 assemble_row 之后的文本块左沿**（2026-11-11 09-14 视频号）：
+  行首等级/粉丝药丸按几何被丢进 badge 列、不进行框，`+13粉丝橙子君` 的行文本块
+  被抬到 x1=85（`+2粉丝wjm` 是 69）⇒ 只按药丸原始 x1≈26 写 32 会漏剥。
+  量法：看被丢药丸那一行的**剩余文本块**最左沿，取略大值（本批 90）。
+- **直播结束点只认底部输入栏**（`说点什么` / `聊一聊`）：`直播已结束` 字样会晚 2~3s
+  才出现，按它裁会留 2~3s 结束页；cv2 `CAP_PROP_POS_MSEC` seek 也不可靠。
+  用 PyAV `container.seek(int(t*av.time_base))` + 0.5s 二分找输入栏最后出现点，
+  再减 0.2s 流拷贝。
+
+
+- **视频区里的「下三分之一横幅」会被 OCR 读成带冒号的一行，看着像置顶评论**（2026-11-11 奇瑞
+  创新大会实测）：`!CHANGE! 2026奇瑞全球创新大会` 落在 y≈522（视频画面底 591 之上），OCR 读成
+  `ICHANGE：2026奇瑞全球创新大会`、x1≈104 正好是昵称列、而且每帧都在同一位置。量 rect 时先定
+  「视频画面在哪结束」再取 y1，别把这条当评论（否则它会以同一昵称反复出现，还可能在交付图里
+  被圈出来）。
+- **列表顶部渐隐带里的半透明行，OCR 仍能读出完整的字**（同上，~70px，到 y≈672 才全亮）：
+  判 y1 不能看「OCR 有没有读出来」，要看行是不是**全亮**（放大截图看对比度），再往下留
+  10~20px；本次 rect y1=672、视频画面底 591。
+- **抖音系统行的 `分享了直播` / `推荐了直播` 不在内置 `_NOTICE_RE` 里**（内置只有
+  赞了直播 / 为主播点赞 / 入了直播间 / 关注了主播 / 送出了）：不在 overlay_cards 补短语就会
+  变成匿名评论；`…关注了主播奇瑞汽车` 被折行切开后，后半截整行就是 `奇瑞汽车`
+  ⇒ 用 `^奇瑞汽车$` 锚行首尾丢（别用不带锚的「奇瑞汽车」，会误伤续行）。
+
+- **PyAV `container.seek` 的 offset 单位是 `stream.time_base`，不是微秒**（2026-11-11 09-16
+  老章拆车踩过）：`c.seek(int(t*1_000_000), stream=st)` 在 1/90000 时间基上等价于往后跳
+  十几小时，每次抽帧都落到片尾（现象：t=60/300/900/1500/2100 抽出的帧一模一样、评论内容
+  40 分钟不变）。正确写法 `c.seek(int(t / float(st.time_base)), stream=st)` 再 decode 到
+  `pts >= t`。做「抽帧量版式」的临时脚本时先打印 `st.time_base` 核对。
+- **同一分辨率不同直播间的「评论区顶部」可能差 250px**（2026-11-11，590×1280 抖音）：
+  奇瑞创新大会批 评论列表顶在 ≈672（~70px 渐隐带），老章拆车批 880~918 才渐隐到亮白
+  ⇒ y1 必须逐批量，不能按「590×1280 同档」套用。视频号更要注意：`650~750` 可能是
+  **视频画面里的手机屏幕文字**（OCR 读成 `责任免球款以官方`），不是评论；判据是看这一块
+  会不会随评论滚动、有没有冒号/药丸/`来了` 等评论形状。
+
+- **撞库名单不能直接把渠道汇总 xlsx 喂给 `match`**（2026-11-15）：渠道表头常写成
+  `抖音-奇瑞汽车` / `视频号-风云新能源`，而 `platform_label` 只认纯平台名（或 `抖音号` 等
+  别名）；一个 sheet 还常有多场（上午/下午）和多块，`_find_header` 只看第一块。正确做法是
+  先按「场次 × 平台」拆成单场文件（`撞库名单/split_account_lists.py`），CSV 的平台列之间
+  留空列（`序号,抖音,,序号,视频号`）——否则 `_pick_column` 的 right 分支会把隔壁表头当人名。
+- 拆名单清洗的边界：`@` 前缀和 9.14 视频号列的 `1.`/`2.` 行首编号要去；但 emoji 的变体
+  选择符（`❤️` 的 FE0F）和昵称里的标点（`辉、`、`南风过境。`）必须保留，否则名单看着变样。
+  去重口径用 `list_match.common.normalize_name`，别自创一套。
+
+- **视频时间核对看「文件名区间 × ffprobe 时长」**（2026-11-15）：段视频名里的时间区间就是
+  batch 的 seg 时间。实际短于区间超容差 = 错（09-07 快手 seg4 文件名 `14:30-17:23` 实际
+  53min）；长于区间多是录尾带推荐页，只警告。`creation_time` 在部分批次是复制/转码时间
+  （实测偏 3~4 小时），只能当参考，不能当判据。素材盘挪位置用 `--video-map`。
+- **交付/排查前先 `livepipe verify <cfg>`**（2026-11-15）：它只读，按实际步骤核对
+  comments/summary/rows/frames/users/users_qualified/merged/export/collect 的存在性、计数与
+  时间戳。**0 字节 `rows.jsonl` 是硬错误**（崩溃残留），不是「这场没人评论」；下游文件比
+  上游旧 = 重跑断链（如 parse 重跑后没跑 filter）。素材盘没挂载时用宽松读配置
+  （`C.load(..., check_videos=False)`），不要为了核对产物去改配置路径。
+
+- **不知道一批录屏对应哪张名单时，先 `ffprobe creation_time` 定日期**（2026-11-16，
+  1019-1024 创新大会）：文件夹写的是大会日期区间（10-19~24），实际录屏只有一天上午；
+  `creation_time = 2026-10-20T01:35:23Z`（= 09:35 +08）正好对上 seg2 文件名
+  `9：35-10：50` ⇒ 对应渠道表 `10.20` sheet 的「多渠道账号清单」。渠道表里的「主名单」
+  不一定在文件名里写场次，要按日期 + 平台列去找。
+- **重跑多场撞库前先统计「失效视频前缀」，再逐一对到现存素材**（2026-11-16）：同一份
+  `--video-map` 列表要同时覆盖 `/root/livepipe_batches/...`（远程产出）和
+  `/home/puyu/work/data/...`（本地老批次）两种历史前缀；只映射一种时，另一批的
+  「仅直播命中」会静默地补不了图（每段一条 warn，但整场 rc 仍为 0）。核对办法：遍历
+  `out/*/*/seg*/summary.json` 的 `video`，逐个按映射解析，打印 MISS 的行再补前缀。
+- **多账号批次（`<平台>/<子账号>/segN`）撞库要建虚拟交付树**（2026-11-16，09-22）：
+  `discover_platforms` 只认 `<live>/<平台>/all_users_*`。在批次下建
+  `.撞库合并/<平台>/`：账号目录符号链接加 `<子账号>__` 前缀、段目录链接成
+  `segN__<子账号>`、manifest 的 `users` 合并（counts 相加）、`judgments.jsonl` 按 `k` 去重合并。
+  HTML 的场次名默认取 live 根目录名，要 `--title "<批次名>" --date "<日期>"` 覆盖，
+  `--no-images` 重生成不会动已导出的 `标记图/`（坏链为 0 已验证）。
+
+- **用 `--print-config` 的产物改临时切片配置时，先删掉所有 `_` 开头的内部键**（2026-11-16）：
+  `--print-config` 会带上 `_videos` / `_segments` / `_judgments_cache`，而
+  `segments()` 优先返回 `cfg["_segments"]` ⇒ 你改的 `input.videos` / `output.dir`
+  完全不生效，会按原始整段跑到真实产出目录。切片配置要 `{k:v for k,v in cfg.items()
+  if not k.startswith("_")}` 之后再改。
+- **`findmnt` 还显示 fuse 不等于 goofys 活着**（2026-11-18，P1.5）：进程被杀/终端断开后
+  挂载点会变成 `ENOTCONN`（`ls` 报 `Transport endpoint is not connected`）。恢复：
+  `fusermount3 -u ~/oss-bucket` 再 `setsid nohup ~/goofys -f -o allow_other
+  --endpoint http://oss-cn-beijing.aliyuncs.com --subdomain static-cantotimes-com
+  ~/oss-bucket &`（凭据在 `~/.aws/credentials`）。`ps -C goofys` 没有进程就是断了。
+- **P1.5 样片验证不必等外置 out 盘**（2026-11-18）：配置的 `base_dir`/`output.dir`
+  指外置盘，打临时配置时把 `base_dir` 指向 `~/livepipe_batches/<有表情表的批次>`、
+  `output.dir` 指 `/tmp`，并只保留目标那一段的 `input.videos` 与同下标
+  `panels.manual`，就是真实管线路径。
+- **goofys 的 `rename` 在目标路径含 `+` 的目录会 404**（2026-11-18，P2）：
+  `+1八重樱-3/2.jpg.part → 2.jpg` 报 ENOENT，S3 日志是 NoSuchKey；直接写正式名正常。
+  小结果文件同步用直写（失败可重跑）；3GB 录屏的大文件上传仍用 `.part → rename`，
+  但新事件/账号目录如果含 `+`，上传前要先验证 rename 或用直写+字节校验。
+- **P2 结果同步的批处理开关**（2026-11-18）：`batch_local` / `batch_remote` 配
+  `oss_results_root` + `oss_sync`，任务级 `oss_result`（相对 root）指定落点；
+  收/回传成功后自动同步；失败只记 `oss_state=failed`，不动 `transferred`，
+  用 `--apply --oss-only` 补。
+- **goofys 单文件直写的内存代价**（2026-11-19，P3）：3.2GB 文件经 `cp` 直写 OSS，
+  goofys RSS 涨到约 6.0GB；墙钟 536s（约 6.0MB/s）。小内存机器先做 256MB 压测。
+  下载收尾统一走 `scripts/oss_download.py`（live/baidu），最终复用 `finalize_part`
+  的字节+时长闸门。`baidu` 用 bypy 的 PCS 接口**单请求顺序流式**写 `.part`
+  （一次 open、顺序 write）；bypy 自带的 20MB 分块下载每次重新 open+seek，
+  在 goofys 上第二块起就失败（2026-11-19 实测：1.28GB 文件只留下 20MB 截断文件）。
+- **P4 清盘先看 base_dir 依赖**（2026-11-19）：外置 out 里有 `*_emoji` 表情表，
+  22 份配置的 `base_dir` 指外置盘根；删 out 前必须把表迁到不参与清盘的
+  `~/livepipe_assets/out/` 并改 base_dir，否则 livepipe 跑不了。
+- **P4 回滚到本地的前提是 MyDisk 在**（2026-11-19）：`rollback-check` 82 条本地视频
+  路径有 76 条不存在（MyDisk 未挂载）。删本地 out 后“回滚到本地”不再是一条配置切换，
+  只能从 OSS 录屏重跑；决策前先挂回盘确认。
+
+- **百度 `直播录屏/` 是录屏归档，给新目录写配置前先核对是不是已配置素材的再归档**（2026-11-19）：
+  `直播录屏/奇瑞探秘局/`（11-19 16:00 上传）就是 10.24/10.25 探秘局视频号的重复上传 ——
+  6 个文件与本地 MyDisk 原件逐个大小一致、与 11-17 已归档副本的百度 MD5 也相同。
+  核对方法：`bypy list` 看大小/MD5 + 对照仓库里已有配置的 `input.videos`；同一批素材
+  不要再写第二套配置（会出两套交付树/两份撞库）。
+
+- **项目 OSS 根是 `~/oss-bucket/web/1/奇瑞汽车/直播看管/`**（2026-11-19 用户明确纠正）：
+  之前以为 `~/oss-bucket/奇瑞汽车/直播看管` 就是根，实际那是桶根同名前缀（P1/P2 写错的位置）；
+  正确位置多一层 `web/1/`。历史原方案是在 `~/oss-bucket` 上 bind-mount 桶内 `web/1`，
+  一旦 goofys 直接挂桶根，所有 `~/oss-bucket/奇瑞汽车/...` 就会解析到错误前缀。
+  新脚本/配置一律写显式 `web/1/...`，不要依赖 bind mount。
+- **本桶不要用 `upload_part_copy` 做大文件迁移**（2026-11-19 实测）：64MB 的 CopyPart
+  直接 60s 读超时；CopyObject 单请求反而能秒级复制 3GB 对象（5GB 上限）。
+  服务端前缀迁移统一走 `scripts/oss_relocate_prefix.py`。
 
 ## Do-Not-Repeat（别再犯）
+
+- **看到 `~/oss-bucket/...` 报 ENOTCONN，先查挂载，不要当成文件缺失/配置错**（2026-11-19）：
+  goofs 进程掉了但 mount 表还留着 fuse 条目。`nautilus` 常持有挂载点里的文件，普通
+  `fusermount3 -u` 会 busy ⇒ 用 `fusermount3 -uz` 懒卸载，再
+  `nohup setsid ~/goofys -f -o allow_other --endpoint http://oss-cn-beijing.aliyuncs.com
+  --subdomain static-cantotimes-com ~/oss-bucket &` 重挂；1s 内可 stat。长期应改 systemd 托管。
+
+- **goofys 不支持 `open("a")`（FUSE append，ENOTSUP）**（2026-11-19）：结果直写 OSS 后，
+  `rows.jsonl` 的续跑分支会崩。已改成「先试 append，失败则 `open("w")` 重写已有行再继续」。
+  以后任何往 OSS 追加写的中间产物都要先确认 append 支持，或改成整文件重写/本地暂存到收尾再传。
+  `w` + 每帧 flush 是支持的（flush 会更新对象大小），不要因为 append 不支持就误判整类写不可用。
+
+- **不要用 `bypy download` 直写 goofys 挂载点**（2026-11-19）：bypy 按 20MB 分块、
+  每块重新 open + seek 写；goofys 上 1.28GB 文件从第二块开始 HTTP 206 重试耗尽，
+  最终只剩 20MB 截断文件（还占着正式名）。百度来源一律走
+  `scripts/oss_download.py baidu`：PCS 单请求 `Range` 顺序流式写 `.part`。
+
+- **改 OSS 前缀前先确认挂载语义**（2026-11-19）：`~/oss-bucket` 既可能挂桶根、也可能
+  bind-mount 到 `web/1`，`ls` 两个不同前缀能直接看出来。写死显式路径（`web/1/...`），
+  并在配置/工具里同步；只改配置不改工具默认根，下次回填又会写错。
+
+- **跑 parse 必须用 `/home/puyu/anaconda3/envs/vlx/bin/python`**（2026-11-15）：shell 默认的
+  conda base 没有 `rapidocr_onnxruntime` / `cv2`，`python -m livepipe run … --only parse`
+  会在导入 OCR 时直接报 ModuleNotFoundError。verify 用 base 能跑（刻意不依赖 OCR）。
+- **给新版式起档案名（`platforms` 里的 key / 面板 `platform`）时，必须同步两处
+  `PLATFORM_CN`**（2026-11-15）：`tools/export_user_images/common.py` 和
+  `tools/verify_run/common.py` 各有一份、要求逐项一致。漏一个，export 就会用档案名建
+  段级导出目录（`kuaishou_large/` 这类），collect 报「平台名不一致」。已收：
+  `kuaishou_480/kuaishou_720/kuaishou_large/douyin_app_480/weibo_app`。
+- **不要直接 `Path(旧路径).is_file()` 试探素材路径**（2026-11-15）：summary.json 里的旧视频
+  路径可能落在 `/root/...` 这类无读权限目录，`stat` 抛 `PermissionError`，会让后面的
+  `--video-map` 重映射永远轮不到。包一层 `try/except OSError` 的 `_isfile()`。
 
 - 面板覆盖里 `y_phase / x_text / x_ignore_from / badge_span` 的 `int(round(float(...)))`
   必须先判 `None` —— CONFIG.md 明确允许 `x_ignore_from: null`（= 关闭浮层闸），
@@ -91,7 +311,25 @@
 - 改 `score_norm` / `_partial_norm` 这类核心相似度时，**顺手删掉 return 之后的死代码**——
   自检不会报不可达块，它会一直误导后来的人。
 - 不要手工改生成的 CSV/xlsx；要改就改代码重跑。
+- **批量改配置的脚本必须幂等**：插入键前先检查键是否已存在（`re.search(r'^\\s*"key"\\s*:', ..., re.M)`），
+  重跑前先想好「第二次运行会不会重复插入/重复替换」。2026-11-17 迁移 `out/` 时，`base_dir`
+  插入逻辑没做存在检查，脚本跑第二遍给 66 份 JSON 各插了两行（见 buglog 2026-11-17）。
 - 重跑撞库只覆盖同名文件，旧名单名留下的 `标记图/` 子目录不会自动删 —— 需要干净结果就换 `--out`。
+  **换 `--title` / `--date` 重生成 HTML 也一样**：文件名前缀跟着变，旧 `撞库清单/*.html`
+  会和新文件并存，`--no-images` 重跑后要手动删掉旧名文件（2026-11-16 09-22 踩过）。
 - 补图/复制这类「会多段写同一目录」的逻辑，判断能不能直接写**必须靠本轮状态**（如 `owners` 集合），
   不能用「目标文件是否已存在」——重跑时旧文件还在，会判成「不是第一次」而加段名前缀，
   结果同一张图存两遍（赵丽丽 2→4 张）。重跑幂等要显式测：跑两遍看计数不变。
+- **临时切片试跑会把 rows.jsonl 写进真实段目录**（2026-11-11 09-16）：用
+  `build_parse_args(cfg, seg=...)` 手工跑 60s 切片时，`a.dump_rows` 仍然是
+  `<output.dir>/segN/rows.jsonl`（odir 取自 seg["out"]），即使用 `a.out` 指到 /tmp。
+  正式全量前必须删掉 `<段目录>/rows.jsonl`，否则 `paths.py` 见文件存在就判「已抽完」，
+  全量 parse 变成对 60s 的零 OCR 复算。
+
+- **微博（`wrap_at_text_left`）的 `row_pitch` 要取「评论行距的一半」**（2026-11-11，09-22 微博
+  590×1280）：这一档续行只离首行 26px，而两条评论间距 78.5px。pitch 写 78.5 时，26px <
+  0.4×pitch（31.4）⇒ `group_rows` 会把续行判成折行后、把它的首行当「同一视觉行的兄弟碎片」
+  一起并进 k±0.5 小数槽；`assemble_row` 按 x1 排序（续行 x1=27 < 首行 28）又把文字倒置，
+  连带吞掉下一条评论的头。写 **39.2（=78.5/2）**：两行评论正好 2 槽、单行 1.32 槽、续行
+  0.66 槽（在 0.15~0.73 续行闸内），实测 44 条唯一评论、用户名与正文顺序都对。写 52（单行
+  评论间距）文本也干净，但两行评论与下一条差 1.51 个行距，实测丢 8 条。见 buglog 2026-11-11。

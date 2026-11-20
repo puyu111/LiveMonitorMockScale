@@ -1,0 +1,1145 @@
+{
+  "version": 1,
+  "generated_at": "2026-11-17T00:00:00Z",
+  "generated_by": "scripts/build_oss_inventory.py",
+  "totals": {
+    "configs": 22,
+    "refs": 82,
+    "full_mapped": 55,
+    "trimmed": 27,
+    "missing": 0,
+    "local_missing": 0,
+    "failed_configs": 0
+  },
+  "bytes": {
+    "full_mapped": 175302204124,
+    "trimmed": 40069546585,
+    "missing": 0,
+    "total": 215371750709
+  },
+  "bytes_human": {
+    "full_mapped": "163.3 GB",
+    "trimmed": "37.3 GB",
+    "missing": "0 B",
+    "total": "200.6 GB"
+  },
+  "bytes_gb_decimal": {
+    "full_mapped": 175.3,
+    "trimmed": 40.07,
+    "missing": 0.0,
+    "total": 215.37
+  },
+  "bytes_gib": {
+    "full_mapped": 163.26,
+    "trimmed": 37.32,
+    "missing": 0.0,
+    "total": 200.58
+  },
+  "acceptance": {
+    "doc_expected": {
+      "full_mapped": 55,
+      "missing": 0,
+      "trimmed": 27
+    },
+    "actual": {
+      "configs": 22,
+      "refs": 82,
+      "full_mapped": 55,
+      "trimmed": 27,
+      "missing": 0,
+      "local_missing": 0,
+      "failed_configs": 0
+    },
+    "after_backfill": {
+      "full_mapped": 55,
+      "missing": 0,
+      "trimmed": 27
+    },
+    "phase": "p1",
+    "p1_objects": 27,
+    "p1_bytes": 40069546585,
+    "p1_bytes_gib": 37.32,
+    "state": "P1 补传完成：55 段整段全部落盘，27 段裁尾副本已在上传清单"
+  },
+  "coverage": {
+    "global": {
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+      "indexed_videos": 52,
+      "configs": 16
+    },
+    "1019": {
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/10.19",
+      "indexed_videos": 30,
+      "configs": 6
+    },
+    "total_indexed_videos": 82
+  },
+  "per_config": [
+    {
+      "name": "09-30_全球车的中国路_快手.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/09-30_全球车的中国路_快手.json",
+      "group": "global",
+      "refs": 2,
+      "full_mapped": 0,
+      "trimmed": 2,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 0,
+        "trimmed": 3006789272,
+        "missing": 0,
+        "total": 3006789272
+      }
+    },
+    {
+      "name": "09-30_全球车的中国路_抖音.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/09-30_全球车的中国路_抖音.json",
+      "group": "global",
+      "refs": 4,
+      "full_mapped": 3,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 9676742877,
+        "trimmed": 166572698,
+        "missing": 0,
+        "total": 9843315575
+      }
+    },
+    {
+      "name": "09-30_全球车的中国路_视频号.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/09-30_全球车的中国路_视频号.json",
+      "group": "global",
+      "refs": 4,
+      "full_mapped": 3,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 9678057483,
+        "trimmed": 3110035513,
+        "missing": 0,
+        "total": 12788092996
+      }
+    },
+    {
+      "name": "10-01_全球车的中国路_快手.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-01_全球车的中国路_快手.json",
+      "group": "global",
+      "refs": 3,
+      "full_mapped": 1,
+      "trimmed": 2,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 3228808205,
+        "trimmed": 1751147743,
+        "missing": 0,
+        "total": 4979955948
+      }
+    },
+    {
+      "name": "10-01_全球车的中国路_抖音.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-01_全球车的中国路_抖音.json",
+      "group": "global",
+      "refs": 5,
+      "full_mapped": 3,
+      "trimmed": 2,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 9675188475,
+        "trimmed": 4668142462,
+        "missing": 0,
+        "total": 14343330937
+      }
+    },
+    {
+      "name": "10-01_全球车的中国路_视频号.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-01_全球车的中国路_视频号.json",
+      "group": "global",
+      "refs": 4,
+      "full_mapped": 3,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 9678331662,
+        "trimmed": 2005390060,
+        "missing": 0,
+        "total": 11683721722
+      }
+    },
+    {
+      "name": "10-02_全球车的中国路_快手.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-02_全球车的中国路_快手.json",
+      "group": "global",
+      "refs": 2,
+      "full_mapped": 0,
+      "trimmed": 2,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 0,
+        "trimmed": 5300770408,
+        "missing": 0,
+        "total": 5300770408
+      }
+    },
+    {
+      "name": "10-02_全球车的中国路_抖音.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-02_全球车的中国路_抖音.json",
+      "group": "global",
+      "refs": 5,
+      "full_mapped": 3,
+      "trimmed": 2,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 9677078295,
+        "trimmed": 3310692143,
+        "missing": 0,
+        "total": 12987770438
+      }
+    },
+    {
+      "name": "10-02_全球车的中国路_视频号.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-02_全球车的中国路_视频号.json",
+      "group": "global",
+      "refs": 6,
+      "full_mapped": 4,
+      "trimmed": 2,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 12904113229,
+        "trimmed": 1066885117,
+        "missing": 0,
+        "total": 13970998346
+      }
+    },
+    {
+      "name": "10-03_全球车的中国路_快手.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-03_全球车的中国路_快手.json",
+      "group": "global",
+      "refs": 2,
+      "full_mapped": 1,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 3229231923,
+        "trimmed": 877546258,
+        "missing": 0,
+        "total": 4106778181
+      }
+    },
+    {
+      "name": "10-03_全球车的中国路_抖音.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-03_全球车的中国路_抖音.json",
+      "group": "global",
+      "refs": 3,
+      "full_mapped": 2,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 6450951872,
+        "trimmed": 2857339103,
+        "missing": 0,
+        "total": 9308290975
+      }
+    },
+    {
+      "name": "10-03_全球车的中国路_视频号.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-03_全球车的中国路_视频号.json",
+      "group": "global",
+      "refs": 4,
+      "full_mapped": 3,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 9678084760,
+        "trimmed": 331998928,
+        "missing": 0,
+        "total": 10010083688
+      }
+    },
+    {
+      "name": "10-04_全球车的中国路_抖音.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-04_全球车的中国路_抖音.json",
+      "group": "global",
+      "refs": 1,
+      "full_mapped": 1,
+      "trimmed": 0,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 1081459667,
+        "trimmed": 0,
+        "missing": 0,
+        "total": 1081459667
+      }
+    },
+    {
+      "name": "10-04_全球车的中国路_视频号.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-04_全球车的中国路_视频号.json",
+      "group": "global",
+      "refs": 1,
+      "full_mapped": 0,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 0,
+        "trimmed": 1400465253,
+        "missing": 0,
+        "total": 1400465253
+      }
+    },
+    {
+      "name": "10-06_全球车的中国路_抖音.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-06_全球车的中国路_抖音.json",
+      "group": "global",
+      "refs": 3,
+      "full_mapped": 2,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 6450723880,
+        "trimmed": 221633902,
+        "missing": 0,
+        "total": 6672357782
+      }
+    },
+    {
+      "name": "10-06_全球车的中国路_视频号.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-06_全球车的中国路_视频号.json",
+      "group": "global",
+      "refs": 3,
+      "full_mapped": 2,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 6451648447,
+        "trimmed": 540735037,
+        "missing": 0,
+        "total": 6992383484
+      }
+    },
+    {
+      "name": "10-19奇瑞创新大会_抖音QQ汽车.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_抖音QQ汽车.json",
+      "group": "1019",
+      "refs": 6,
+      "full_mapped": 5,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 16128867257,
+        "trimmed": 834998990,
+        "missing": 0,
+        "total": 16963866247
+      }
+    },
+    {
+      "name": "10-19奇瑞创新大会_抖音奇瑞汽车.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_抖音奇瑞汽车.json",
+      "group": "1019",
+      "refs": 5,
+      "full_mapped": 4,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 12900337826,
+        "trimmed": 3089242130,
+        "missing": 0,
+        "total": 15989579956
+      }
+    },
+    {
+      "name": "10-19奇瑞创新大会_抖音风云新能源.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_抖音风云新能源.json",
+      "group": "1019",
+      "refs": 6,
+      "full_mapped": 5,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 16132877626,
+        "trimmed": 747125465,
+        "missing": 0,
+        "total": 16880003091
+      }
+    },
+    {
+      "name": "10-19奇瑞创新大会_视频号奇瑞QQ.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_视频号奇瑞QQ.json",
+      "group": "1019",
+      "refs": 5,
+      "full_mapped": 4,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 12907629647,
+        "trimmed": 1689390397,
+        "missing": 0,
+        "total": 14597020044
+      }
+    },
+    {
+      "name": "10-19奇瑞创新大会_视频号奇瑞汽车.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_视频号奇瑞汽车.json",
+      "group": "1019",
+      "refs": 3,
+      "full_mapped": 2,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 6464020160,
+        "trimmed": 1741127534,
+        "missing": 0,
+        "total": 8205147694
+      }
+    },
+    {
+      "name": "10-19奇瑞创新大会_视频号风云新能源汽车.json",
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_视频号风云新能源汽车.json",
+      "group": "1019",
+      "refs": 5,
+      "full_mapped": 4,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 12908050833,
+        "trimmed": 1351518172,
+        "missing": 0,
+        "total": 14259569005
+      }
+    }
+  ],
+  "missing_segments": [],
+  "trim_source_analysis": {
+    "rule": "按 _live 文件名里的 <HH-MM>-<HH-MM> 区间，在同日期目录下匹配 OSS 文件名区间（忽略空格、全角冒号与 ~）；先找同平台目录，同平台无精确命中时才用其它平台目录的唯一精确命中兜底（OSS 目录名可能与画面平台错位）；同区间多个对象记 ambiguous；绝不用字节数/时长猜源对象。",
+    "total_trimmed": 27,
+    "unique_time_match": 18,
+    "ambiguous": 0,
+    "not_matched": 9,
+    "matched_rate": 0.6667,
+    "by_reason": {
+      "split_or_partial": 1,
+      "overlap_not_exact": 1,
+      "source_missing": 1,
+      "unique_time_match": 18,
+      "media_raw_source": 6
+    },
+    "trimmed_bytes_split": {
+      "live": 30616143897,
+      "media": 9453402688
+    },
+    "media_note": "6 个 10-19 media 裁尾（dy_*/wx_*_live.mp4）的源是原始 SVID 对象，OSS 上存在但文件名不含时间区间，因此按本规则计为不可自动匹配；对应关系见各配置注释。",
+    "typical_examples": [
+      {
+        "disk_name": "1001_wechat_12-43-14-00_0-2854.mp4",
+        "config": "10-01_全球车的中国路_视频号.json",
+        "time_range": "12:43-14:00",
+        "match": "unique_time_match",
+        "matched_oss": "10.01/视频号/1/12：43-14：00.mp4",
+        "source_match": "10.01/视频号/1/12：43-14：00.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "reason_text": "文件名时间区间在同平台目录唯一命中"
+      },
+      {
+        "disk_name": "930_kuaishou_9-29-12-35_0-6885.mp4",
+        "config": "09-30_全球车的中国路_快手.json",
+        "time_range": "9:29-12:35",
+        "match": "not_matched",
+        "matched_oss": null,
+        "source_match": null,
+        "candidates": [
+          "9.30/快手/9：29-10：52.mp4"
+        ],
+        "reason": "split_or_partial",
+        "reason_text": "起点能在 OSS 找到对象，但区间被拆分 / 仅部分覆盖，没有单一源对象"
+      },
+      {
+        "disk_name": "930_douyin_14-54-15-38_0-407.mp4",
+        "config": "09-30_全球车的中国路_抖音.json",
+        "time_range": "14:54-15:38",
+        "match": "not_matched",
+        "matched_oss": null,
+        "source_match": null,
+        "candidates": [],
+        "reason": "source_missing",
+        "reason_text": "OSS 同日期目录里没有同名区间、也没有重叠对象"
+      }
+    ],
+    "recommendation": "P0 不填 source_oss（27 段 source_oss 全为 null）；P1 直接补传 27 个裁尾副本（合计 40.07 GB 十进制 / 37.3 GB，40069546585 字节），不必等按区间回溯源对象。",
+    "items": [
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/09-30_全球车的中国路_快手.json",
+        "seg": "seg1",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/930_kuaishou_9-29-12-35_0-6885.mp4",
+        "disk_name": "930_kuaishou_9-29-12-35_0-6885.mp4",
+        "bytes": 1752035866,
+        "duration_s": 6885.633778,
+        "trim_s": [
+          0.0,
+          6885.633778
+        ],
+        "platform": "快手",
+        "time_range": "9:29-12:35",
+        "match": "not_matched",
+        "matched_oss": null,
+        "source_match": null,
+        "candidates": [
+          "9.30/快手/9：29-10：52.mp4"
+        ],
+        "reason": "split_or_partial",
+        "platform_dir": "快手",
+        "cross_platform": false,
+        "reason_text": "起点能在 OSS 找到对象，但区间被拆分 / 仅部分覆盖，没有单一源对象",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/09-30_全球车的中国路_快手.json",
+        "seg": "seg2",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/930_kuaishou_13-37-15-37_0-5076.mp4",
+        "disk_name": "930_kuaishou_13-37-15-37_0-5076.mp4",
+        "bytes": 1254753406,
+        "duration_s": 5076.213544,
+        "trim_s": [
+          0.0,
+          5076.213544
+        ],
+        "platform": "快手",
+        "time_range": "13:37-15:37",
+        "match": "not_matched",
+        "matched_oss": null,
+        "source_match": null,
+        "candidates": [
+          "9.30/快手/12：08-13：41.mp4",
+          "9.30/快手/13：41-15：04.mp4",
+          "9.30/快手/15：04-15：39.mp4"
+        ],
+        "reason": "overlap_not_exact",
+        "platform_dir": "快手",
+        "cross_platform": false,
+        "reason_text": "OSS 有重叠对象，但起止时间与 _live 名不一致，不能唯一确定",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/09-30_全球车的中国路_抖音.json",
+        "seg": "seg4",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/930_douyin_14-54-15-38_0-407.mp4",
+        "disk_name": "930_douyin_14-54-15-38_0-407.mp4",
+        "bytes": 166572698,
+        "duration_s": 407.679578,
+        "trim_s": [
+          0.0,
+          407.679578
+        ],
+        "platform": "抖音",
+        "time_range": "14:54-15:38",
+        "match": "not_matched",
+        "matched_oss": null,
+        "source_match": null,
+        "candidates": [],
+        "reason": "source_missing",
+        "platform_dir": "抖音",
+        "cross_platform": false,
+        "reason_text": "OSS 同日期目录里没有同名区间、也没有重叠对象",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/09-30_全球车的中国路_视频号.json",
+        "seg": "seg4",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/930_wechat_13-41-15-04_0-4827.mp4",
+        "disk_name": "930_wechat_13-41-15-04_0-4827.mp4",
+        "bytes": 3110035513,
+        "duration_s": 4827.607933,
+        "trim_s": [
+          0.0,
+          4827.607933
+        ],
+        "platform": "视频号",
+        "time_range": "13:41-15:04",
+        "match": "unique_time_match",
+        "matched_oss": "9.30/快手/13：41-15：04.mp4",
+        "source_match": "9.30/快手/13：41-15：04.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "platform_dir": "视频号",
+        "cross_platform": true,
+        "reason_text": "同平台目录无命中，但在同日期其它平台目录唯一命中（OSS 目录名与画面平台错位）",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-01_全球车的中国路_快手.json",
+        "seg": "seg2",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1001_kuaishou_13-17-14-34_0-848.mp4",
+        "disk_name": "1001_kuaishou_13-17-14-34_0-848.mp4",
+        "bytes": 222941190,
+        "duration_s": 848.140744,
+        "trim_s": [
+          0.0,
+          848.140744
+        ],
+        "platform": "快手",
+        "time_range": "13:17-14:34",
+        "match": "unique_time_match",
+        "matched_oss": "10.01/快手/1/13：17-14：34.mp4",
+        "source_match": "10.01/快手/1/13：17-14：34.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "platform_dir": "快手",
+        "cross_platform": false,
+        "reason_text": "文件名时间区间在同平台目录唯一命中",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-01_全球车的中国路_快手.json",
+        "seg": "seg3",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1001_kuaishou_14-36-19-13_5779-12388.mp4",
+        "disk_name": "1001_kuaishou_14-36-19-13_5779-12388.mp4",
+        "bytes": 1528206553,
+        "duration_s": 6609.427,
+        "trim_s": [
+          5779.0,
+          12388.0
+        ],
+        "platform": "快手",
+        "time_range": "14:36-19:13",
+        "match": "unique_time_match",
+        "matched_oss": "10.01/快手/2/14：36-19：13.mp4",
+        "source_match": "10.01/快手/2/14：36-19：13.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "platform_dir": "快手",
+        "cross_platform": false,
+        "reason_text": "文件名时间区间在同平台目录唯一命中",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-01_全球车的中国路_抖音.json",
+        "seg": "seg3",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1001_douyin_12-50-14-33_0-2432.mp4",
+        "disk_name": "1001_douyin_12-50-14-33_0-2432.mp4",
+        "bytes": 1583677862,
+        "duration_s": 2432.503256,
+        "trim_s": [
+          0.0,
+          2432.503256
+        ],
+        "platform": "抖音",
+        "time_range": "12:50-14:33",
+        "match": "unique_time_match",
+        "matched_oss": "10.01/抖音/1/12：50-14：33.mp4",
+        "source_match": "10.01/抖音/1/12：50-14：33.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "platform_dir": "抖音",
+        "cross_platform": false,
+        "reason_text": "文件名时间区间在同平台目录唯一命中",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-01_全球车的中国路_抖音.json",
+        "seg": "seg5",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1001_douyin_16-11-19-14_0-6716.mp4",
+        "disk_name": "1001_douyin_16-11-19-14_0-6716.mp4",
+        "bytes": 3084464600,
+        "duration_s": 6717.030867,
+        "trim_s": [
+          0.0,
+          6716.0
+        ],
+        "platform": "抖音",
+        "time_range": "16:11-19:14",
+        "match": "unique_time_match",
+        "matched_oss": "10.01/抖音/2/16：11-19：14.mp4",
+        "source_match": "10.01/抖音/2/16：11-19：14.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "platform_dir": "抖音",
+        "cross_platform": false,
+        "reason_text": "文件名时间区间在同平台目录唯一命中",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-01_全球车的中国路_视频号.json",
+        "seg": "seg3",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1001_wechat_12-43-14-00_0-2854.mp4",
+        "disk_name": "1001_wechat_12-43-14-00_0-2854.mp4",
+        "bytes": 2005390060,
+        "duration_s": 2854.413689,
+        "trim_s": [
+          0.0,
+          2854.413689
+        ],
+        "platform": "视频号",
+        "time_range": "12:43-14:00",
+        "match": "unique_time_match",
+        "matched_oss": "10.01/视频号/1/12：43-14：00.mp4",
+        "source_match": "10.01/视频号/1/12：43-14：00.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "platform_dir": "视频号",
+        "cross_platform": false,
+        "reason_text": "文件名时间区间在同平台目录唯一命中",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-02_全球车的中国路_快手.json",
+        "seg": "seg1",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1002_kuaishou_10-32-14-07_0-10720.mp4",
+        "disk_name": "1002_kuaishou_10-32-14-07_0-10720.mp4",
+        "bytes": 2922492758,
+        "duration_s": 10720.038844,
+        "trim_s": [
+          0.0,
+          10720.038844
+        ],
+        "platform": "快手",
+        "time_range": "10:32-14:07",
+        "match": "unique_time_match",
+        "matched_oss": "10.02/快手/2/10：32-14：07.mp4",
+        "source_match": "10.02/快手/2/10：32-14：07.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "platform_dir": "快手",
+        "cross_platform": false,
+        "reason_text": "文件名时间区间在同平台目录唯一命中",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-02_全球车的中国路_快手.json",
+        "seg": "seg2",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1002_kuaishou_14-31-18-26_0-9538.mp4",
+        "disk_name": "1002_kuaishou_14-31-18-26_0-9538.mp4",
+        "bytes": 2378277650,
+        "duration_s": 9538.816,
+        "trim_s": [
+          0.0,
+          9538.816
+        ],
+        "platform": "快手",
+        "time_range": "14:31-18:26",
+        "match": "unique_time_match",
+        "matched_oss": "10.02/快手/2/14：31-18：26.mp4",
+        "source_match": "10.02/快手/2/14：31-18：26.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "platform_dir": "快手",
+        "cross_platform": false,
+        "reason_text": "文件名时间区间在同平台目录唯一命中",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-02_全球车的中国路_抖音.json",
+        "seg": "seg3",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1002_douyin_13-28-14-08_0-164.mp4",
+        "disk_name": "1002_douyin_13-28-14-08_0-164.mp4",
+        "bytes": 97153646,
+        "duration_s": 164.741978,
+        "trim_s": [
+          0.0,
+          164.741978
+        ],
+        "platform": "抖音",
+        "time_range": "13:28-14:08",
+        "match": "unique_time_match",
+        "matched_oss": "10.02/抖音/13：28-14：08.mp4",
+        "source_match": "10.02/抖音/13：28-14：08.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "platform_dir": "抖音",
+        "cross_platform": false,
+        "reason_text": "文件名时间区间在同平台目录唯一命中",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-02_全球车的中国路_抖音.json",
+        "seg": "seg5",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1002_douyin_16-00-17-40_0-5432.mp4",
+        "disk_name": "1002_douyin_16-00-17-40_0-5432.mp4",
+        "bytes": 3213538497,
+        "duration_s": 5432.504,
+        "trim_s": [
+          0.0,
+          5432.504
+        ],
+        "platform": "抖音",
+        "time_range": "16:00-17:40",
+        "match": "unique_time_match",
+        "matched_oss": "10.02/快手/1/16：00-17：40.mp4",
+        "source_match": "10.02/快手/1/16：00-17：40.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "platform_dir": "抖音",
+        "cross_platform": true,
+        "reason_text": "同平台目录无命中，但在同日期其它平台目录唯一命中（OSS 目录名与画面平台错位）",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-02_全球车的中国路_视频号.json",
+        "seg": "seg3",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1002_wechat_13-09-14-31_0-1316.mp4",
+        "disk_name": "1002_wechat_13-09-14-31_0-1316.mp4",
+        "bytes": 943810846,
+        "duration_s": 1316.913,
+        "trim_s": [
+          0.0,
+          1316.913
+        ],
+        "platform": "视频号",
+        "time_range": "13:09-14:31",
+        "match": "unique_time_match",
+        "matched_oss": "10.02/视频号/1/13：09-14：31.mp4",
+        "source_match": "10.02/视频号/1/13：09-14：31.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "platform_dir": "视频号",
+        "cross_platform": false,
+        "reason_text": "文件名时间区间在同平台目录唯一命中",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-02_全球车的中国路_视频号.json",
+        "seg": "seg6",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1002_wechat_17-27-18-27_0-239.mp4",
+        "disk_name": "1002_wechat_17-27-18-27_0-239.mp4",
+        "bytes": 123074271,
+        "duration_s": 239.107367,
+        "trim_s": [
+          0.0,
+          239.107367
+        ],
+        "platform": "视频号",
+        "time_range": "17:27-18:27",
+        "match": "unique_time_match",
+        "matched_oss": "10.02/视频号/2/17：27-18：27.mp4",
+        "source_match": "10.02/视频号/2/17：27-18：27.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "platform_dir": "视频号",
+        "cross_platform": false,
+        "reason_text": "文件名时间区间在同平台目录唯一命中",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-03_全球车的中国路_快手.json",
+        "seg": "seg2",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1003_kuaishou_14-31-15-40_0-3576.mp4",
+        "disk_name": "1003_kuaishou_14-31-15-40_0-3576.mp4",
+        "bytes": 877546258,
+        "duration_s": 3576.213333,
+        "trim_s": [
+          0.0,
+          3576.213333
+        ],
+        "platform": "快手",
+        "time_range": "14:31-15:40",
+        "match": "unique_time_match",
+        "matched_oss": "10.03/快手/14：31-15：40.mp4",
+        "source_match": "10.03/快手/14：31-15：40.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "platform_dir": "快手",
+        "cross_platform": false,
+        "reason_text": "文件名时间区间在同平台目录唯一命中",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-03_全球车的中国路_抖音.json",
+        "seg": "seg3",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1003_douyin_14-05-15-36_0-5095.mp4",
+        "disk_name": "1003_douyin_14-05-15-36_0-5095.mp4",
+        "bytes": 2857339103,
+        "duration_s": 5095.017667,
+        "trim_s": [
+          0.0,
+          5095.017667
+        ],
+        "platform": "抖音",
+        "time_range": "14:05-15:36",
+        "match": "unique_time_match",
+        "matched_oss": "10.03/抖音/14：05-15：36.mp4",
+        "source_match": "10.03/抖音/14：05-15：36.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "platform_dir": "抖音",
+        "cross_platform": false,
+        "reason_text": "文件名时间区间在同平台目录唯一命中",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-03_全球车的中国路_视频号.json",
+        "seg": "seg4",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1003_wechat_15-20-15-40_0-566.mp4",
+        "disk_name": "1003_wechat_15-20-15-40_0-566.mp4",
+        "bytes": 331998928,
+        "duration_s": 566.916378,
+        "trim_s": [
+          0.0,
+          566.916378
+        ],
+        "platform": "视频号",
+        "time_range": "15:20-15:40",
+        "match": "unique_time_match",
+        "matched_oss": "10.03/视频号/15：20-15：40.mp4",
+        "source_match": "10.03/视频号/15：20-15：40.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "platform_dir": "视频号",
+        "cross_platform": false,
+        "reason_text": "文件名时间区间在同平台目录唯一命中",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-04_全球车的中国路_视频号.json",
+        "seg": "seg1",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1004_wechat_11-26-12-12_0-2113.mp4",
+        "disk_name": "1004_wechat_11-26-12-12_0-2113.mp4",
+        "bytes": 1400465253,
+        "duration_s": 2113.813333,
+        "trim_s": [
+          0.0,
+          2113.813333
+        ],
+        "platform": "视频号",
+        "time_range": "11:26-12:12",
+        "match": "unique_time_match",
+        "matched_oss": "10.04/视频号/11：26-12：12.mp4",
+        "source_match": "10.04/视频号/11：26-12：12.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "platform_dir": "视频号",
+        "cross_platform": false,
+        "reason_text": "文件名时间区间在同平台目录唯一命中",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-06_全球车的中国路_抖音.json",
+        "seg": "seg3",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1006_douyin_13-22-16-49_0-538.mp4",
+        "disk_name": "1006_douyin_13-22-16-49_0-538.mp4",
+        "bytes": 221633902,
+        "duration_s": 538.905778,
+        "trim_s": [
+          0.0,
+          538.905778
+        ],
+        "platform": "抖音",
+        "time_range": "13:22-16:49",
+        "match": "unique_time_match",
+        "matched_oss": "10.06/抖音/13：22-16：49.mp4",
+        "source_match": "10.06/抖音/13：22-16：49.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "platform_dir": "抖音",
+        "cross_platform": false,
+        "reason_text": "文件名时间区间在同平台目录唯一命中",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-06_全球车的中国路_视频号.json",
+        "seg": "seg3",
+        "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1006_wechat_13-11-14-57_0-1166.mp4",
+        "disk_name": "1006_wechat_13-11-14-57_0-1166.mp4",
+        "bytes": 540735037,
+        "duration_s": 1166.914833,
+        "trim_s": [
+          0.0,
+          1166.914833
+        ],
+        "platform": "视频号",
+        "time_range": "13:11-14:57",
+        "match": "unique_time_match",
+        "matched_oss": "10.06/视频号/13：11-14：57.mp4",
+        "source_match": "10.06/视频号/13：11-14：57.mp4",
+        "candidates": [],
+        "reason": "unique_time_match",
+        "platform_dir": "视频号",
+        "cross_platform": false,
+        "reason_text": "文件名时间区间在同平台目录唯一命中",
+        "group": "global"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_抖音QQ汽车.json",
+        "seg": "seg6",
+        "disk": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/dy_qq_16-31-17-00_live.mp4",
+        "disk_name": "dy_qq_16-31-17-00_live.mp4",
+        "bytes": 834998990,
+        "duration_s": 1730.474067,
+        "trim_s": [
+          0.0,
+          1730.474067
+        ],
+        "platform": "抖音",
+        "time_range": "16:31-17:00",
+        "match": "not_matched",
+        "matched_oss": null,
+        "source_match": null,
+        "candidates": [],
+        "reason": "media_raw_source",
+        "platform_dir": "抖音",
+        "cross_platform": false,
+        "reason_text": "10-19 media 裁尾；OSS 侧是未按时间命名的原始 SVID 对象，按时间区间无法自动匹配",
+        "group": "1019"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_抖音奇瑞汽车.json",
+        "seg": "seg5",
+        "disk": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/dy_qr_15-29-17-00_live.mp4",
+        "disk_name": "dy_qr_15-29-17-00_live.mp4",
+        "bytes": 3089242130,
+        "duration_s": 5455.716033,
+        "trim_s": [
+          0.0,
+          5455.716033
+        ],
+        "platform": "抖音",
+        "time_range": "15:29-17:00",
+        "match": "not_matched",
+        "matched_oss": null,
+        "source_match": null,
+        "candidates": [],
+        "reason": "media_raw_source",
+        "platform_dir": "抖音",
+        "cross_platform": false,
+        "reason_text": "10-19 media 裁尾；OSS 侧是未按时间命名的原始 SVID 对象，按时间区间无法自动匹配",
+        "group": "1019"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_抖音风云新能源.json",
+        "seg": "seg6",
+        "disk": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/dy_fy_16-38-17-00_live.mp4",
+        "disk_name": "dy_fy_16-38-17-00_live.mp4",
+        "bytes": 747125465,
+        "duration_s": 1369.938189,
+        "trim_s": [
+          0.0,
+          1369.938189
+        ],
+        "platform": "抖音",
+        "time_range": "16:38-17:00",
+        "match": "not_matched",
+        "matched_oss": null,
+        "source_match": null,
+        "candidates": [],
+        "reason": "media_raw_source",
+        "platform_dir": "抖音",
+        "cross_platform": false,
+        "reason_text": "10-19 media 裁尾；OSS 侧是未按时间命名的原始 SVID 对象，按时间区间无法自动匹配",
+        "group": "1019"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_视频号奇瑞QQ.json",
+        "seg": "seg5",
+        "disk": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/wx_qq_15-58-17-00_live.mp4",
+        "disk_name": "wx_qq_15-58-17-00_live.mp4",
+        "bytes": 1689390397,
+        "duration_s": 3737.716,
+        "trim_s": [
+          0.0,
+          3737.716
+        ],
+        "platform": "视频号",
+        "time_range": "15:58-17:00",
+        "match": "not_matched",
+        "matched_oss": null,
+        "source_match": null,
+        "candidates": [],
+        "reason": "media_raw_source",
+        "platform_dir": "视频号",
+        "cross_platform": false,
+        "reason_text": "10-19 media 裁尾；OSS 侧是未按时间命名的原始 SVID 对象，按时间区间无法自动匹配",
+        "group": "1019"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_视频号奇瑞汽车.json",
+        "seg": "seg3",
+        "disk": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/wx_qr_15-21-17-00_live.mp4",
+        "disk_name": "wx_qr_15-21-17-00_live.mp4",
+        "bytes": 1741127534,
+        "duration_s": 5946.605189,
+        "trim_s": [
+          0.0,
+          5946.605189
+        ],
+        "platform": "视频号",
+        "time_range": "15:21-17:00",
+        "match": "not_matched",
+        "matched_oss": null,
+        "source_match": null,
+        "candidates": [],
+        "reason": "media_raw_source",
+        "platform_dir": "视频号",
+        "cross_platform": false,
+        "reason_text": "10-19 media 裁尾；OSS 侧是未按时间命名的原始 SVID 对象，按时间区间无法自动匹配",
+        "group": "1019"
+      },
+      {
+        "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_视频号风云新能源汽车.json",
+        "seg": "seg5",
+        "disk": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/wx_fy_16-13-17-00_live.mp4",
+        "disk_name": "wx_fy_16-13-17-00_live.mp4",
+        "bytes": 1351518172,
+        "duration_s": 2821.710433,
+        "trim_s": [
+          0.0,
+          2821.710433
+        ],
+        "platform": "视频号",
+        "time_range": "16:13-17:00",
+        "match": "not_matched",
+        "matched_oss": null,
+        "source_match": null,
+        "candidates": [],
+        "reason": "media_raw_source",
+        "platform_dir": "视频号",
+        "cross_platform": false,
+        "reason_text": "10-19 media 裁尾；OSS 侧是未按时间命名的原始 SVID 对象，按时间区间无法自动匹配",
+        "group": "1019"
+      }
+    ]
+  },
+  "doc_discrepancy": {
+    "document": "livepipe/docs/oss-migration.html",
+    "claimed": {
+      "full_mapped": 55,
+      "trimmed_bytes": 37900000000,
+      "trimmed_bytes_text": "37.9 GB",
+      "trimmed_bytes_gb_decimal": 37.9,
+      "note": "文档写「55 段整段 1:1 命中 / 27 段裁尾待补 37.9GB」"
+    },
+    "measured": {
+      "full_mapped": 55,
+      "missing_full": 0,
+      "trimmed": 27,
+      "trimmed_bytes": 40069546585,
+      "trimmed_bytes_gb_decimal": 40.07,
+      "trimmed_bytes_gib": 37.32,
+      "trimmed_bytes_human": "37.3 GB"
+    },
+    "explanation": "82 段里 27 段是裁尾；剩下 55 段中有 2 段在 OSS 上没有同字节对象（09-30 抖音 seg1/seg3），所以整段命中是 53 而不是 55。27 个裁尾副本实测合计 40.07GB，不是文档里的 37.9GB。本清单以实测为准。"
+  },
+  "uploads": {
+    "checked": 27,
+    "present": 27,
+    "missing": [],
+    "size_mismatch": []
+  }
+}

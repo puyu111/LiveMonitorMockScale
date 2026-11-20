@@ -12,7 +12,7 @@
 
 | 子工程 | 干什么 | 入口 | 依赖 |
 | --- | --- | --- | --- |
-| **`livepipe/`** | 抖音 / 视频号 / 快手 / 微博录屏 → OCR 抽行 → 评论组装去重 → 筛「正面」用户 → 交付图与 `manifest.json`（交付后可用**撞库**核对名单） | `python3 -m livepipe run <cfg.json>`（另有 `panels` / `check` / `match` / `steps` / `example`） | 纯文本/配置校验零第三方依赖；碰视频或模型要用带 rapidocr + torch 的环境；撞库读 xlsx 要 openpyxl |
+| **`livepipe/`** | 抖音 / 视频号 / 快手 / 微博录屏 → OCR 抽行 → 评论组装去重 → 筛「正面」用户 → 交付图与 `manifest.json`（交付后可用**撞库**核对名单） | `python3 -m livepipe run <cfg.json>`（另有 `panels` / `check` / `verify` / `match` / `steps` / `example`） | 纯文本/配置校验零第三方依赖；碰视频或模型要用带 rapidocr + torch 的环境；撞库读 xlsx 要 openpyxl |
 | **`mock_scale/`** | 本地确定性 inpainting：把框内用户名换掉、其余像素不动；两条换名出片线与一条正文替换线共用 `core/` 一份管线 | `python3 mock/make_spec.py` · `python3 core/batch_produce.py` · `python3 core/batch_run.py` · `python3 expand/expand_produce.py` · 正文线 `python3 mock/measure_bodies.py` → `python3 mock/gen_bodies.py` → `python3 core/batch_body.py` | numpy、opencv-python-headless、Pillow |
 
 详细文档：
@@ -21,6 +21,8 @@
 | --- | --- |
 | livepipe 包结构与改动定位 | [`livepipe/README.md`](livepipe/README.md) |
 | livepipe 从零跑一遍（命令 / 产物 / 耗时 / 排错） | [`livepipe/全流程说明.md`](livepipe/全流程说明.md) |
+| 录屏/结果 OSS 化：目录契约、分阶段迁移、实测吞吐 | [`livepipe/docs/oss-migration.html`](livepipe/docs/oss-migration.html) · P0 [`devlog`](livepipe/docs/oss-p0-devlog.html) · P1 [`devlog`](livepipe/docs/oss-p1-devlog.html) · P1.5 [`devlog`](livepipe/docs/oss-p15-devlog.html) · P2 [`devlog`](livepipe/docs/oss-p2-devlog.html) · P3 [`devlog`](livepipe/docs/oss-p3-devlog.html) · P4 [`devlog`](livepipe/docs/oss-p4-devlog.html) |
+| OSS 清盘审计摘要（staging / 本地 out / 外置 out 覆盖） | [`livepipe/docs/p4-audit-summary.json`](livepipe/docs/p4-audit-summary.json) |
 | livepipe 每个配置参数的取值、默认、坑 | [`livepipe/CONFIG.md`](livepipe/CONFIG.md) |
 | 数据集怎么建、复核按条还是按整帧（含 A/B 实测判定） | [`livepipe/docs/dataset.html`](livepipe/docs/dataset.html) · [`livepipe/docs/review_granularity.html`](livepipe/docs/review_granularity.html) |
 | 数据集 5 类 → 4 类改造（等级标退出）实测报告 | [`livepipe/docs/dataset-4class-report.html`](livepipe/docs/dataset-4class-report.html) |
@@ -38,19 +40,22 @@
 ```
 LiveMonitorMockScale/
 ├── livepipe/                       # ① 录屏 → 结构化评论 → 合格用户
-│   ├── __main__.py                 #   python -m livepipe（run / panels / check / steps / example）
+│   ├── __main__.py                 #   python -m livepipe（run / panels / check / verify / match / steps / example）
 │   ├── pipeline.py                 #   8 个步骤的顺序执行
 │   ├── config/                     #   JSON → argparse（DEFAULTS / 合并 / 路径 / 步骤表）
 │   ├── parsing/                    #   解析核心（common → text → layout → panels/emoji → ocr
 │   │                               #   → comments → render/reporting → cli → selftest，单向依赖）
 │   ├── tools/                      #   独立 CLI：dataset（YOLO 数据集）/ 四张表情表 / export_user_images
 │   │                               #   / user_filter / remedy_badges / merge_segments / list_match（撞库）
+│   │                               #   / verify_run（核对一次 run 的产物是否完整）
 │   ├── parse_live_comments.py      #   兼容 facade（旧命令行 / 旧 import 照旧）
 │   ├── account_id.py               #   账号身份 = (昵称, 等级标 ◆N) —— 唯一实现
 │   ├── locate_panels.py · batch_locate_panels.py · draw_boxes.py
 │   ├── examples/                   #   pipeline.example.json / minimal.json / panels.example.json
 │   ├── *.json                      #   抖音 / 视频号 / 快手 / 微博各批次的真实配置
-│   └── docs/                       #   platforms / dataset / review_granularity / dataset-4class-report / colon-fix-report
+│   └── docs/                       #   platforms / dataset / colon-fix / OSS 迁移与 P0–P4 devlog
+├── scripts/                        # OSS 迁移工具（P0 盘点 / P1 补传 / P1.5 切读 / P2 回填 /
+│                                   #   P3 下载收尾 / P4 清盘审计；纯标准库+ffprobe，goofys/bypy 为外部依赖）
 ├── mock_scale/                     # ② 借底图批量出片 + 换评论正文
 │   ├── core/                       #   三条线共用的唯一一份管线 + 工具 + 运行配置
 │   ├── mock/                       #   mock 用户线（名单 → 假名字出片）+ 正文线（量 / 生句 / 替换）
@@ -86,6 +91,10 @@ accelerate / safetensors / bitsandbytes（面板定位模型，可选）。文�
 两样不在 pip 里：面板模型加载器 `locateanything_worker.py`（仓库外，需拷到根目录；只走 OCR
 定位时不需要）和 `ffmpeg`（只用于人工修素材，管线本身用 OpenCV 解码）。
 
+OSS 工具链同样不走 pip：`goofys 0.24.0`（挂载 `~/oss-bucket`）+ `bypy 1.8.9`（百度
+`/直播录屏`），凭据放 `~/.aws/credentials` 与 `~/.bypy/bypy.json`（0600）。装好/接新机器后
+先跑 `python3 -m livepipe oss check-env`，全 PASS 再接队列。
+
 ### livepipe
 
 | 用途 | 解释器 / 依赖 |
@@ -109,6 +118,12 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 本工程只做 inpainting，不弹窗口。
 
 ## ① livepipe：录屏 → 评论 → 合格用户
+
+> **前置条件：视频先下载到 OSS。** 本项目统一从 OSS 读素材：`input.videos` 必须是
+> `~/oss-bucket/...`（goofs 挂载）路径（本地路径仅作离线兜底），不接受百度/bypy 路径。
+> 新素材先按 [「OSS 归档与迁移」](#oss-归档与迁移2026-11) 里的
+> `oss_download.py baidu` 入库，`livepipe check` 通过后再跑；缺文件时
+> `check` / `run` 会直接报错。
 
 ### 两阶段工作流（推荐）
 
@@ -263,6 +278,79 @@ out/dataset_v1/
 原因与前后样张见 [`livepipe/docs/dataset-4class-report.html`](livepipe/docs/dataset-4class-report.html)；
 复核口径（按条 vs 按整帧）见 [`livepipe/docs/dataset.html`](livepipe/docs/dataset.html) 与
 [`livepipe/docs/review_granularity.html`](livepipe/docs/review_granularity.html)。
+
+## OSS 归档与迁移（2026-11）
+
+目标是把录屏与结果收敛到 OSS 一份：录屏经 `goofys` 挂载成 `~/oss-bucket/...` 普通目录，
+livepipe 直接按路径读；**新配置（2026-11-19 起）把 `output.dir` / `collect.out` 直接写到
+`直播产生结果/`，本地不留结果**（`10-24/10-25奇瑞探秘局_视频号.json` 已切）；存量批次仍按
+P2 把本地结果同步上去。
+
+**项目 OSS 根 = `~/oss-bucket/web/1/奇瑞汽车/直播看管/`**（2026-11-19 用户确认：
+`直播录屏/` 放裁尾副本、`直播产生结果/` 放结果、`<事件>/` 是原始录屏存量）。
+P1/P2 早期曾把对象写到桶根 `~/oss-bucket/奇瑞汽车/直播看管/...`，已用
+`scripts/oss_relocate_prefix.py` 服务端复制到 `web/1` 下；源前缀暂留待复核后删除。
+
+**当前方案是 goofys 单通道**（读、写、回填、下载收尾、P4 审计都走挂载点）。原生
+`oss2` 只在速度基准里试过，尚未接入代码；挂载的强项是大文件顺序读/seek，弱项是几十万
+小文件的逐文件元数据开销。
+
+| 阶段 | 状态 | 入口 / 结果 |
+| --- | --- | --- |
+| P0 盘点 | 完成 | `scripts/build_oss_inventory.py`；22 配置 / 82 段 / 55 整段 / 27 裁尾 |
+| P1 补传 | 完成 | `scripts/p1_upload.py`；29 个对象 / 46.52GB 落 OSS |
+| P1.5 切读 | 完成 | `scripts/p15_repoint.py`；`input.videos` 指 OSS，check 22/22 |
+| P2 结果链路 | 完成 + 回填中 | `scripts/oss_sync.py`；`batch_local/remote` 收尾自动同步；存量 out 用 `scripts/p2_backfill.py` 回填；新配置可把 `output.dir` / `collect.out` 直写 `直播产生结果/` |
+| P3 下载链路 | 完成 | `scripts/oss_download.py live/baidu`；`.part` 收尾、字节+时长、manifest |
+| P4 清盘 | 影子期（到 2026-11-26） | `scripts/p4_cleanup.py`；staging 审计通过，out 需等回填/选择 inputs 口径 |
+
+```bash
+python3 -m livepipe oss check-env                 # goofys / bypy / ffprobe / 凭据体检
+python3 scripts/p2_backfill.py plan               # 存量 out → OSS 的 37 个事件树与两阶段体积
+python3 scripts/p2_backfill.py run --phase deliverables --workers 8 --yes
+python3 scripts/p2_backfill.py run --phase all    --workers 8 --yes
+python3 scripts/p4_cleanup.py shadow-status       # P4 影子期倒计时
+python3 scripts/p4_cleanup.py audit --targets staging --allow-metadata
+```
+
+回填状态（2026-11-19）：`deliverables` 已传 **174,068 个文件 / 34.91 GB**，`all`
+阶段正在补 seg 帧图（约 50 万文件 / 109GB 总量）；09-09 的 1 个瞬时失败文件已单独补传，
+任务状态待收尾重跑清理。`deliverables` 完成时 OSS `直播产生结果` 约 17.6 万对象 /
+34GB。本地 out 未删除；P4 影子期结束后才允许按 `p4_cleanup.py` 的闸门清理。
+
+`base_dir` 默认 `~/livepipe_assets`（表情表 4 套，不参与清盘）；配置里的
+`input.videos` 是 OSS 绝对路径。**探秘局两份配置（2026-11-19）已把 `base_dir` 也指到
+OSS `…/直播看管/素材`**，表情表在 `<base_dir>/out/wechat_emoji/`，本地不再依赖
+`~/livepipe_assets`。详细契约、实测吞吐与各阶段验收见
+[`livepipe/docs/oss-migration.html`](livepipe/docs/oss-migration.html) 与
+`livepipe/docs/oss-p*-devlog.html`。
+
+**跑 livepipe 之前，视频必须先到 OSS。** livepipe 用 OpenCV/ffmpeg 直接打开文件并反复
+seek，`input.videos` 必须是 **goofs 挂载的 OSS 路径**（`~/oss-bucket/...`；本地路径仅作
+离线兜底），不接受百度/bypy 路径。新素材按这个顺序处理：
+
+```bash
+# 1) 百度 → OSS（直写，不落本地暂存；中断后加 --resume 续传）
+python3 scripts/oss_download.py baidu \
+  --root "$HOME/oss-bucket/web/1/奇瑞汽车/直播看管/直播录屏" \
+  --remote /直播录屏/<事件>/<日期> --dest-rel '<事件>/<日期>'
+
+# 2) 需要裁尾的段：先 cp 成 OSS 的 .part，再走同一套校验收尾
+cp <本地裁尾副本> "<OSS 目标>.part"
+python3 -m livepipe oss ingest "<OSS 目标>.part" --expect-bytes <字节> \
+  --event <事件> --day <日期> --platform <平台> --account <账号> --trim 0-<秒>
+
+# 3) 配置 input.videos 指向 OSS；output.dir / collect.out 也写 OSS（直播产生结果/…）
+python3 -m livepipe check <cfg.json>        # 缺失文件会直接报错
+python3 -m livepipe run   <cfg.json> --dry-run
+```
+
+每个入库文件都会写 `<名>.manifest.json`（字节、时长、百度来源、远端相对路径）；
+`check` / `--dry-run` 不联网，缺文件就失败，不会偷偷下载。结果目录同样直接用 OSS
+路径（如 `~/oss-bucket/web/1/奇瑞汽车/直播看管/直播产生结果/<事件>/<日期>/<平台>`），
+本地不留产物；goofs 不支持 append，`rows.jsonl` 续跑会自动重写已有行。
+`base_dir` 决定表情表等相对路径；探秘局配置已指到 OSS `…/直播看管/素材`，
+表情表放在 `<base_dir>/out/wechat_emoji/`。
 
 ## ② mock_scale：借底图批量出片 + 换评论正文
 
@@ -463,6 +551,8 @@ python3 expand/expand_produce.py --source <上面那棵树的路径> --mode plan
 | 正文量测（左沿 / 右缘 / 行带 / em / 颜色） | `mock_scale/core/body_text.py` |
 | 正文挑句判据 / 擦除矩形 / 断行写回 | `mock_scale/core/replace_body.py` |
 | 正文批量 + 八道闸 | `mock_scale/core/batch_body.py` |
+| OSS 盘点/切读/回填/下载收尾/清盘 | `scripts/build_oss_inventory.py` · `p1_upload.py` · `p15_repoint.py` · `p2_backfill.py` · `oss_sync.py` · `oss_download.py` · `p4_cleanup.py` |
+| OSS 挂载/凭据/环境基线 | `scripts/bootstrap_oss_env.sh` · `livepipe/tools/oss_ingest/` |
 | 正文句子生成（本地池 / 远端 NLP） | `mock_scale/mock/gen_bodies.py` |
 | mock_scale 运行配置 | `core/` `mock/` `expand/` 下的 `*.config.json`（连 `_备注` 一起改） |
 
@@ -477,6 +567,10 @@ python3 -m livepipe --help                  # 入口可用性（run / panels / c
 # 完整干跑（示例配置）：
 cd .. && python3 -m livepipe check livepipe/examples/pipeline.example.json
 python3 -m livepipe run livepipe/examples/pipeline.example.json --dry-run
+
+# ---- OSS 工具（不碰 OSS/百度，全在临时目录）----
+python3 scripts/selftest_oss_sync.py        # 33 项：增量/重跑/哈希/软链/include/verify
+python3 scripts/selftest_oss_download.py    # 32 项：live .part 收尾 / baidu 直写 / 续传 / 失败清理
 
 # ---- mock_scale ----
 cd mock_scale
@@ -505,6 +599,12 @@ python3 core/platform_probe.py <语料根> --limit 5   # 先量「这份语料�
 
 ## 注意与边界
 
+- **OSS 回填/清盘还没有结束**：本地 out 未删除，P4 影子期到 2026-11-26；
+  `p4_cleanup.py apply` 必须影子期满 + 选中目标 0 个不可删文件 + `--yes`。
+  `--policy inputs` 只保证 OSS 录屏可读，结果要靠重跑。
+- **goofys 挂载断开时 `findmnt` 仍会显示 fuse**：`ls` 报 ENOTCONN 就 `fusermount3 -u`
+  后重挂；生产建议 `scripts/bootstrap_oss_env.sh --systemd` 托管。小文件批量写不要走
+  挂载，用原生 OSS 客户端或打包。
 - **`expand --mode run --yes` 会改写语料**（文件与目录名）。不确定时先 `--mode plan`、
   再 `--mode run --out /tmp/exp` 预演。
 - `manifest.json` 是扩展线的**硬依赖**：缺它 `expand_produce` 会直接报错（用 livepipe

@@ -10,7 +10,7 @@
  "fingerprint": {
   "corpus_sha256": "a941ea3f57d3af21e381f667cf5d4aaf1b992e58d8a2e72f9faec514fd9b5117",
   "corpus_files": 74,
-  "corpus_source": "/home/puyu/github/LiveMonitorMockScale/out/风云T7_20260826_11/抖音/all_users_正面_2张以上",
+  "corpus_source": "/run/media/puyu/C0DE6A4BDE6A39B4/out/风云T7_20260826_11/抖音/all_users_正面_2张以上",
   "code": "file:4dbd6d80089f5a96",
   "workers": 8,
   "seed": 20261010,

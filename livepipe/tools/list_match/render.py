@@ -1,9 +1,10 @@
-"""给「只在直播里、没进交付树」的命中补出标记图。
+"""给「只在直播里、没进交付树」的命中/未命中最近账号补出标记图。
 
 撞库的范围是**直播全量账号**：只要发过**任意一条**评论（正面/负面/中性）就算，
 不管有没有达到交付阈值（≥3 张）。这些人交付树里没有目录，图也不存在 —— 这里临时把
 他们的用户记录喂给 ``export``，从视频原帧里按交付口径（整帧 + 评论绿框、不裁、不加字）
-现出几张，再放进 ``标记图/<平台>/<名单名>/<账号目录>/``。零正面的账号按全部标签取评论，
+现出几张，再放进 ``标记图/<平台>/<名单名>/<账号目录>/``（未命中名单的最近账号放进
+``标记图/未命中/<平台>/<名单名>/<账号目录>/``）。零正面的账号按全部标签取评论，
 有正面的仍只取正面。
 
 **只在真有这种命中时才跑**；取帧走 ``sample_mode=adaptive`` 顺序解码，和交付图
@@ -17,8 +18,17 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from .common import IMAGE_SUFFIXES, safe_dirname
+from .common import IMAGE_SUFFIXES, UNMATCHED_IMG_DIR, safe_dirname
 from .sources import load_judgments, load_seg_accounts, stream_segments
+
+
+def _isfile(path: str) -> bool:
+    """``Path.is_file()`` 的无异常版：旧路径可能落在没权限的目录（``/root/…``），
+    ``stat`` 会抛 ``PermissionError``，不能让重映射因此失效。"""
+    try:
+        return Path(path).is_file()
+    except OSError:
+        return False
 
 
 def _resolve_video(seg: Path, video_map: list[tuple[str, str]] | None) -> str | None:
@@ -36,22 +46,22 @@ def _resolve_video(seg: Path, video_map: list[tuple[str, str]] | None) -> str | 
         return None
     if not video:
         return None
-    if Path(video).is_file():
+    if _isfile(video):
         return video
     for old, new in video_map or []:
         if video.startswith(old):
             cand = new + video[len(old):]
-            if Path(cand).is_file():
+            if _isfile(cand):
                 return cand
     return video
 
 
 def _render_group(seg: Path, seg_users: dict[tuple[str, str], dict],
                   items: dict[tuple[str, str], list[dict]], label: str,
-                  out_dir: Path, owners: dict[Path, str],
+                  mark_root: Path, owners: dict[Path, str],
                   labels: tuple[str, ...], video: str | None = None,
                   log=print) -> dict:
-    """跑一次 export，只出 ``items`` 里的账号、只取 ``labels`` 的评论；图落到 ``标记图/``。
+    """跑一次 export，只出 ``items`` 里的账号、只取 ``labels`` 的评论；图落到 ``mark_root``。
 
     ``owners`` 记录「每个账号目录本轮是哪个段先写的」：**第一个**写它的段用原名
     （``1.jpg``），之后的段加 ``<段名>_`` 前缀（``seg2_1.jpg``）。判断按「本轮」
@@ -99,7 +109,7 @@ def _render_group(seg: Path, seg_users: dict[tuple[str, str], dict],
                 continue
             src = tree / u["dir"]
             for m in ms:
-                dst = out_dir / "标记图" / label / safe_dirname(m["list_name"]) / u["dir"]
+                dst = mark_root / label / safe_dirname(m["list_name"]) / u["dir"]
                 dst.mkdir(parents=True, exist_ok=True)
                 first = dst not in owners
                 if first:
@@ -120,9 +130,9 @@ def _render_group(seg: Path, seg_users: dict[tuple[str, str], dict],
 
 def _render_seg(seg: Path, seg_users: dict[tuple[str, str], dict],
                 items: dict[tuple[str, str], list[dict]], label: str,
-                out_dir: Path, owners: dict[Path, str],
+                mark_root: Path, owners: dict[Path, str],
                 video_map: list[tuple[str, str]] | None = None, log=print) -> dict:
-    """把一段的命中账号按评论标签分两拨补图。
+    """把一段的账号按评论标签分两拨补图。
 
     有正面评论的仍按交付口径只取**正面**；**零正面**（只发过中性/负面评论也能进撞库
     池子）的取全部标签，否则 export 一张都挑不出来。
@@ -135,67 +145,107 @@ def _render_seg(seg: Path, seg_users: dict[tuple[str, str], dict],
     for group, labels in ((pos, ("正面",)), (rest, ("正面", "中性", "负面"))):
         if not group:
             continue
-        part = _render_group(seg, seg_users, group, label, out_dir, owners,
+        part = _render_group(seg, seg_users, group, label, mark_root, owners,
                              labels, video, log)
         for k in got:
             got[k] += part[k]
     return got
 
 
+def _render_entries(report: dict, label: str, entries: list[dict],
+                    mark_root: Path, owners: dict[Path, str],
+                    video_map: list[tuple[str, str]] | None, log,
+                    what: str) -> dict:
+    """一个平台、一组「交付树里没有图」的条目 → 给它们现补图；返回计数。
+
+    ``entries`` 是命中的 ``matches`` 条目，或未命中名单的 ``best``（补了 ``list_name``）。
+    """
+    totals = {"accounts": 0, "images": 0, "skipped": 0, "segments": 0}
+    rep = report["platforms"][label]
+    pdir = rep.get("platform_dir")
+    segs = stream_segments(Path(pdir)) if pdir else []
+    if not segs:
+        totals["skipped"] += len(entries)
+        log(f"[撞库][warn] {label}：找不到 seg*/comments.jsonl 或 users.jsonl，"
+            f"{len(entries)} 个「{what}」补不了图（只有表格）")
+        return totals
+    cache = load_judgments(Path(pdir))
+    seg_users = {s: load_seg_accounts(s, cache) for s in segs}
+    plan: dict[Path, dict[tuple[str, str], list[dict]]] = {}
+    for m in entries:
+        key = (m["account"], m.get("level") or "")
+        hit = [s for s in segs if key in seg_users[s]]
+        if not hit:
+            totals["skipped"] += 1
+            log(f"[撞库][warn] {label}/{m.get('display') or m['account']}：段"
+                f" comments.jsonl / users.jsonl 里都没有，补不了图")
+            continue
+        for s in hit:
+            plan.setdefault(s, {}).setdefault(key, []).append(m)
+
+    for seg, items in sorted(plan.items(), key=lambda kv: kv[0].name):
+        totals["segments"] += 1
+        log(f"[撞库] 补图：{label}/{seg.name} · {len(items)} 个账号（{what}，"
+            f"顺序解码视频，可能要几十秒）")
+        try:
+            got = _render_seg(seg, seg_users[seg], items, label, mark_root,
+                              owners, video_map, log)
+        except SystemExit as e:
+            totals["skipped"] += len(items)
+            log(f"[撞库][warn] {label}/{seg.name} 补图失败：{e}")
+            continue
+        except Exception as e:  # noqa: BLE001 - 一张补图失败不该毁整份报告
+            totals["skipped"] += len(items)
+            log(f"[撞库][warn] {label}/{seg.name} 补图出错：{type(e).__name__}: {e}")
+            continue
+        totals["accounts"] += got["accounts"]
+        totals["images"] += got["images"]
+        totals["skipped"] += got["skipped"]
+    return totals
+
+
 def render_missing(out_dir: Path, report: dict, log=print,
                    video_map: list[tuple[str, str]] | None = None) -> dict:
-    """给 ``in_delivery=False`` 的命中补图；返回 ``{accounts, images, skipped, segments}``。
+    """给 ``in_delivery=False`` 的**命中**和**未命中最近账号**补图。
 
-    ``skipped`` = 补不了的命中数（缺平台目录 / 段里查无此人 / 取不到帧）。
-    ``video_map`` = ``(旧前缀, 新前缀)``：summary.json 里的视频路径失效时重映射。
+    命中落到 ``标记图/<平台>/<名单名>/…``，未命中的最近账号落到
+    ``标记图/未命中/<平台>/<名单名>/…``，两拨分开。
+
+    返回 ``{accounts, images, skipped, segments, unmatched_accounts,
+    unmatched_images, unmatched_skipped}``：``skipped`` = 补不了的条目数
+    （缺平台目录 / 段里查无此人 / 取不到帧）。``video_map`` = ``(旧前缀, 新前缀)``：
+    summary.json 里的视频路径失效时重映射。
     """
-    needed = {label: [m for m in rep.get("matches", []) if not m.get("in_delivery")]
-              for label, rep in report.get("platforms", {}).items()}
-    needed = {k: v for k, v in needed.items() if v}
-    totals = {"accounts": 0, "images": 0, "skipped": 0, "segments": 0}
-    if not needed:
+    hit_needed: dict[str, list[dict]] = {}
+    unm_needed: dict[str, list[dict]] = {}
+    for label, rep in (report.get("platforms") or {}).items():
+        hits = [m for m in rep.get("matches", []) if not m.get("in_delivery")]
+        if hits:
+            hit_needed[label] = hits
+        bests = [{**u["best"], "list_name": u["list_name"]}
+                 for u in rep.get("unmatched") or []
+                 if u.get("best") and not u["best"].get("in_delivery")]
+        if bests:
+            unm_needed[label] = bests
+
+    totals = {"accounts": 0, "images": 0, "skipped": 0, "segments": 0,
+              "unmatched_accounts": 0, "unmatched_images": 0,
+              "unmatched_skipped": 0}
+    if not hit_needed and not unm_needed:
         return totals
     owners: dict[Path, str] = {}
 
-    for label, matches in needed.items():
-        rep = report["platforms"][label]
-        pdir = rep.get("platform_dir")
-        segs = stream_segments(Path(pdir)) if pdir else []
-        if not segs:
-            totals["skipped"] += len(matches)
-            log(f"[撞库][warn] {label}：找不到 seg*/comments.jsonl 或 users.jsonl，"
-                f"{len(matches)} 个「仅直播命中」补不了图（只有表格）")
-            continue
-        cache = load_judgments(Path(pdir))
-        seg_users = {s: load_seg_accounts(s, cache) for s in segs}
-        plan: dict[Path, dict[tuple[str, str], list[dict]]] = {}
-        for m in matches:
-            key = (m["account"], m.get("level") or "")
-            hit = [s for s in segs if key in seg_users[s]]
-            if not hit:
-                totals["skipped"] += 1
-                log(f"[撞库][warn] {label}/{m['display']}：段 comments.jsonl / users.jsonl"
-                    f" 里都没有，补不了图")
-                continue
-            for s in hit:
-                plan.setdefault(s, {}).setdefault(key, []).append(m)
-
-        for seg, items in sorted(plan.items(), key=lambda kv: kv[0].name):
-            totals["segments"] += 1
-            log(f"[撞库] 补图：{label}/{seg.name} · {len(items)} 个账号"
-                f"（顺序解码视频，可能要几十秒）")
-            try:
-                got = _render_seg(seg, seg_users[seg], items, label, out_dir,
-                                  owners, video_map, log)
-            except SystemExit as e:
-                totals["skipped"] += len(items)
-                log(f"[撞库][warn] {label}/{seg.name} 补图失败：{e}")
-                continue
-            except Exception as e:  # noqa: BLE001 - 一张补图失败不该毁整份报告
-                totals["skipped"] += len(items)
-                log(f"[撞库][warn] {label}/{seg.name} 补图出错：{type(e).__name__}: {e}")
-                continue
-            totals["accounts"] += got["accounts"]
-            totals["images"] += got["images"]
-            totals["skipped"] += got["skipped"]
+    for needed, mark_root, what in (
+            (hit_needed, out_dir / "标记图", "仅直播命中"),
+            (unm_needed, out_dir / "标记图" / UNMATCHED_IMG_DIR, "未命中最近账号")):
+        for label, entries in needed.items():
+            got = _render_entries(report, label, entries, mark_root,
+                                  owners, video_map, log, what)
+            if what == "仅直播命中":
+                for k in ("accounts", "images", "skipped", "segments"):
+                    totals[k] += got[k]
+            else:
+                totals["unmatched_accounts"] += got["accounts"]
+                totals["unmatched_images"] += got["images"]
+                totals["unmatched_skipped"] += got["skipped"]
     return totals

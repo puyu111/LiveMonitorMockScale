@@ -85,11 +85,11 @@
     "enabled": true,                    // false ⇒ 关掉表情识别，只出 OCR 文字        取反 --no-emoji
     "tables": {                         // 表情表资产（platforms.<p>.emoji 指向这里的键）
       "douyin": {
-        "path": "out/douyin_emoji/douyin-emoji.json",   // 表路径（阈值随表走）
+        "path": "/run/media/puyu/C0DE6A4BDE6A39B4/out/douyin_emoji/douyin-emoji.json",   // 表路径（阈值随表走）
         "build": {                      // 建表设置（仅 emoji_tables 步骤且 enabled=true 时生效）
           "enabled": false,             //   false ⇒ 不重建，假定表已存在
           "mode": "api",                //   api=打官方接口（推荐）/ dom=从网页 DOM 抽
-          "out": "out/douyin_emoji",    //   建表输出目录                                     --out
+          "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/douyin_emoji",    //   建表输出目录                                     --out
           "api": null,                  //   null=内置接口地址；也可给本地 JSON 路径/自定义 URL  --api
           "html": "-",                  //   mode=dom 时的 DOM 文件；"-"=stdin                --html
           "per_sheet": 100,             //   每张核对图放几个表情                              --per-sheet
@@ -97,23 +97,23 @@
         }
       },
       "wechat": {
-        "path": "out/wechat_emoji/wechat-emoji.json",    // 视频号用的微信 2021 新版表（109 个）
+        "path": "/run/media/puyu/C0DE6A4BDE6A39B4/out/wechat_emoji/wechat-emoji.json",    // 视频号用的微信 2021 新版表（109 个）
         "build": {
           "enabled": false,
           "mode": "fetch",              //   fetch=下 tarball / src=用手上已有目录（离线）
-          "out": "out/wechat_emoji",
+          "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/wechat_emoji",
           "src": null,                  //   mode=src 时的 <NNN_名称>.png 目录                --src
           "no_sheet": false             //   true ⇒ 不产出核对图                              --no-sheet
         }
       },
       "weibo": {
-        "path": "out/weibo_emoji/weibo-emoji.json",      // 微博 PC 端面板表（262/280；身份=面板 key）
+        "path": "/run/media/puyu/C0DE6A4BDE6A39B4/out/weibo_emoji/weibo-emoji.json",      // 微博 PC 端面板表（262/280；身份=面板 key）
         // 本配置没有平台引用它（微博的档案在 livepipe/weibo.json）——留着是为了随时能点表：
         //   --emoji-table right=weibo
         "build": {
           "enabled": false,
           "mode": "panel",              //   panel=吃仓库里那份面板 DOM + key→URL 解析表（不联网枚举接口）
-          "out": "out/weibo_emoji",
+          "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/weibo_emoji",
           "panel": null,                //   null ⇒ <out>/panel.html                          --panel
           "map": null,                  //   null ⇒ <out>/panel_map.json（key→URL）           --map
           "src": null,                  //   已有图目录（按 CDN 原名存）⇒ 离线重建            --src
@@ -170,7 +170,7 @@
   },
 
   "output": {
-    "dir": "out/livepipe_example3",      // 输出目录                                               --out
+    "dir": "/run/media/puyu/C0DE6A4BDE6A39B4/out/livepipe_example3",      // 输出目录                                               --out
     "write": true,                      // 是否写盘（comments.jsonl + summary.json 成对）；false ⇒ 只打 stdout
     "rows": true,                       // 另存 rows.jsonl（可回喂 input.rows 复算）      --dump-rows <dir>/rows.jsonl
     "panels": true,                     // mode=auto 时把定位结果存成 panels.json         --dump-panels <dir>/panels.json

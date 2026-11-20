@@ -34,7 +34,7 @@
 //      y2=1200 在输入栏 `说点什么…`（实测 1222~1251）之上；x2=575 是评论内容右沿
 //      （正文最长读到 479，再往右是商品卡区间，卡由 x_ignore_from 丢）
 //   ✅ 浮层左界 380：评论侧块左沿最大 87、卡块最小 391（`·讲解中` 393）⇒ 空带取 380
-//   ✅ 表情用抖音那套表（out/douyin_emoji/douyin-emoji.json，已建好）
+//   ✅ 表情用抖音那套表（/run/media/puyu/C0DE6A4BDE6A39B4/out/douyin_emoji/douyin-emoji.json，已建好）
 //   ⚠ 开场提示卡（`欢迎来到直播间…` / `本直播间已接入三方管理工具…`）与商品卡的文字
 //     都在 overlay_cards 里按短语兜底（判据只作用于**没有冒号**的行）。
 //
@@ -48,13 +48,14 @@
 //        NLP_API_KEY=sk-xxxx $P -m livepipe run 10-31_抖音.json \
 //            --only filter,qualify,export,collect
 //   ③ 先看后交：产物在
-//        out/10.31/抖音/all_users_正面_3张以上/
+//        /run/media/puyu/C0DE6A4BDE6A39B4/out/10.31/抖音/all_users_正面_3张以上/
 //
 // 校验（不跑、安全）：
 //   python3 -m livepipe check 10-31_抖音.json
 //   python3 -m livepipe run   10-31_抖音.json --dry-run
 // ============================================================================
 {
+  "base_dir": "/run/media/puyu/C0DE6A4BDE6A39B4",
   "version": 1,
   "name": "奇瑞电感智行·大美中国 2026-10-31 · 抖音手机 App · 竖屏",
 
@@ -136,8 +137,21 @@
     }
   },
 
-  // 表情表用内置的 `douyin`（out/douyin_emoji/douyin-emoji.json）
-  // ⇒ 这里一个字段都不用写：emoji.tables 的默认值就是它，emoji.enabled 默认 true。
+  // 表情表用内置的 `douyin`（/run/media/puyu/C0DE6A4BDE6A39B4/out/douyin_emoji/douyin-emoji.json）。
+  // ⚠ 表是 **JSON + img/ 图片** 两部分；upload_livepipe_ssh.py 只传表 JSON、
+  //   不传 img/（214 张 webp）⇒ 远程解析时 214 条模板全缺图，会打
+  //   "一条可用的模板都没有（图没下全？）" 并跳过表情识别。
+  //   ⇒ 打开 build.enabled：run.sh 开头的预建表步骤在**远程**调官方表情接口
+  //   （www.douyin.com/aweme/v1/web/emoji/list，实测 214 张、约 1 分钟）重建表，
+  //   落 <base_dir>/out/douyin_emoji/。本机 steps.skip 含 emoji_tables，不会重复建。
+  //   不想刷新用 `LIVEPIPE_SKIP_EMOJI=1 ./run.sh …`。
+  "emoji": {
+    "tables": {
+      "douyin": {
+        "build": {"enabled": true}
+      }
+    }
+  },
 
   "input": {
     // 三段素材：**显式数组**（段顺序 = 时间顺序）。
@@ -245,7 +259,7 @@
     // 多段时这里是**段的父目录**：实际各写 <dir>/seg1、seg2、seg3；
     // 跨段产物落在这儿：merged_users.json（qualify）；交付树见 collect.out。
     // 按平台分目录：同素材另有「视频号/」「快手/」，各用各的 output.dir，段目录不会撞。
-    "dir": "out/10.31/抖音",            // 输出根目录                                             --out
+    "dir": "/run/media/puyu/C0DE6A4BDE6A39B4/out/10.31/抖音",            // 输出根目录                                             --out
     "write": true,                      // 是否写盘（comments.jsonl + summary.json 成对）
     "rows": true,                       // 另存 rows.jsonl（**可回喂复算**）
     "panels": true,                     // mode=auto 时把定位结果存成 panels.json
@@ -321,7 +335,7 @@
     "enabled": true,
     "stage_min": null,                  // 各段导出目录名里的数字；null ⇒ qualify.stage_min
     "platform_dir": null,               // 交付树里的平台目录名；null ⇒ 从各段导出目录自动认（抖音）
-    "out": "out/10.31/抖音/all_users_正面_3张以上",
+    "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/10.31/抖音/all_users_正面_3张以上",
     "force": true                       // 目标非空时整棵重来（否则报错退出）
   },
 
@@ -341,6 +355,6 @@
     // 逐段步（panels/parse/filter/export/draw）三段各跑一遍；全局步（emoji_tables/qualify/collect）整批一次。
     "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
               "export", "collect", "draw"],
-    "skip": ["emoji_tables", "draw"]    // 表情表已建好（out/douyin_emoji/）；独立描框用不上
+    "skip": ["emoji_tables", "draw"]    // 表情表已建好（/run/media/puyu/C0DE6A4BDE6A39B4/out/douyin_emoji/）；独立描框用不上
   }
 }

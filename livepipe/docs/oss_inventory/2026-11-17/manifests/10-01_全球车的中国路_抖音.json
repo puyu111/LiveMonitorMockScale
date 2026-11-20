@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "config": "/home/puyu/github/LiveMonitorMockScale/10-01_全球车的中国路_抖音.json",
+  "generated_from": {
+    "config": "/home/puyu/github/LiveMonitorMockScale/10-01_全球车的中国路_抖音.json",
+    "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+    "disk_root": null,
+    "generated_at": "2026-11-17T00:00:00Z"
+  },
+  "segments": [
+    {
+      "seg": "seg1",
+      "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.01/抖音/1/9：59-11：15.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.01/抖音/1/9：59-11：15.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3224747054,
+      "duration_s": 4531.276644,
+      "trim_s": null
+    },
+    {
+      "seg": "seg2",
+      "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.01/抖音/1/11：15-12：50.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.01/抖音/1/11：15-12：50.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3225024037,
+      "duration_s": 5720.823,
+      "trim_s": null
+    },
+    {
+      "seg": "seg3",
+      "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1001_douyin_12-50-14-33_0-2432.mp4",
+      "oss": null,
+      "trimmed": true,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 1583677862,
+      "duration_s": 2432.503256,
+      "trim_s": [
+        0.0,
+        2432.503256
+      ]
+    },
+    {
+      "seg": "seg4",
+      "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.01/抖音/2/14：34-16：08.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.01/抖音/2/14：34-16：08.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3225417384,
+      "duration_s": 5685.277333,
+      "trim_s": null
+    },
+    {
+      "seg": "seg5",
+      "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1001_douyin_16-11-19-14_0-6716.mp4",
+      "oss": null,
+      "trimmed": true,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3084464600,
+      "duration_s": 6717.030867,
+      "trim_s": [
+        0.0,
+        6716.0
+      ]
+    }
+  ]
+}

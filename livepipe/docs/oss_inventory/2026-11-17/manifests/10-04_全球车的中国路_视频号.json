@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "config": "/home/puyu/github/LiveMonitorMockScale/10-04_全球车的中国路_视频号.json",
+  "generated_from": {
+    "config": "/home/puyu/github/LiveMonitorMockScale/10-04_全球车的中国路_视频号.json",
+    "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+    "disk_root": null,
+    "generated_at": "2026-11-17T00:00:00Z"
+  },
+  "segments": [
+    {
+      "seg": "seg1",
+      "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1004_wechat_11-26-12-12_0-2113.mp4",
+      "oss": null,
+      "trimmed": true,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 1400465253,
+      "duration_s": 2113.813333,
+      "trim_s": [
+        0.0,
+        2113.813333
+      ]
+    }
+  ]
+}

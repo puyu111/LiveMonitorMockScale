@@ -28,6 +28,7 @@ from urllib.parse import quote
 
 from .common import (
     IMAGE_SUFFIXES,
+    UNMATCHED_IMG_DIR,
     dir_username,
     platform_sort_key,
     safe_dirname,
@@ -155,6 +156,26 @@ def _mark_dir(out_dir: Path, label: str, m: dict) -> Path | None:
     if not base.is_dir():
         return None
     names = {m.get("account") or "", m.get("display") or ""}
+    cands = [p for p in base.iterdir()
+             if p.is_dir() and dir_username(p.name) in names]
+    if not cands:
+        return None
+    return max(cands, key=lambda p: _count_images(p))
+
+
+def _best_mark_dir(out_dir: Path, label: str, u: dict) -> Path | None:
+    """未命中名单的最近账号在 ``标记图/未命中/`` 里的目录（与 :func:`_mark_dir` 同口径）。"""
+    best = u.get("best") or {}
+    if not best:
+        return None
+    base = (out_dir / "标记图" / UNMATCHED_IMG_DIR / label
+            / safe_dirname(u["list_name"]))
+    d = best.get("account_dir") or ""
+    if d and (base / d).is_dir():
+        return base / d
+    if not base.is_dir():
+        return None
+    names = {best.get("account") or "", best.get("display") or ""}
     cands = [p for p in base.iterdir()
              if p.is_dir() and dir_username(p.name) in names]
     if not cands:
@@ -519,22 +540,31 @@ def build_platform_html(
     for i, u in enumerate(un_rows, 1):
         best = u.get("best") or {}
         score = float(best.get("score") or 0)
+        mark = _best_mark_dir(out_dir, label, u) if has_images else None
+        first = _first_image(mark)
+        if first:
+            url = _rel_url("..", "标记图", UNMATCHED_IMG_DIR, label,
+                           safe_dirname(u["list_name"]), mark.name, first)
+            img_cell = f'<a class="link" href="{_esc(url)}" target="_blank">查看</a>'
+        else:
+            img_cell = '<span class="muted">—</span>'
         utrs.append(
             f'<tr><td class="rank">{i}</td>'
             f'<td class="uname">{_esc(u["list_name"])}</td>'
             f'<td class="num muted">{_esc(u.get("list_seq") if u.get("list_seq") is not None else "—")}</td>'
             f'<td class="acct">{_esc(best.get("display") or best.get("account") or "—")}</td>'
             f'<td>{_chip("fuzzy" if score >= 0.8 else "none", f"{score * 100:.0f}%")}</td>'
+            f'<td>{img_cell}</td>'
             f'</tr>')
     un_table = f"""
   <div class="panel">
     <div class="ph"><h2>未命中名单 · 共 {len(un_rows)} 人</h2>
       <div class="hint">阈值 {threshold:.2f} 卡掉或直播里确实没出现，附平台内最近账号供复核</div></div>
     <div class="tblwrap">
-    <table style="min-width:760px">
-      <thead><tr><th>#</th><th>名单姓名</th><th class="num">名单序号</th><th>最近账号</th><th>最近匹配度</th></tr></thead>
+    <table style="min-width:860px">
+      <thead><tr><th>#</th><th>名单姓名</th><th class="num">名单序号</th><th>最近账号</th><th>最近匹配度</th><th>最近图</th></tr></thead>
       <tbody>
-{chr(10).join(utrs) if utrs else '<tr><td colspan="5" class="muted">名单上的人都命中了。</td></tr>'}
+{chr(10).join(utrs) if utrs else '<tr><td colspan="6" class="muted">名单上的人都命中了。</td></tr>'}
       </tbody>
     </table>
     </div>

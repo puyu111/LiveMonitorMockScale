@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "config": "/home/puyu/github/LiveMonitorMockScale/10-03_全球车的中国路_快手.json",
+  "generated_from": {
+    "config": "/home/puyu/github/LiveMonitorMockScale/10-03_全球车的中国路_快手.json",
+    "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+    "disk_root": null,
+    "generated_at": "2026-11-17T00:00:00Z"
+  },
+  "segments": [
+    {
+      "seg": "seg1",
+      "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.03/快手/11：02-14：30.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.03/快手/11：02-14：30.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3229231923,
+      "duration_s": 12507.435667,
+      "trim_s": null
+    },
+    {
+      "seg": "seg2",
+      "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1003_kuaishou_14-31-15-40_0-3576.mp4",
+      "oss": null,
+      "trimmed": true,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 877546258,
+      "duration_s": 3576.213333,
+      "trim_s": [
+        0.0,
+        3576.213333
+      ]
+    }
+  ]
+}

@@ -58,8 +58,18 @@ def run(args: argparse.Namespace) -> int:
             dst.parent.mkdir(parents=True, exist_ok=True)
             if getattr(args, "resume", False) and dst.exists():
                 resume_rows = load_rows(str(dst))
-                rows_fh = dst.open("a", encoding="utf-8")
-                _log(f"[rows] 续跑：复用已处理 {len(resume_rows)} 行，接着写 {dst}")
+                try:
+                    rows_fh = dst.open("a", encoding="utf-8")
+                    _log(f"[rows] 续跑：复用已处理 {len(resume_rows)} 行，接着写 {dst}")
+                except OSError as e:
+                    # goofs 等 FUSE 挂载不支持 append（EOPNOTSUPP）：改写已有行后继续，
+                    # 这样 rows.jsonl 可以直接落在 OSS 上，续跑语义不变。
+                    rows_fh = dst.open("w", encoding="utf-8")
+                    for r in resume_rows:
+                        rows_fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+                    rows_fh.flush()
+                    _log(f"[rows] 续跑：该文件系统不支持追加（{e}），"
+                         f"改写已有 {len(resume_rows)} 行后继续 {dst}")
             else:
                 rows_fh = dst.open("w", encoding="utf-8")
 

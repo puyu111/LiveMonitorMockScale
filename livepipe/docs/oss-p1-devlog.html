@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OSS P1 补传开发日志</title>
+<style>
+:root{--bg:#f6f7f4;--card:#fff;--ink:#17201c;--muted:#5d6a63;--line:#dfe4df;
+--accent:#0f766e;--soft:#d8f0eb;--trim:#c2760a;--trimsoft:#fdf0d8;--bad:#c0392b;
+--codes:#eef1ee;--shadow:0 1px 2px rgba(20,40,30,.05),0 8px 24px rgba(20,40,30,.04)}
+@media(prefers-color-scheme:dark){:root{--bg:#101513;--card:#18201d;
+--ink:#e7ede9;--muted:#9fada6;--line:#2a3530;--accent:#57c7b8;--soft:#143630;
+--trim:#e2a33c;--trimsoft:#2f2413;--bad:#ef8074;--codes:#111815;--shadow:none}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);
+font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+"Microsoft YaHei",sans-serif;padding:0 18px 56px}
+main{max-width:1060px;margin:0 auto}header{padding:52px 0 24px}
+.eyebrow{font-size:12px;letter-spacing:.14em;color:var(--accent);font-weight:700}
+h1{font-size:clamp(28px,4vw,40px);margin:8px 0 10px;letter-spacing:-.01em}
+.lede{color:var(--muted);font-size:17px;max-width:780px;margin:0}
+.meta{color:var(--muted);font-size:13px;margin-top:12px}
+.verdict{margin:26px 0 28px;padding:20px 22px;background:var(--card);
+border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;
+box-shadow:var(--shadow)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+gap:12px;margin:0 0 36px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;
+padding:15px;box-shadow:var(--shadow)}
+.kpi b{display:block;font-size:25px;line-height:1.15}
+.kpi span{display:block;font-size:13px;margin-top:4px}
+.kpi em{display:block;font-size:11.5px;color:var(--muted);font-style:normal}
+section{margin:0 0 38px}h2{font-size:20px;margin:0 0 6px}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+padding:16px;box-shadow:var(--shadow);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;
+border-bottom:1px solid var(--line);padding:7px 8px;white-space:nowrap}
+td{border-bottom:1px solid var(--line);padding:7px 8px;vertical-align:top}
+tr:last-child td{border-bottom:0}.num{text-align:right;font-variant-numeric:tabular-nums}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+font-size:12px;word-break:break-all}
+.ok{color:var(--accent);font-weight:700}.bad{color:var(--bad);font-weight:700}
+.bar{display:flex;height:34px;border-radius:8px;overflow:hidden;margin:6px 0 8px}
+.bar i{display:block;font-style:normal;color:#fff;font-size:12px;white-space:nowrap;
+display:flex;align-items:center;justify-content:center;min-width:52px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted)}
+.legend b{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+pre{background:var(--codes);border-radius:8px;padding:13px 14px;overflow:auto;
+font-size:12.5px;line-height:1.55;margin:0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+background:var(--codes);padding:1px 5px;border-radius:4px;font-size:12.5px}
+.note{background:var(--soft);border-radius:10px;padding:14px 16px;font-size:13.5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}.card{overflow-x:auto}table{min-width:560px}}
+.tree{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;line-height:1.75;
+white-space:pre;overflow:auto}
+footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);
+padding-top:14px}
+</style></head><body><main>
+<header>
+  <p class="eyebrow">开发日志 · 2026-11-18 · 直播看管</p>
+  <h1>OSS P1 补传：29 个对象，46.52GB</h1>
+  <p class="lede">把 P0 清单里的 2 个缺失整段和 27 个裁尾副本补进 OSS，然后用字节数、
+  清单阶段和 SHA256 逐层验收。配置里的本地路径没有改。</p>
+  <p class="meta">入口 <code>scripts/p1_upload.py</code> · 清单
+  <code>p1-upload-list.csv</code> · 报告 <code>p1-upload-report.json</code></p>
+  <p class="meta"><b>2026-11-19 更正：</b>项目 OSS 根实际是 <code>~/oss-bucket/web/1/奇瑞汽车/直播看管/</code>；文中 <code>~/oss-bucket/奇瑞汽车/…</code> 是当时写错的桶根前缀。相关对象已用 <code>scripts/oss_relocate_prefix.py</code> 服务端复制到 <code>web/1/…</code>，配置与工具默认根已改指。</p>
+</header>
+
+<div class="verdict">
+  <b>结论：P1 完成。</b> 29/29 对象在目标且字节相符；2 个整段补齐后，22 份配置
+  从 <b>53 / 27 / 2</b> 变成 <b>55 / 27 / 0</b>；27 个裁尾副本全部落在新契约根，
+  <code>--verify-uploads</code> 27/27 通过。本次写入 45,689,353,799 B（另 5 个对象此前已在位），耗时
+  2.01 小时，聚合 6.31 MB/s。
+</div>
+
+<div class="kpis">
+  <div class="kpi"><b>29 / 29</b><span>对象已落盘</span><em>24 本次上传 + 5 试传已在位</em></div>
+  <div class="kpi"><b>46.52 GB</b><span>29 个对象合计</span><em>本次写入 45.69 GB</em></div>
+  <div class="kpi"><b>2.01 h</b><span>总耗时</span><em>7235s，3 并发</em></div>
+  <div class="kpi"><b>6.31 MB/s</b><span>聚合（按本次写入）</span><em>单文件峰值 4.13 MB/s</em></div>
+  <div class="kpi"><b>55 / 27 / 0</b><span>P1 后整段/裁尾/缺失</span><em>22 份配置，EXIT 0</em></div>
+</div>
+
+<section>
+  <h2>一句话流程</h2>
+  <p class="sub">源文件只读；写入 OSS 的每个对象都先过临时名和字节校验。</p>
+  <div class="card" style="padding:10px;overflow-x:auto">
+  <svg viewBox="0 0 960 250" style="min-width:720px;display:block" role="img"
+       aria-label="本地 29 个对象经 p1_upload.py 写入两个 OSS 根，再由四层验收确认">
+    <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5"
+      markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/></marker></defs>
+    <rect x="12" y="72" width="196" height="106" rx="10" fill="var(--soft)"
+          stroke="var(--line)"/>
+    <text x="110" y="100" text-anchor="middle" font-size="14" font-weight="700"
+          fill="var(--ink)">本地源（只读）</text>
+    <text x="110" y="124" text-anchor="middle" font-size="12"
+          fill="var(--muted)">MyDisk + 外置盘</text>
+    <text x="110" y="145" text-anchor="middle" font-size="12"
+          fill="var(--muted)">29 个对象 · 46.52 GB</text>
+    <text x="110" y="163" text-anchor="middle" font-size="11"
+          fill="var(--muted)">先核对存在 + 字节</text>
+
+    <line x1="208" y1="125" x2="258" y2="125" stroke="var(--muted)"
+          stroke-width="1.5" marker-end="url(#ar)"/>
+
+    <rect x="262" y="72" width="196" height="106" rx="10" fill="var(--card)"
+          stroke="var(--accent)" stroke-width="1.6"/>
+    <text x="360" y="100" text-anchor="middle" font-size="14" font-weight="700"
+          fill="var(--ink)">p1_upload.py</text>
+    <text x="360" y="124" text-anchor="middle" font-size="12"
+          fill="var(--muted)">写 .part → 核字节</text>
+    <text x="360" y="145" text-anchor="middle" font-size="12"
+          fill="var(--muted)">→ os.replace 正式名</text>
+    <text x="360" y="163" text-anchor="middle" font-size="11"
+          fill="var(--muted)">3 并发 · 3 重试 · 同字节跳过</text>
+
+    <line x1="458" y1="125" x2="506" y2="125" stroke="var(--muted)"
+          stroke-width="1.5" marker-end="url(#ar)"/>
+    <path d="M506 125 H516 V57 H534" fill="none" stroke="var(--muted)"
+          stroke-width="1.5" marker-end="url(#ar)"/>
+    <path d="M506 125 H516 V193 H534" fill="none" stroke="var(--muted)"
+          stroke-width="1.5" marker-end="url(#ar)"/>
+
+    <rect x="538" y="22" width="212" height="72" rx="10" fill="var(--card)"
+          stroke="var(--line)"/>
+    <text x="644" y="47" text-anchor="middle" font-size="13" font-weight="700"
+          fill="var(--ink)">旧存根 · 整段 2 个</text>
+    <text x="644" y="70" text-anchor="middle" font-size="11.5"
+          fill="var(--muted)">直播data/录屏/…/9.30/抖音</text>
+    <text x="644" y="86" text-anchor="middle" font-size="11"
+          fill="var(--muted)">6.45 GB · 参与整段匹配</text>
+
+    <rect x="538" y="158" width="212" height="72" rx="10" fill="var(--card)"
+          stroke="var(--line)"/>
+    <text x="644" y="183" text-anchor="middle" font-size="13" font-weight="700"
+          fill="var(--ink)">新契约根 · 裁尾 27 个</text>
+    <text x="644" y="206" text-anchor="middle" font-size="11.5"
+          fill="var(--muted)">奇瑞汽车/直播看管/…/_live</text>
+    <text x="644" y="222" text-anchor="middle" font-size="11"
+          fill="var(--muted)">40.07 GB · 线上直接可播</text>
+
+    <path d="M750 58 H770 V96 H790" fill="none" stroke="var(--muted)"
+          stroke-width="1.5" marker-end="url(#ar)"/>
+    <path d="M750 194 H770 V156 H790" fill="none" stroke="var(--muted)"
+          stroke-width="1.5" marker-end="url(#ar)"/>
+
+    <rect x="794" y="72" width="154" height="106" rx="10" fill="var(--soft)"
+          stroke="var(--line)"/>
+    <text x="871" y="100" text-anchor="middle" font-size="14" font-weight="700"
+          fill="var(--ink)">四层验收</text>
+    <text x="871" y="123" text-anchor="middle" font-size="11.5"
+          fill="var(--muted)">29/29 在位</text>
+    <text x="871" y="141" text-anchor="middle" font-size="11.5"
+          fill="var(--muted)">55 / 27 / 0 · 27/27 字节</text>
+    <text x="871" y="159" text-anchor="middle" font-size="11.5"
+          fill="var(--muted)">SHA256 抽验</text>
+  </svg>
+  </div>
+</section>
+
+<section>
+  <h2>对象构成：两类，两个目标根</h2>
+  <p class="sub">清单里 29 行不是同一类东西：2 个整段要回旧存根参与整段匹配，
+  27 个裁尾副本进新契约根供线上直接播放。</p>
+  <div class="bar" role="img" aria-label="整段 6.45GB 占 13.9%，裁尾 40.07GB 占 86.1%">
+    <i style="width:13.9%;background:var(--accent)">整段</i>
+    <i style="width:86.1%;background:var(--trim)">裁尾</i>
+  </div>
+  <div class="legend">
+    <span><b style="background:var(--accent)"></b>整段 2 个 · 6,451,182,921 B</span>
+    <span><b style="background:var(--trim)"></b>裁尾 27 个 · 40,069,546,585 B</span>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <table>
+      <tr><th>类型</th><th class="num">数量</th><th class="num">字节</th>
+      <th>目标根</th><th>验收方式</th></tr>
+      <tr><td>缺失整段</td><td class="num">2</td><td class="num">6,451,182,921</td>
+      <td class="mono">~/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/9.30/抖音/</td>
+      <td>回旧存根 → <code>audit</code> 按字节命中 55</td></tr>
+      <tr><td>裁尾副本</td><td class="num">27</td><td class="num">40,069,546,585</td>
+      <td class="mono">~/oss-bucket/奇瑞汽车/直播看管/直播录屏/&lt;事件&gt;/_live/</td>
+      <td><code>--verify-uploads</code> 27/27 字节</td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>具体传到哪：3 个真实例子</h2>
+  <div class="card">
+    <div class="tree">~/oss-bucket/
+├── 直播data/录屏/2026-0930-1006《全球车的中国路》/9.30/抖音/
+│   ├── 9：29-11：12.mp4            ← 整段 seg1，3,225,543,521 B
+│   └── 13：07-14：53.mp4           ← 整段 seg3，3,225,639,400 B
+└── 奇瑞汽车/直播看管/直播录屏/
+    ├── 2026-0930-1006《全球车的中国路》/_live/
+    │   ├── 1002_douyin_13-28-14-08_0-164.mp4    ← 97,153,646 B（最小）
+    │   └── 1001_douyin_16-11-19-14_0-6716.mp4   ← 3,084,464,600 B（最大裁尾）
+    └── 2026-10-19奇瑞全球创新大会/_live/
+        └── wx_qr_15-21-17-00_live.mp4           ← 1,741,127,534 B</div>
+  </div>
+  <p class="sub" style="margin:10px 0 0">新根当前共 27 个文件、40,069,546,585 B，
+  与清单的裁尾合计逐字节吻合。</p>
+</section>
+
+<section>
+  <h2>单文件怎么落盘：四步，不留半个文件</h2>
+  <div class="card">
+    <table>
+      <tr><th>步骤</th><th>动作</th><th>失败时</th></tr>
+      <tr><td>1</td><td>在目标目录写 <code>&lt;名&gt;.mp4.part</code></td>
+      <td>清理 .part，重试（最多 3 次，退避 2/4/8s）</td></tr>
+      <tr><td>2</td><td>close 后 stat <code>.part</code>，核对字节 == 清单</td>
+      <td>字节不符即删 .part 重试，绝不 rename</td></tr>
+      <tr><td>3</td><td><code>os.replace(.part → 正式名)</code>（goofys 服务端 rename）</td>
+      <td>—</td></tr>
+      <tr><td>4</td><td>再 stat 正式名，核对字节</td>
+      <td>记失败，保留目标现状供排查</td></tr>
+    </table>
+  </div>
+  <p class="sub" style="margin:10px 0 0">目标已存在且字节相符 → 直接跳过，所以脚本
+  可以重复跑；目标存在但字节不同 → 拒绝覆盖并报错。本次 24 个上传、5 个试传已在位，
+  0 失败，没有残留 <code>.part</code>。</p>
+</section>
+
+<section>
+  <h2>跑得怎么样：先测再放量</h2>
+  <div class="grid2">
+    <div class="note"><b>试传 1 个（97MB）</b><br>
+      14.8s，6.58 MB/s。证明 goofys 的 <code>.part</code> + rename 路径可用。</div>
+    <div class="note"><b>4 并发（734MB）</b><br>
+      117.3s，聚合 6.26 MB/s——并发不提速，瓶颈在挂载/带宽，于是正式跑用 3 并发。</div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <table>
+      <tr><th>指标</th><th class="num">值</th><th>说明</th></tr>
+      <tr><td>本次上传</td><td class="num">24 个 / 45,689,353,799 B</td>
+      <td>另有 5 个试传对象已在位，跳过</td></tr>
+      <tr><td>总墙钟</td><td class="num">7235s</td>
+      <td>2.01 小时；各文件耗时之和 21,221s ÷ 3 并发</td></tr>
+      <tr><td>聚合速度</td><td class="num">6.31 MB/s</td>
+      <td>按本次写入 ÷ 墙钟</td></tr>
+      <tr><td>最快 / 最慢</td><td class="num">4.13 / 0.60 MB/s</td>
+      <td>dy_qr_15-29-17-00_live.mp4 / 1003_wechat_15-20-15-40_0-566.mp4</td></tr>
+    </table>
+  </div>
+  <details style="margin-top:14px">
+    <summary style="cursor:pointer;color:var(--muted);font-size:13.5px">
+      展开 29 个对象逐条状态（字节 / 耗时 / 速度 / 目标文件名）</summary>
+    <div class="card" style="margin-top:8px">
+      <table>
+        <tr><th>配置</th><th>段</th><th>类型</th><th class="num">字节</th>
+        <th class="num">耗时</th><th class="num">MB/s</th><th>状态</th><th>目标文件</th></tr>
+        <tr><td>09-30_全球车的中国路_抖音</td><td>seg1</td><td>full</td><td class="num">3,225,543,521</td><td class="num">1308s</td><td class="num">2.47</td><td>本次上传</td><td class="mono">9：29-11：12.mp4</td></tr><tr><td>09-30_全球车的中国路_抖音</td><td>seg3</td><td>full</td><td class="num">3,225,639,400</td><td class="num">1178s</td><td class="num">2.74</td><td>本次上传</td><td class="mono">13：07-14：53.mp4</td></tr><tr><td>09-30_全球车的中国路_快手</td><td>seg1</td><td>trim</td><td class="num">1,752,035,866</td><td class="num">1315s</td><td class="num">1.33</td><td>本次上传</td><td class="mono">930_kuaishou_9-29-12-35_0-6885.mp4</td></tr><tr><td>09-30_全球车的中国路_快手</td><td>seg2</td><td>trim</td><td class="num">1,254,753,406</td><td class="num">1051s</td><td class="num">1.19</td><td>本次上传</td><td class="mono">930_kuaishou_13-37-15-37_0-5076.mp4</td></tr><tr><td>09-30_全球车的中国路_抖音</td><td>seg4</td><td>trim</td><td class="num">166,572,698</td><td class="num">—</td><td class="num">—</td><td>已在位</td><td class="mono">930_douyin_14-54-15-38_0-407.mp4</td></tr><tr><td>09-30_全球车的中国路_视频号</td><td>seg4</td><td>trim</td><td class="num">3,110,035,513</td><td class="num">947s</td><td class="num">3.28</td><td>本次上传</td><td class="mono">930_wechat_13-41-15-04_0-4827.mp4</td></tr><tr><td>10-01_全球车的中国路_快手</td><td>seg2</td><td>trim</td><td class="num">222,941,190</td><td class="num">—</td><td class="num">—</td><td>已在位</td><td class="mono">1001_kuaishou_13-17-14-34_0-848.mp4</td></tr><tr><td>10-01_全球车的中国路_快手</td><td>seg3</td><td>trim</td><td class="num">1,528,206,553</td><td class="num">918s</td><td class="num">1.66</td><td>本次上传</td><td class="mono">1001_kuaishou_14-36-19-13_5779-12388.mp4</td></tr><tr><td>10-01_全球车的中国路_抖音</td><td>seg3</td><td>trim</td><td class="num">1,583,677,862</td><td class="num">586s</td><td class="num">2.70</td><td>本次上传</td><td class="mono">1001_douyin_12-50-14-33_0-2432.mp4</td></tr><tr><td>10-01_全球车的中国路_抖音</td><td>seg5</td><td>trim</td><td class="num">3,084,464,600</td><td class="num">1526s</td><td class="num">2.02</td><td>本次上传</td><td class="mono">1001_douyin_16-11-19-14_0-6716.mp4</td></tr><tr><td>10-01_全球车的中国路_视频号</td><td>seg3</td><td>trim</td><td class="num">2,005,390,060</td><td class="num">1010s</td><td class="num">1.99</td><td>本次上传</td><td class="mono">1001_wechat_12-43-14-00_0-2854.mp4</td></tr><tr><td>10-02_全球车的中国路_快手</td><td>seg1</td><td>trim</td><td class="num">2,922,492,758</td><td class="num">954s</td><td class="num">3.06</td><td>本次上传</td><td class="mono">1002_kuaishou_10-32-14-07_0-10720.mp4</td></tr><tr><td>10-02_全球车的中国路_快手</td><td>seg2</td><td>trim</td><td class="num">2,378,277,650</td><td class="num">896s</td><td class="num">2.65</td><td>本次上传</td><td class="mono">1002_kuaishou_14-31-18-26_0-9538.mp4</td></tr><tr><td>10-02_全球车的中国路_抖音</td><td>seg3</td><td>trim</td><td class="num">97,153,646</td><td class="num">—</td><td class="num">—</td><td>已在位</td><td class="mono">1002_douyin_13-28-14-08_0-164.mp4</td></tr><tr><td>10-02_全球车的中国路_抖音</td><td>seg5</td><td>trim</td><td class="num">3,213,538,497</td><td class="num">1192s</td><td class="num">2.70</td><td>本次上传</td><td class="mono">1002_douyin_16-00-17-40_0-5432.mp4</td></tr><tr><td>10-02_全球车的中国路_视频号</td><td>seg3</td><td>trim</td><td class="num">943,810,846</td><td class="num">766s</td><td class="num">1.23</td><td>本次上传</td><td class="mono">1002_wechat_13-09-14-31_0-1316.mp4</td></tr><tr><td>10-02_全球车的中国路_视频号</td><td>seg6</td><td>trim</td><td class="num">123,074,271</td><td class="num">—</td><td class="num">—</td><td>已在位</td><td class="mono">1002_wechat_17-27-18-27_0-239.mp4</td></tr><tr><td>10-03_全球车的中国路_快手</td><td>seg2</td><td>trim</td><td class="num">877,546,258</td><td class="num">788s</td><td class="num">1.11</td><td>本次上传</td><td class="mono">1003_kuaishou_14-31-15-40_0-3576.mp4</td></tr><tr><td>10-03_全球车的中国路_抖音</td><td>seg3</td><td>trim</td><td class="num">2,857,339,103</td><td class="num">876s</td><td class="num">3.26</td><td>本次上传</td><td class="mono">1003_douyin_14-05-15-36_0-5095.mp4</td></tr><tr><td>10-03_全球车的中国路_视频号</td><td>seg4</td><td>trim</td><td class="num">331,998,928</td><td class="num">558s</td><td class="num">0.60</td><td>本次上传</td><td class="mono">1003_wechat_15-20-15-40_0-566.mp4</td></tr><tr><td>10-04_全球车的中国路_视频号</td><td>seg1</td><td>trim</td><td class="num">1,400,465,253</td><td class="num">798s</td><td class="num">1.75</td><td>本次上传</td><td class="mono">1004_wechat_11-26-12-12_0-2113.mp4</td></tr><tr><td>10-06_全球车的中国路_抖音</td><td>seg3</td><td>trim</td><td class="num">221,633,902</td><td class="num">—</td><td class="num">—</td><td>已在位</td><td class="mono">1006_douyin_13-22-16-49_0-538.mp4</td></tr><tr><td>10-06_全球车的中国路_视频号</td><td>seg3</td><td>trim</td><td class="num">540,735,037</td><td class="num">344s</td><td class="num">1.57</td><td>本次上传</td><td class="mono">1006_wechat_13-11-14-57_0-1166.mp4</td></tr><tr><td>10-19奇瑞创新大会_抖音QQ汽车</td><td>seg6</td><td>trim</td><td class="num">834,998,990</td><td class="num">584s</td><td class="num">1.43</td><td>本次上传</td><td class="mono">dy_qq_16-31-17-00_live.mp4</td></tr><tr><td>10-19奇瑞创新大会_抖音奇瑞汽车</td><td>seg5</td><td>trim</td><td class="num">3,089,242,130</td><td class="num">747s</td><td class="num">4.13</td><td>本次上传</td><td class="mono">dy_qr_15-29-17-00_live.mp4</td></tr><tr><td>10-19奇瑞创新大会_抖音风云新能源</td><td>seg6</td><td>trim</td><td class="num">747,125,465</td><td class="num">744s</td><td class="num">1.00</td><td>本次上传</td><td class="mono">dy_fy_16-38-17-00_live.mp4</td></tr><tr><td>10-19奇瑞创新大会_视频号奇瑞QQ</td><td>seg5</td><td>trim</td><td class="num">1,689,390,397</td><td class="num">664s</td><td class="num">2.55</td><td>本次上传</td><td class="mono">wx_qq_15-58-17-00_live.mp4</td></tr><tr><td>10-19奇瑞创新大会_视频号奇瑞汽车</td><td>seg3</td><td>trim</td><td class="num">1,741,127,534</td><td class="num">738s</td><td class="num">2.36</td><td>本次上传</td><td class="mono">wx_qr_15-21-17-00_live.mp4</td></tr><tr><td>10-19奇瑞创新大会_视频号风云新能源汽车</td><td>seg5</td><td>trim</td><td class="num">1,351,518,172</td><td class="num">735s</td><td class="num">1.84</td><td>本次上传</td><td class="mono">wx_fy_16-13-17-00_live.mp4</td></tr>
+      </table>
+    </div>
+  </details>
+</section>
+
+<section>
+  <h2>验收：四层，逐层有真实输出</h2>
+  <div class="card">
+    <table>
+      <tr><th>层</th><th>命令</th><th>结果</th></tr>
+      <tr><td>1. 目标在位</td><td><code>p1_upload.py --verify-only</code></td>
+      <td><b class="ok">29 / 29 在位，0 失败</b>（1.2s，只 stat 不写）</td></tr>
+      <tr><td>2. 阶段切换</td><td><code>build_oss_inventory.py --verify-uploads</code></td>
+      <td><b class="ok">55 / 27 / 0</b>，phase=p1，EXIT 0；27 行清单 40,069,546,585 B</td></tr>
+      <tr><td>3. 副本字节</td><td>同上，读 CSV 的 dst</td>
+      <td><b class="ok">27 个目标 · 已落盘 27 · 缺失 0 · 字节不符 0</b></td></tr>
+      <tr><td>4. 整段字节</td><td><code>sha256sum</code> 本地 vs OSS</td>
+      <td><b class="ok">全部 MATCH</b></td></tr>
+    </table>
+  </div>
+  <p class="sub" style="margin:10px 0 0">阶段切换不是“改个期望值”：脚本只有整组数字
+  吻合 P1（55 全片 / 0 缺失 / 27 行 / 40,069,546,585 B）才切 phase；否则仍然 EXIT 1。</p>
+</section>
+
+<section><h2>SHA256 抽验：本地与 OSS 逐字节一致</h2><div class="card"><table>
+<tr><th>对象</th><th class="num">字节</th><th>本地 SHA256</th><th>OSS SHA256</th><th>结果</th><th class="num">耗时</th></tr>
+<tr><td>trim/seg6</td><td class="num">834,998,990</td><td class="mono">bd2fb26be2fa8f69…</td><td class="mono">bd2fb26be2fa8f69…</td><td class="ok">MATCH</td><td class="num">55.8s</td></tr><tr><td>trim/seg4</td><td class="num">166,572,698</td><td class="mono">b20ec7d42987896d…</td><td class="mono">b20ec7d42987896d…</td><td class="ok">MATCH</td><td class="num">13.2s</td></tr><tr><td>full/seg1</td><td class="num">3,225,543,521</td><td class="mono">c99fa097ecd8d69a…</td><td class="mono">c99fa097ecd8d69a…</td><td class="ok">MATCH</td><td class="num">258.3s</td></tr><tr><td>full/seg3</td><td class="num">3,225,639,400</td><td class="mono">a2c8260b9a06e8a3…</td><td class="mono">a2c8260b9a06e8a3…</td><td class="ok">MATCH</td><td class="num">259.5s</td></tr></table></div>
+<p class="sub" style="margin:10px 0 0">4 个样本、合计 7,452,754,609 B，两端各读一遍
+（共 14,905,509,218 B）；其余 25 个裁尾由第 3 层按字节数核对。</p></section>
+
+<section>
+  <h2>没有做什么</h2>
+  <ul>
+    <li><b>没有改配置：</b>22 份配置的 <code>input.videos</code> 仍指向 MyDisk 本地路径；
+    切读（把输入指到 OSS）是下一步，不在本次 P1 内。</li>
+    <li><b>没有删本地：</b>补传只增加 OSS 副本，MyDisk / 外置盘的源文件原样保留。</li>
+    <li><b>没有覆盖同名目标：</b>脚本遇到“目标存在但字节不同”会直接报错；本次 0 冲突。</li>
+    <li><b>没有提交 git：</b>所有改动留在工作区。</li>
+  </ul>
+</section>
+
+<section>
+  <h2>怎么复现</h2>
+  <pre><b># 1. 只看计划，不写</b>
+python3 scripts/p1_upload.py --dry-run
+
+<b># 2. 正式补传（可重复跑，已同字节的目标会跳过）</b>
+python3 scripts/p1_upload.py --workers 3
+
+<b># 3. 只核目标在位</b>
+python3 scripts/p1_upload.py --verify-only
+
+<b># 4. 让清单切到 P1 并核 27 个副本字节</b>
+python3 scripts/build_oss_inventory.py --verify-uploads
+[6/6] 校验通过：configs=22 refs=82 full_mapped=55 trimmed=27 missing=0 ✓
+P1 落盘校验：27 个目标 · 已落盘 27 · 缺失 0 · 字节不符 0
+</pre>
+</section>
+
+<footer>
+数据源：<code>out/oss_inventory/2026-11-17/p1-upload-report.json</code>（逐条状态/耗时）、
+<code>p1-verify-report.json</code>、<code>summary.json</code>（phase=p1）。
+上传器 <code>scripts/p1_upload.py</code>；审计与清单 <code>scripts/build_oss_inventory.py</code>。
+本次只补传 29 个对象，未改配置、未删本地、未提交 git。
+上传报告收尾时曾被一次 <code>--verify-only</code> 覆盖，已按 29 行核对快照与上传日志
+逐条重建（<code>reconstructed=true</code>，<code>started_at</code> 不可恢复）；上传器已改为
+verify 默认写独立报告。
+</footer>
+</main></body></html>

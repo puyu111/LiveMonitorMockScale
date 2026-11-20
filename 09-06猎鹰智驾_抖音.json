@@ -2,7 +2,7 @@
 // 猎鹰智驾瑞虎9羌塘无人区（渠道）2026-09-06 · 抖音直播
 // （手机 App 竖屏 720×1560）→ 结构化评论
 //
-// 素材 = 「/home/puyu/work/data/2026-09-06猎鹰智驾瑞虎9羌塘无人区（渠道）/
+// 素材 = 「/run/media/puyu/MyDisk/2026-09-06猎鹰智驾瑞虎9羌塘无人区（渠道）/
 //   抖音-奇瑞汽车/」下的**四段**录屏，分**午场 / 晚场**两场（账号「奇瑞汽车」）：
 //   午场 `9.6抖音丨奇瑞汽车丨12：12-13：43/`
 //     seg1  `12：12-13：13.mp4`  60.5min
@@ -31,7 +31,7 @@
 //   ✅ rect：视频区/评论区分界 ≈717；输入栏 `说点什么...` 上沿 1402；
 //      评论正文右沿最大 580 ⇒ rect x2=620 留余量
 //   ✅ 浮层左界 470：卡块最小左沿 475、评论正文块 x1 都 ≤110 ⇒ 空带取 470
-//   ✅ 表情用抖音那套表（out/douyin_emoji/douyin-emoji.json，已建好）
+//   ✅ 表情用抖音那套表（/run/media/puyu/C0DE6A4BDE6A39B4/out/douyin_emoji/douyin-emoji.json，已建好）
 //   ⚠ 折行续行实测 ~39~40px = 0.74~0.76 行距 ⇒ wrap_gap_ratio 写 **0.85**
 //     （默认 0.73 会把 0.74 那批挡在门外；独立评论/通知行实测 ~0.99）
 //
@@ -45,13 +45,14 @@
 //        NLP_API_KEY=sk-xxxx $P -m livepipe run 09-06猎鹰智驾_抖音.json \
 //            --only filter,qualify,export,collect
 //   ③ 先看后交：产物在
-//        out/2026-09-06猎鹰智驾瑞虎9羌塘无人区（渠道）/抖音/all_users_正面_3张以上/
+//        /run/media/puyu/C0DE6A4BDE6A39B4/out/2026-09-06猎鹰智驾瑞虎9羌塘无人区（渠道）/抖音/all_users_正面_3张以上/
 //
 // 校验（不跑、安全）：
 //   python3 -m livepipe check 09-06猎鹰智驾_抖音.json
 //   python3 -m livepipe run   09-06猎鹰智驾_抖音.json --dry-run
 // ============================================================================
 {
+  "base_dir": "/run/media/puyu/C0DE6A4BDE6A39B4",
   "version": 1,
   "name": "猎鹰智驾瑞虎9羌塘无人区（渠道）2026-09-06 · 抖音手机 App · 竖屏",
 
@@ -128,16 +129,16 @@
     }
   },
 
-  // 表情表用内置的 `douyin`（out/douyin_emoji/douyin-emoji.json）
+  // 表情表用内置的 `douyin`（/run/media/puyu/C0DE6A4BDE6A39B4/out/douyin_emoji/douyin-emoji.json）
   // ⇒ 这里一个字段都不用写：emoji.tables 的默认值就是它，emoji.enabled 默认 true。
 
   "input": {
     // 四段素材：**显式数组**（段顺序 = 时间顺序）。
     "videos": [
-      "/home/puyu/work/data/2026-09-06猎鹰智驾瑞虎9羌塘无人区（渠道）/抖音-奇瑞汽车/9.6抖音丨奇瑞汽车丨12：12-13：43/12：12-13：13.mp4",
-      "/home/puyu/work/data/2026-09-06猎鹰智驾瑞虎9羌塘无人区（渠道）/抖音-奇瑞汽车/9.6抖音丨奇瑞汽车丨12：12-13：43/13：13-13：43.mp4",
-      "/home/puyu/work/data/2026-09-06猎鹰智驾瑞虎9羌塘无人区（渠道）/抖音-奇瑞汽车/9.6抖音丨奇瑞汽车丨17：08-18：25/17：08-18：08.mp4",
-      "/home/puyu/work/data/2026-09-06猎鹰智驾瑞虎9羌塘无人区（渠道）/抖音-奇瑞汽车/9.6抖音丨奇瑞汽车丨17：08-18：25/18：09-18：25.mp4"
+      "/run/media/puyu/MyDisk/2026-09-06猎鹰智驾瑞虎9羌塘无人区（渠道）/抖音-奇瑞汽车/9.6抖音丨奇瑞汽车丨12：12-13：43/12：12-13：13.mp4",
+      "/run/media/puyu/MyDisk/2026-09-06猎鹰智驾瑞虎9羌塘无人区（渠道）/抖音-奇瑞汽车/9.6抖音丨奇瑞汽车丨12：12-13：43/13：13-13：43.mp4",
+      "/run/media/puyu/MyDisk/2026-09-06猎鹰智驾瑞虎9羌塘无人区（渠道）/抖音-奇瑞汽车/9.6抖音丨奇瑞汽车丨17：08-18：25/17：08-18：08.mp4",
+      "/run/media/puyu/MyDisk/2026-09-06猎鹰智驾瑞虎9羌塘无人区（渠道）/抖音-奇瑞汽车/9.6抖音丨奇瑞汽车丨17：08-18：25/18：09-18：25.mp4"
     ],
     "segment_names": null,              // 段名（= 子目录名）；null ⇒ seg1..seg4
     "video": null,                      // 单段写法（与 videos 互斥，本件用不到）              --video
@@ -236,7 +237,7 @@
   "output": {
     // 多段时这里是**段的父目录**：实际各写 <dir>/seg1..seg4；
     // 跨段产物落在这儿：merged_users.json（qualify）；交付树见 collect.out。
-    "dir": "out/2026-09-06猎鹰智驾瑞虎9羌塘无人区（渠道）/抖音",
+    "dir": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-09-06猎鹰智驾瑞虎9羌塘无人区（渠道）/抖音",
     "write": true,                      // 是否写盘（comments.jsonl + summary.json 成对）
     "rows": true,                       // 另存 rows.jsonl（**可回喂复算**）
     "panels": true,                     // mode=auto 时把定位结果存成 panels.json
@@ -312,7 +313,7 @@
     "enabled": true,
     "stage_min": null,                  // 各段导出目录名里的数字；null ⇒ qualify.stage_min
     "platform_dir": null,               // 交付树里的平台目录名；null ⇒ 从各段导出目录自动认（抖音）
-    "out": "out/2026-09-06猎鹰智驾瑞虎9羌塘无人区（渠道）/抖音/all_users_正面_3张以上",
+    "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-09-06猎鹰智驾瑞虎9羌塘无人区（渠道）/抖音/all_users_正面_3张以上",
     "force": true                       // 目标非空时整棵重来（否则报错退出）
   },
 
@@ -332,6 +333,6 @@
     // 逐段步（panels/parse/filter/export/draw）四段各跑一遍；全局步（emoji_tables/qualify/collect）整批一次。
     "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
               "export", "collect", "draw"],
-    "skip": ["emoji_tables", "draw"]    // 表情表已建好（out/douyin_emoji/）；独立描框用不上
+    "skip": ["emoji_tables", "draw"]    // 表情表已建好（/run/media/puyu/C0DE6A4BDE6A39B4/out/douyin_emoji/）；独立描框用不上
   }
 }

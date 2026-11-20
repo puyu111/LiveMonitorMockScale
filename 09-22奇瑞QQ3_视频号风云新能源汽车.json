@@ -1,0 +1,218 @@
+// ============================================================================
+// 奇瑞QQ3摩登版上市（渠道七七）2026-09-22 · 视频号直播 · 账号「风云新能源汽车」
+// ============================================================================
+// 素材：/run/media/puyu/MyDisk/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/视频号/风云新能源汽车/18：12-22：03.MP4（**888×1920**，本批最高一档）。
+// 输出：/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/视频号/风云新能源汽车/。
+//
+// ⚠ 尾部是回放/推荐页（`合集：风云T7` / `开启「自动上滑」`）。底部输入栏 `聊一聊`
+//   最后出现在 13678.0s（228.0min）⇒ 无损流拷贝截到 13677.8s，
+//   副本 = /run/media/puyu/C0DE6A4BDE6A39B4/out/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/media/wx_fy_18-12-22-03_live.mp4。
+//
+// 量到的版式（2026-11-11，10 帧 OCR，888×1920）：
+//   · 行距 **57.5**（单行评论首行间距 56~62；两行评论 104~108）。
+//   · x_text 48：昵称 x1≈50~56，续行 x1≈47~59。
+//   · rect [0,1050,888,1745]：视频底 ≈1005，顶部渐隐带（`拉** 来了` 一带）到 ≈1050；
+//     输入栏 `聊一聊` 上沿 ≈1761 ⇒ y2=1745。
+//   · ⚠ 续行间距 ≈47px = **0.82 行距**（本批最大的续行比），wrap_gap_ratio 取 0.90，
+//     别照抄其他视频号档的 0.75~0.78（会把续行挡在门外）。
+//   · 昵称打码（`蓝**` / `手**` / `+1八重樱`）⇒ account_key=nickname_level_if_masked。
+//   · 888×1920 分辨率大 ⇒ emoji_workers=1（省内存）。
+//
+// 跑法：$P -m livepipe run 09-22奇瑞QQ3_视频号风云新能源汽车.json --only panels,parse
+//
+// 校验：python3 -m livepipe check 09-22奇瑞QQ3_视频号风云新能源汽车.json
+// ============================================================================
+{
+  "base_dir": "/run/media/puyu/C0DE6A4BDE6A39B4",
+  "version": 1,
+  "name": "奇瑞QQ3摩登版上市（渠道七七）2026-09-22 · 视频号手机 App · 风云新能源汽车",
+
+  "platforms": {
+    "wechat_app": {
+      "label": "视频号直播（手机 App 竖屏 888×1920；等级/粉丝药丸在昵称左边，常被 OCR 并进正文）",
+      "emoji": "wechat",
+      "account_key": "nickname_level_if_masked",
+      "row_pitch": 57.5,
+      "y_phase": 18,
+      "x_text": 48,
+      "badge_span": 44,
+      "x2_from": "window",
+      "wrap_indent": true,
+      // 这批视频号**没有左侧徽章列**（昵称 x1≈34，续行也落在 32~37）⇒ 形状判据分不开；
+      // 走「间距软入口」：无冒号、x1 ≤ x_text+8 的块按与上一行的间距（0.15~0.73 行距）
+      // 认续行，认不中的照旧当普通行（不丢数据）。见 grouping.py 的 _text_left_candidates。
+      "wrap_at_text_left": true,
+      "wrap_gap_ratio": 0.9,
+      "badge_alias": true,
+      "username_alias": true,
+      "badge_name_recover": true,
+      "colon_bg_max_v": 255,
+      "colon_v_delta": 30,
+      "colon_text_fix": true,
+      "merge_emoji_continuation": true,
+      "emoji_gap_sweep": true,
+      "overlay_cards": "通知|主题|公众号|欢迎来到直播间|禁止未成年|理性消费|私下交易|人身损失|点击了解详情|广告|全新QQ3摩登版上市发布会|超值礼包|更多直播|订阅回放"
+    }
+  },
+
+  "emoji": {
+    "tables": {
+      "wechat": {"build": {"enabled": true}}
+    }
+  },
+
+  "input": {
+    "videos": [
+      "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/media/wx_fy_18-12-22-03_live.mp4",   // seg1 228.0min（原 231.1min 尾部是回放/推荐页，已裁）
+    ],
+    "segment_names": null,
+    "video": null,
+    "rows": null,
+    "text": null,
+    "start": 0.0,
+    "duration": null,
+    "interval": 2.0,
+    "max_frames": null,
+    "resume": true,
+    "sample": {
+      "mode": "adaptive",
+      "stride": 2,
+      "safety_rows": 5.0,
+      "settle_frames": 3,
+      "eps_px": 1.0,
+      "entry_thr": 8.0,
+      "max_gap_s": 5.0,
+      "min_interval": 0.2,
+      "max_interval": 6.0,
+      "min_score": 0.3
+    }
+  },
+
+  "panels": {
+    "mode": "manual",
+    "file": null,
+    "files": null,
+    "overwrite": false,
+    "auto": {
+      "method": "hybrid",
+      "at": 900,
+      "frames": 5,
+      "span": null,
+      "split_x": null,
+      "pad_x": 60,
+      "pad_top": 80,
+      "pad_y": 16,
+      "sub_width": 500,
+      "model": "nvidia/LocateAnything-3B",
+      "quant": "4bit",
+      "device": "cuda",
+      "platforms": {
+        "left": "wechat_app",
+        "right": null
+      },
+      "frame_width": 888
+    },
+    "manual": [
+      {"comments": {"rect": [0, 1050, 888, 1745], "platform": "wechat_app"}}
+    ],
+    "batch": {
+      "count": 30,
+      "start": 0.0,
+      "span": 600.0,
+      "anchor": "panel"
+    }
+  },
+
+
+  "parse": {
+    "sep": " ",
+    "max_username_len": 24,
+    "merge_continuation": true,
+    "adjacency": true,
+    "dedup": true,
+    "calibrate": false,
+    "right_pad": 0,
+    "emoji_workers": 1
+  },
+
+  "output": {
+    "dir": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/视频号/风云新能源汽车",
+    "write": true,
+    "rows": true,
+    "panels": true,
+    "frames": true,
+    "print": false
+  },
+
+  "filter": {
+    "enabled": true,
+    "source": null,
+    "out": null,
+    "cache": null,
+    "min_positive": 1,
+    "exclude_keywords": [
+      "奇瑞", "4s", "店", "qq3", "汽车",
+      "尹同跃", "张国忠", "鲍思语", "王津华", "王孝伟", "胡敬源", "尹祥领",
+      "王来春", "李晶", "商文江", "杨棉之", "叶盛基", "路风", "黎汝雄",
+      "李学用", "张贵兵", "代立宏", "章红玉", "高新华", "戚士龙", "王琅"
+    ],
+    "nlp": {
+      "api_key": null,
+      "api_key_env": "NLP_API_KEY",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "deepseek-v4.1-flash",
+      "batch_size": 20,
+      "concurrency": 4,
+      "timeout": 60.0,
+      "retries": 3,
+      "limit": null,
+      "prompt": null
+    }
+  },
+
+  "qualify": {
+    "enabled": true,
+    "min_positive": 3,
+    "stage_min": 1
+  },
+
+  "export": {
+    "enabled": true,
+    "base": "frame",
+    "labels": "正面",
+    "min_positive": null,
+    "min_scope": "platform",
+    "users": null,
+    "color": "0,255,0",
+    "width": 3,
+    "pad": 0,
+    "pad_ratio": 0.25,
+    "quality": 90,
+    "force": true
+  },
+
+  "collect": {
+    "enabled": true,
+    "stage_min": null,
+    "platform_dir": null,
+    "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/视频号/风云新能源汽车/all_users_正面_3张以上",
+    "force": true
+  },
+
+  "draw": {
+    "enabled": false,
+    "source": null,
+    "at": 8.0,
+    "window": 5.0,
+    "out": null,
+    "width": 5,
+    "quality": 90,
+    "labels": true
+  },
+
+  "steps": {
+    "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
+              "export", "collect", "draw"],
+    "skip": ["emoji_tables", "draw"]
+  }
+}

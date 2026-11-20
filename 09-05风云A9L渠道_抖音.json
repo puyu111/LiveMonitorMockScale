@@ -2,7 +2,7 @@
 // 风云A9L + OTA升级直播（渠道）2026-09-05 · 抖音直播
 // （手机 App 竖屏 720×1568 / 720×1560）→ 结构化评论
 //
-// 素材 = 「/home/puyu/work/data/2026-09-05风云A9L+OTA升级直播（渠道）」抖音/ 下的
+// 素材 = 「/run/media/puyu/MyDisk/2026-09-05风云A9L+OTA升级直播（渠道）」抖音/ 下的
 // **三段**录屏（同一场直播、时间**不重叠**，账号「风云新能源」）：
 //   seg1  `16：05-17：00.mp4`  55.5min  720×1568  25fps
 //   seg2  `17：01-17：20.mp4`  20.1min  720×1568  25fps
@@ -31,7 +31,7 @@
 //      输入栏上沿 1374（seg1/2）/ 1396（seg3）；三段 x 方向同一台设备 ⇒ [0,·,620,·]
 //   ✅ 评论文字右沿最大 533（seg3 900s）⇒ rect x2=620 留余量；再往右是商品卡区间
 //   ✅ 浮层左界 460：卡块左沿 477（`·讲解中` 479）· 评论正文块 x1 都 <200 ⇒ 空带取 460
-//   ✅ 表情用抖音那套表（out/douyin_emoji/douyin-emoji.json，已建好）
+//   ✅ 表情用抖音那套表（/run/media/puyu/C0DE6A4BDE6A39B4/out/douyin_emoji/douyin-emoji.json，已建好）
 //   ⚠ 折行续行实测 0.76 行距（seg3 `死的`：40.5/53.5）⇒ wrap_gap_ratio 写 **0.85**
 //     （默认 0.73 会把它挡在门外；独立评论/通知行实测 0.92~1.06）
 //   ⚠ 开局提示卡/商品卡/通知碎片都放 overlay_cards（只作用于**没有冒号**的行）
@@ -46,13 +46,14 @@
 //        NLP_API_KEY=sk-xxxx $P -m livepipe run 09-05风云A9L渠道_抖音.json \
 //            --only filter,qualify,export,collect
 //   ③ 先看后交：产物在
-//        out/2026-09-05风云A9L+OTA升级直播（渠道）/抖音/all_users_正面_3张以上/
+//        /run/media/puyu/C0DE6A4BDE6A39B4/out/2026-09-05风云A9L+OTA升级直播（渠道）/抖音/all_users_正面_3张以上/
 //
 // 校验（不跑、安全）：
 //   python3 -m livepipe check 09-05风云A9L渠道_抖音.json
 //   python3 -m livepipe run   09-05风云A9L渠道_抖音.json --dry-run
 // ============================================================================
 {
+  "base_dir": "/run/media/puyu/C0DE6A4BDE6A39B4",
   "version": 1,
   "name": "风云A9L+OTA升级直播（渠道）2026-09-05 · 抖音手机 App · 竖屏",
 
@@ -134,15 +135,15 @@
     }
   },
 
-  // 表情表用内置的 `douyin`（out/douyin_emoji/douyin-emoji.json）
+  // 表情表用内置的 `douyin`（/run/media/puyu/C0DE6A4BDE6A39B4/out/douyin_emoji/douyin-emoji.json）
   // ⇒ 这里一个字段都不用写：emoji.tables 的默认值就是它，emoji.enabled 默认 true。
 
   "input": {
     // 三段素材：**显式数组**（段顺序 = 时间顺序）。
     "videos": [
-      "/home/puyu/work/data/2026-09-05风云A9L+OTA升级直播（渠道）/抖音/风云A9L+OTA升级直播丨抖音丨风云新能源丨16：03-17：44/16：05-17：00.mp4",
-      "/home/puyu/work/data/2026-09-05风云A9L+OTA升级直播（渠道）/抖音/风云A9L+OTA升级直播丨抖音丨风云新能源丨16：03-17：44/17：01-17：20.mp4",
-      "/home/puyu/work/data/2026-09-05风云A9L+OTA升级直播（渠道）/抖音/风云A9L+OTA升级直播丨抖音丨风云新能源丨16：03-17：44/17：21-17：45.mp4"
+      "/run/media/puyu/MyDisk/2026-09-05风云A9L+OTA升级直播（渠道）/抖音/风云A9L+OTA升级直播丨抖音丨风云新能源丨16：03-17：44/16：05-17：00.mp4",
+      "/run/media/puyu/MyDisk/2026-09-05风云A9L+OTA升级直播（渠道）/抖音/风云A9L+OTA升级直播丨抖音丨风云新能源丨16：03-17：44/17：01-17：20.mp4",
+      "/run/media/puyu/MyDisk/2026-09-05风云A9L+OTA升级直播（渠道）/抖音/风云A9L+OTA升级直播丨抖音丨风云新能源丨16：03-17：44/17：21-17：45.mp4"
     ],
     "segment_names": null,              // 段名（= 子目录名）；null ⇒ seg1、seg2、seg3
     "video": null,                      // 单段写法（与 videos 互斥，本件用不到）              --video
@@ -244,7 +245,7 @@
   "output": {
     // 多段时这里是**段的父目录**：实际各写 <dir>/seg1、seg2、seg3；
     // 跨段产物落在这儿：merged_users.json（qualify）；交付树见 collect.out。
-    "dir": "out/2026-09-05风云A9L+OTA升级直播（渠道）/抖音",
+    "dir": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-09-05风云A9L+OTA升级直播（渠道）/抖音",
     "write": true,                      // 是否写盘（comments.jsonl + summary.json 成对）
     "rows": true,                       // 另存 rows.jsonl（**可回喂复算**）
     "panels": true,                     // mode=auto 时把定位结果存成 panels.json
@@ -320,7 +321,7 @@
     "enabled": true,
     "stage_min": null,                  // 各段导出目录名里的数字；null ⇒ qualify.stage_min
     "platform_dir": null,               // 交付树里的平台目录名；null ⇒ 从各段导出目录自动认（抖音）
-    "out": "out/2026-09-05风云A9L+OTA升级直播（渠道）/抖音/all_users_正面_3张以上",
+    "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-09-05风云A9L+OTA升级直播（渠道）/抖音/all_users_正面_3张以上",
     "force": true                       // 目标非空时整棵重来（否则报错退出）
   },
 
@@ -340,6 +341,6 @@
     // 逐段步（panels/parse/filter/export/draw）三段各跑一遍；全局步（emoji_tables/qualify/collect）整批一次。
     "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
               "export", "collect", "draw"],
-    "skip": ["emoji_tables", "draw"]    // 表情表已建好（out/douyin_emoji/）；独立描框用不上
+    "skip": ["emoji_tables", "draw"]    // 表情表已建好（/run/media/puyu/C0DE6A4BDE6A39B4/out/douyin_emoji/）；独立描框用不上
   }
 }

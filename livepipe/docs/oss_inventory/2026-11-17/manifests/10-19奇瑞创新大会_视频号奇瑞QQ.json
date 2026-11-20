@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_视频号奇瑞QQ.json",
+  "generated_from": {
+    "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_视频号奇瑞QQ.json",
+    "oss_root": "/home/puyu/oss-bucket/直播data/录屏/10.19",
+    "disk_root": null,
+    "generated_at": "2026-11-17T00:00:00Z"
+  },
+  "segments": [
+    {
+      "seg": "seg1",
+      "disk": "/run/media/puyu/MyDisk/10.19/视频号/奇瑞QQ/9： 01~10： 24.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/奇瑞QQ/9： 01~10： 24.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3225829823,
+      "duration_s": 5010.568333,
+      "trim_s": null
+    },
+    {
+      "seg": "seg2",
+      "disk": "/run/media/puyu/MyDisk/10.19/视频号/奇瑞QQ/10： 25~12： 10.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/奇瑞QQ/10： 25~12： 10.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3226956960,
+      "duration_s": 6357.256333,
+      "trim_s": null
+    },
+    {
+      "seg": "seg3",
+      "disk": "/run/media/puyu/MyDisk/10.19/视频号/奇瑞QQ/12： 11~14： 09.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/奇瑞QQ/12： 11~14： 09.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3227820459,
+      "duration_s": 7101.964333,
+      "trim_s": null
+    },
+    {
+      "seg": "seg4",
+      "disk": "/run/media/puyu/MyDisk/10.19/视频号/奇瑞QQ/14： 09~15： 58.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/奇瑞QQ/14： 09~15： 58.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3227022405,
+      "duration_s": 6556.312333,
+      "trim_s": null
+    },
+    {
+      "seg": "seg5",
+      "disk": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/wx_qq_15-58-17-00_live.mp4",
+      "oss": null,
+      "trimmed": true,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 1689390397,
+      "duration_s": 3737.716,
+      "trim_s": [
+        0.0,
+        3737.716
+      ]
+    }
+  ]
+}

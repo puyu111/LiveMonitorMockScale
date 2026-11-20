@@ -3,7 +3,9 @@
     python -m livepipe run    <config.json> [--only a,b] [--skip c] [--dry-run]
     python -m livepipe panels <config.json>     # 阶段①：只定位评论区 → 待人工标注 platform
     python -m livepipe check  <config.json>     # 只校验配置，不跑
+    python -m livepipe verify <config.json>     # 核对已跑完的产物是否完整（只读）
     python -m livepipe match  <名单> <直播路径>  # 撞库：名单 × 已交付账号（--threshold 0.8）
+    python -m livepipe oss    <子命令> ...      # OSS 入库工具（manifest/audit/sync/ingest/check-env）
     python -m livepipe steps                    # 列出可用步骤
     python -m livepipe example [PATH]           # 把示例配置写到 PATH（默认 stdout）
 """
@@ -87,10 +89,22 @@ def _cmd_panels(argv: list[str]) -> int:
     return rc
 
 
+def _cmd_verify(argv: list[str]) -> int:
+    """核对一次 run 的产物是否完整（独立工具，只读）。"""
+    from .tools.verify_run.cli import main as verify_main
+    return verify_main(argv)
+
+
 def _cmd_match(argv: list[str]) -> int:
     """撞库（独立工具，不走管线）：名单 × 已交付账号目录。"""
     from .tools.list_match.cli import main as list_match_main
     return list_match_main(argv)
+
+
+def _cmd_oss(argv: list[str]) -> int:
+    """OSS 入库工具（独立工具，延迟导入，避免拖慢其他子命令）。"""
+    from .tools.oss_ingest.cli import main as oss_main
+    return oss_main(argv, prog="python -m livepipe oss")
 
 
 def _cmd_steps(_argv: list[str]) -> int:
@@ -121,7 +135,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if argv else 2
     cmd, rest = argv[0], argv[1:]
     table = {"run": _cmd_run, "check": _cmd_check, "panels": _cmd_panels,
-             "match": _cmd_match, "steps": _cmd_steps, "example": _cmd_example}
+             "verify": _cmd_verify, "match": _cmd_match, "oss": _cmd_oss,
+             "steps": _cmd_steps, "example": _cmd_example}
     if cmd not in table:
         print(f"未知子命令：{cmd}\n", file=sys.stderr)
         print(__doc__, file=sys.stderr)

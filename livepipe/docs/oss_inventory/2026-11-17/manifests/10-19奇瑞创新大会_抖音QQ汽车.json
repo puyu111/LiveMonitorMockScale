@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_抖音QQ汽车.json",
+  "generated_from": {
+    "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_抖音QQ汽车.json",
+    "oss_root": "/home/puyu/oss-bucket/直播data/录屏/10.19",
+    "disk_root": null,
+    "generated_at": "2026-11-17T00:00:00Z"
+  },
+  "segments": [
+    {
+      "seg": "seg1",
+      "disk": "/run/media/puyu/MyDisk/10.19/抖音/QQ汽车/9： 01-10： 10.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/QQ汽车/9： 01-10： 10.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3225200957,
+      "duration_s": 4196.599344,
+      "trim_s": null
+    },
+    {
+      "seg": "seg2",
+      "disk": "/run/media/puyu/MyDisk/10.19/抖音/QQ汽车/10： 10-11： 21.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/QQ汽车/10： 10-11： 21.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3225100149,
+      "duration_s": 4260.6418,
+      "trim_s": null
+    },
+    {
+      "seg": "seg3",
+      "disk": "/run/media/puyu/MyDisk/10.19/抖音/QQ汽车/11： 22-13： 00.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/QQ汽车/11： 22-13： 00.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3226017317,
+      "duration_s": 5924.943333,
+      "trim_s": null
+    },
+    {
+      "seg": "seg4",
+      "disk": "/run/media/puyu/MyDisk/10.19/抖音/QQ汽车/13： 01-14： 46.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/QQ汽车/13： 01-14： 46.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3226215437,
+      "duration_s": 6318.503078,
+      "trim_s": null
+    },
+    {
+      "seg": "seg5",
+      "disk": "/run/media/puyu/MyDisk/10.19/抖音/QQ汽车/14： 46-16： 31.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/QQ汽车/14： 46-16： 31.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3226333397,
+      "duration_s": 6338.552,
+      "trim_s": null
+    },
+    {
+      "seg": "seg6",
+      "disk": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/dy_qq_16-31-17-00_live.mp4",
+      "oss": null,
+      "trimmed": true,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 834998990,
+      "duration_s": 1730.474067,
+      "trim_s": [
+        0.0,
+        1730.474067
+      ]
+    }
+  ]
+}

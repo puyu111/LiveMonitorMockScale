@@ -573,3 +573,778 @@
   `locateanything_worker.py` 不在仓库里（本机在 `~/github/eagle/Embodied/`），只走 OCR 定位时不需要。
 - 根 `README.md`「环境」补了安装命令与说明，目录树补了 `requirements.txt` 一行；
   `mock_scale/requirements.txt` 保持不动（子集，单跑 mock_scale 更轻）。
+
+## 2026-11-10 猎鹰智驾瑞虎9羌塘无人区（渠道）2026-09-09 配置
+
+- 新增 `09-09猎鹰智驾_抖音.json` / `_快手.json` / `_视频号.json`；素材在外置盘
+  `/run/media/puyu/MyDisk/2026-09-09…/`。抖音 4 段（720×1560，201.3min）/
+  快手 4 段（720×1560×2 + 1968×3150×2，195.4min）/ 视频号 5 段（592×1280，225.7min）。
+- 用户明确要求「框要低一点，因为有的评论区顶部有虚化」⇒ rect y1 全部下移到渐隐带以下：
+  视频号 [0,760,592,1128] / 抖音 [0,790,620,1390] / 快手 [0,770,720,1390] +
+  [0,1600,1968,3000]。这是本批与 09-05/06/07 最大的差别。
+- 版式按素材重测：抖音 53.0 / y_phase 35 / x_text 96；快手 720 档 55.0 / 13 / 105；
+  快手大档 79.9 / 54 / 155 / x2_from=content；视频号 41.5 / x_text 34。
+- 三处录制尾部直播已结束（推荐页广告卡会被读成匿名评论）：用 PyAV **stream copy**
+  截到最后一个直播帧，得到 `out/…/media/{wx_morn_10-39-11-08_live,wx_eve_15-41-16-02_live,ks_eve_15-55-16-02_live}.mp4`。
+  PyAV 18 没有 `add_stream(template=)`，要 `out.add_stream_from_template(in_stream)`；
+  大档 1968×3150 用 `cv2.VideoCapture.set(POS_FRAMES, …)` 会返回 False，改用
+  `container.seek()` + 解码取最后一帧。
+- overlay 补充：视频号广告卡 `点击了解详情/广告/HER`；抖音顶部 `主播` 标签（OCR 读成
+  `土描`）；快手 `送出人气票|送出小可爱|送出粉丝团灯牌`、`0 0` 空白计数、
+  `来自搜索|来自开播提醒`。
+- 验证到 `check` + `panels` 落盘 + `--dry-run`（13 段全部展开正确、表情表路径命中）；
+  真实短切片尚未跑，下一位接手可直接全量抽行。
+
+## 2026-11-10 猎鹰智驾瑞虎9羌塘无人区（渠道）2026-09-08 配置
+
+- 新增 `09-08猎鹰智驾_抖音.json` / `_快手.json` / `_视频号.json`；素材在外置盘
+  `/run/media/puyu/MyDisk/2026-09-08…/`。抖音 6 段（720×1560，~347min，文件夹名
+  误写「快手」）/ 快手 7 段（720×1560×3 + 1968×3150×4，~344min）/ 视频号 6 段
+  （592×1280，~351min，末段直播自然结束、不用裁剪）。
+- 版式重测（每档 14 帧）：抖音 53.5 / y_phase 42 / x_text 96 / rect [0,770,620,1380]；
+  快手 720 档 55.0 / 30 / 105 / rect [0,740,720,1380]；快手大档 80.0 / 55 / 155 /
+  rect [0,1600,1968,3000] / x_ignore_from 1400；视频号 41.5 / 22 / 34 /
+  rect [0,675,592,1128]。rect y1 仍按「渐隐带下沿 + 10~20px」的既定偏好。
+- 快手晚场首段 `16：11-17：06.mp4` 中途上下翻转（前 260s 正立、之后整段倒置且**没有**
+  rotation 元数据；翻转发生在 260.0–260.5s）。在关键帧 260.6186s 处 `-c copy` 拆成
+  `media/ks_eve_16-11-17-06_a_upright.mp4`（260.6s）与
+  `media/ks_eve_16-11-17-06_b_rot180.mp4`（3056.6s，`-display_rotation 180` 写 rotation=-180）。
+  OpenCV 默认 `CAP_PROP_ORIENTATION_AUTO=1`，读 b 时自动转正，parse 无需额外处理。
+- 全批方向扫描（逐文件采样 10–13 帧，比较首帧与后续帧的横竖投影）确认其余素材无翻转。
+- 验证：三份 `check` 全过（快手 7 段展开正确）；截图 OCR 量右边界（抖音 577<620、
+  快手大档 1290<1400）；旋转副本做 120s 真实 parse，rows 干净、用户名与正文可读。
+
+## 2026-11-10 猎鹰智驾瑞虎9羌塘无人区（渠道）2026-09-10 配置
+
+- 新增 `09-10猎鹰智驾_抖音.json` / `_快手.json` / `_视频号.json`；素材在外置盘
+  `/run/media/puyu/MyDisk/2026-09-10…/`。抖音 4 段（720×1560，236.5min）/
+  快手 5 段（720×1560×3 + 1968×3150×2，237.7min）/ 视频号 4 段（592×1280，232.8min）。
+- 版式按素材重测：抖音 53.0 / y_phase 22 / x_text 96 / rect [0,850,620,1380]；
+  快手 720 档 55.0 / 30 / 105 / [0,780,720,1380]；快手大档 79.9 / 60 / 155 /
+  [0,1700,1968,3000] / x2_from=content；视频号 41.5 / 17 / 34 / [0,740,592,1128]。
+- 视频号两个素材文件夹名误写成「9.10快手…」，但内容是视频号（同 09-08 抖音文件夹
+  误写成快手）；配置按真实路径写，文件头注明，避免下一位按平台名猜路径。
+- 快手大档 seg4 部分时段有「粉丝农场」小游戏盖住评论列右半边：卡面文字最小左沿 751、
+  真评论被卡裁在 x2≤665 ⇒ `x_ignore_from=700` 整块丢掉卡面文字；另把
+  `粉丝农场|暂未加团|预存亲密值|加粉丝团送|Lv.\d+扩建|一键种菜|偷菜|一键施肥|种子`
+  写进 overlay_cards。
+- 视频号本批**没有**右侧广告/商品卡（四文件 60s 间隔扫描零命中）⇒ `x_ignore_from=null`。
+- 短切片（每平台 120s）真实 parse 发现快手 720 有 OCR 变体垃圾
+  `「官方扶持！` / `来白短视频` / `消风…丝团灯牌`，overlay_cards 补
+  `官方扶持|^来白|丝团灯牌|团灯牌` 后逐条复测命中、真评论不命中。
+- 已知边界：`N粉丝团` 药丸与昵称被 OCR 并成一个框时（`4粉丝团清风徐来：`，x1=126 >
+  x_text=105），前缀留在用户名里，`badge_alias` 只在同句有干净读法时归一；
+  配置层无开关，已在快手配置头记录，全量后按 users.jsonl 的 `*粉丝团*` 人工核对。
+- 验证：三份 `check` + 13 份 `panels.json` + 三份 `--dry-run` + 四个 120s 短切片 rc=0。
+- 四段真实短切片验证全部通过（`--only panels,parse`，rc=0）：抖音 720 35 条唯一评论 /
+  快手 720 12 条 / 快手 1968 旋转副本 24 条（正文干净、[火][赞] 可识别）/ 视频号 11 条。
+  4K 120s 切片约 21min（adaptive 顺序解码是瓶颈），720p 60s 约 5min。
+
+## 2026-11-10 艾瑞泽8CTCC职业联赛（上海站）（渠道七七）2026-09-13 配置
+
+- 新增 `09-13艾瑞泽8CTCC_抖音.json` / `_快手.json` / `_视频号.json`；素材在外置盘
+  `/run/media/puyu/MyDisk/2026-09-13…/`。抖音 3 段、快手 3 段、视频号 2 段，各约 4h。
+- 三平台都是 590/592×1280（与猎鹰批的 720×1560 / 1968×3150 都不同）：抖音 43.8 /
+  83 / 48 / rect [0,672,590,1189]；快手 45.0 / 81 / 47 / rect [0,668,590,1189]；
+  视频号 41.9 / 34 / 44 / rect [0,658,592,1190]。
+- 同赛事还有 `09-12CTCC_*.json`，但缩放不同（抖音 35 / 视频号 33）⇒ 模板结构可参考，
+  像素数字必须按当天素材重测。
+- 抖音末段、快手末段尾部是「直播已结束」页。找直播终点的可靠判据是**底部输入栏
+  `说点什么` 在不在**：结束页会先黑屏/直接出「猜你喜欢」，用「直播已结束」四个字
+  去找会判晚 2~3s（第一版抖音切到 1850.0、快手切到 4560.0，都多切了 2~3s）。
+  实测终点：抖音 1849.69s、快手 4557.44s，`-t <终点-0.2> -c copy` 重新裁。
+- 验证：三份 check 全过；8 份面板落盘；三段 60s 真实切片全 rc=0（抖音 14 / 快手 16 /
+  视频号 13 条唯一评论）。
+
+## 2026-11-10 艾瑞泽8CTCC职业联赛（上海站）（渠道七七）2026-09-12 配置
+
+- 新增 `09-12CTCC_抖音.json` / `_快手.json` / `_视频号.json`；素材在外置盘
+  `/run/media/puyu/MyDisk/2026-09-12…/`。抖音 2 段、快手 2 段、视频号 1 段（原片 193.6min）。
+- 三平台都是 590/592×1280，但缩放与本仓常见档位都不同：抖音行距 35.0 / 78 / 58 /
+  rect [0,655,590,1210]；快手 45.0 / 81 / 58 / rect [0,680,590,1200]；视频号
+  33.0 / 66 / 44 / rect [0,660,592,1190]（fan_badge_x_max 66）。
+- 抖音、视频号有打码昵称 ⇒ `account_key=nickname_level_if_masked`（自动开 badge_reread）；
+  快手昵称未打码 ⇒ `account_key=username`。
+- 尾部裁切：先用 cv2 `CAP_PROP_POS_MSEC` 采样得到 1507.5 / 1742.4 / 6905.6s，
+  **末帧仍带结束页**；改用 PyAV `container.seek` + **底部输入栏**（`说点什么`/`聊一聊`）
+  0.5s 二分，实测最后直播点 1505.34 / 1738.26 / 6903.02s ⇒ 各减 0.2s 重裁为
+  1505.1 / 1738.0 / 6902.7s。三份重裁后末帧 OCR 均仍有输入栏、无「直播已结束」。
+- 验证：三份 check 全过；5 份 panels.json 已落盘；三份 --dry-run 全过
+  （seg1+seg2 路径展开、表情表/面板文件/account_key 绑定均正确）。
+
+## 2026-11-11 · 09-10 视频号远程表情表
+
+- 远程 parse 要认表情，表目录里必须有 `img/`：只把 `wechat-emoji.json` 传过去，
+  109 条模板会全部 missing，parse 打「一条可用的模板都没有」并跳过表情识别。
+- `emoji.tables.<src>.build.enabled` 默认 false ⇒ run.sh 的预建表步骤只会打「跳过」。
+  想让远程自建：配置里打开该开关；服务器到 codeload.github.com 实测可达（4.7MB / 2s）。
+- 建表无图片缓存，`build.enabled=true` 时每次 run.sh 都会重下；不想刷新用
+  `LIVEPIPE_SKIP_EMOJI=1 ./run.sh …`。
+
+## 2026-11-11 · 09-10 及以后配置统一打开远程建表
+
+- 已确认服务器能跑的建表源：抖音官方接口（`www.douyin.com/aweme/v1/web/emoji/list`，
+  214 张，约 1 分钟）、快手 `live.kuaishou.com`（207 张）、视频号 codeload tarball（109 张）。
+- 抖音脚本直接跑要带 `--api`（不带会落 DOM 解析分支，报「没抽到任何表情 URL」）；
+  pipeline 的 `build_emoji_args` 会自动填 API_URL，不用手写。
+- 09-10/09-12/09-13/10-31 的抖音 4 份、视频号 3 份已补 `emoji.tables.<src>.build.enabled=true`；
+  快手 4 份原本就是 true。10-31 的素材在外置盘 `A1B7-2982`，不挂载时 check 会报文件不存在。
+
+## 2026-11-11 · 09-14 艾瑞泽8CTCC 三平台配置
+
+- 素材 10 段，全部 590×1280（视频号这批也是 590，不是 09-13 的 592）。
+- 抖音（3 段）：43.8 / y_phase 26 / x_text 84 / badge_span 50 / rect [0,668,590,1190]；
+  右侧商品讲解卡 x1≥392 ⇒ x_ignore_from 380；尾部输入栏最后 2805.37s。
+- 快手（3 段）：45.0 / 18 / 81 / 47 / rect [0,655,590,1200]；评论满宽到 558，
+  不设 x_ignore_from；送礼卡 `送出11个人气` 常断成 `票爵`/`票等` ⇒ overlay 用
+  `送出.*人气` + `^票[爵等]?$` 兜底；尾部最后 3711.97s。
+- 视频号（4 段）：41.9 / 14 / 64 / 46 / rect [0,686,590,1190]；wrap_gap_ratio **0.75**
+  （续行 22.5~26.5px、独立行 34.5~42.5px，0.85 会把独立行误并）；
+  fan_badge_x_max **90**（`粉丝橙子君` 行文本块被抬到 x1=85）；x_ignore_from 350；
+  overlay 加糊掉的系统行 `天注了王播`；尾部最后 1335.30s。
+- 三份末段都是 PyAV 流拷贝裁到「最后输入栏 −0.2s」：2805.2 / 3711.8 / 1335.1s。
+- 校验：check 全过、10 份 panels.json、dry-run 全过。
+
+## 2026-11-11 · 09-15 艾瑞泽8CTCC 三平台配置
+
+- 本批是**上午 + 下午两场**：抖音 5 段、快手 4 段、视频号 5 段，全部 590×1280。
+- 抖音：43.8 / 26 / 84 / 50 / rect [0,668,590,1190]（商品讲解卡 x1≥391 ⇒ x_ignore 380）。
+- 快手：45.0 / 15 / 81 / 47 / rect [0,655,590,1200]；top 渐隐带到 652，首条评论顶 659。
+- 视频号：41.9 / 14 / 64 / 46 / rect [0,686,590,1190]；wrap_gap_ratio 0.75
+  （续行 23.5~27px、独立行 39~42.5px）；fan_badge_x_max 90；底部左侧广告卡走 skip/overlay。
+- 每个平台的**上午场末段 + 下午场末段**都要裁：输入栏最后出现点（相对各段起点）
+  抖音 2981.91 / 2479.38s、快手 1235.72 / 5027.37s、视频号 2639.22 / 2190.02s
+  ⇒ 各减 0.2s 流拷贝成 6 份 `media/*_live.mp4`，末帧 OCR 全部仍有输入栏。
+- 校验：三份 check 全过、14 份 panels.json、dry-run 全过（exit=0）。
+
+## 2026-11-11 · 奇瑞2026全球创新大会（CGIC 2026·芜湖）抖音配置
+
+- 素材 `/run/media/puyu/MyDisk/2026-1019-1024奇瑞创新大会/抖音-奇瑞汽车/`：4 段
+  （590×1280，7：58~13：15 连续录屏，96.7/75.9/77.8/66.9min）；只有抖音一个平台；
+  末段末帧仍在直播（输入栏在）⇒ 不需要裁「直播已结束」页。
+- 抖音：行距 43.8 / y_phase 22 / x_text 86 / badge_span 74 / wrap_gap_ratio 0.85 /
+  rect [0,672,590,1196] / x2_from=content / x_ignore_from 380（商品讲解卡 x1≥390）。
+- 顶部要小心两样东西：① 视频画面到 y≈591，y≈522 的「!CHANGE! 2026奇瑞全球创新大会」
+  是**视频里的下三分之一横幅**（OCR 会读成 `ICHANGE：…`，看着像置顶评论，其实在视频区）；
+  ② 评论列表顶部有 ~70px 渐隐带（半透明行，OCR 仍能读出零碎字），到 y≈672 才全亮
+  ⇒ rect y1=672（用户口径「框要低一点」）。
+- 开头 4 分钟只有平台提示卡/三方工具卡/主题卡（全无冒号）：折行后是 8 块，每块都要有
+  一个短语命中，否则残块会变成匿名评论 —— overlay_cards 补
+  `直播或礼物消费|严禁出现违法违|明示信息为准|工作人员高效回应|在不当方式|当科技切实改变生活|价值才能真正体现`；
+  系统行的 `分享了直播|推荐了直播` 也不在内置表里，一并补。
+- 续行 x1 26~35（< 86−58+8=36 ⇒ 走贴左沿分支，不需要 wrap_indent）；续行间距
+  27.5~32px=0.63~0.73、独立行 41~43=0.94~0.98 ⇒ wrap_gap_ratio 0.85。
+- 校验：`livepipe check` ✔、`--only panels` 写出 4 份 panels.json、`--dry-run` 全过。
+- 试跑（seg1 t=600~780s、10 帧）：`--only panels,parse` 出 6 条评论，多行续行正确并成一条
+  （sockets 7/7.5、9/10），`分享了直播`/`来了` 全部丢掉，无匿名碎片行；本机 ~30s/帧
+  （10 帧 309s ⇒ 全量 5.3h 抽行要跑很久）。
+
+## 2026-11-11 · 「汽车人老章」A9拆车（渠道七七）2026-09-16 配置
+
+- 只读素材 + 量版式 + 写配置，未跑全量。两平台同手机同 App：590×1280、无旋转。
+- **PyAV seek 的坑（本次踩过）**：`container.seek(offset, stream=st)` 的 offset 单位是
+  **stream.time_base**（本批 1/90000），不是微秒。按微秒传会让每次 seek 都落到片尾，
+  不同时间点抽出来的帧完全相同（假象：评论内容 40 分钟不变）。正确写法
+  `c.seek(int(t / float(st.time_base)), stream=st)`，随即 `decode` 到 `pts>=t`。
+- 抖音评论区顶部是**逐行渐隐**：实测 880~918 的白字 p99.5 只有 185~206，920 起 250~255
+  ⇒ rect y1=920。视频号**无渐隐**：最上面一条真评论顶 ≈762（系统行 `送出粉丝牌`），
+  650~750 读到的是**视频里的手机屏幕文字**（`责任免球款以官方`），不是评论 ⇒ y1=740。
+- 两平台打码/不打码昵称混杂（`滨**` + `期待sj` + `Try`）⇒ `nickname_level_if_masked`，
+  `badge_reread` 不写（自动绑定为开）。
+- 抖音 overlay 本批要补：`分享了直`（OCR 常把「播」吃掉）、`加入粉丝团`、
+  `等\d+人在说`、`人在说`、`官方提示`；视频号补 `加入粉丝团|送出粉丝牌|等\d+人在说|人在说`。
+  补后 60s 切片 69 → 63 条，系统行清零；残留 1 条：分享通知被当续行并进上一条评论。
+- 试跑会把 `--dump-rows` 的 rows.jsonl 写进**真实段目录**（build_parse_args 的 odir 来自
+  seg["out"]），60s 的 rows 留在那里会让正式跑误判成「已抽完」 —— 试跑后必须删
+  `<段>/{抖音,视频号}/seg1/rows.jsonl`。
+- 尾部：抖音 seg5 直播在 131.88s 结束（入口栏判据），裁到 131.7s；视频号 seg6 在 515.31s
+  结束，裁到 515.1s；末帧 OCR 均仍有输入栏。
+
+## 2026-11-14 · 09-22 视频号三份批次本地批量跑（batch_local）
+
+- 本地解释器用 vlx（`/home/puyu/anaconda3/envs/vlx/bin/python`）；`batch_jobs.local.json`
+  的 `conda_env` 不写会退回 base，base 没装 `rapidocr_onnxruntime`。
+- 首次崩溃留下的 **0 字节 rows.jsonl** 会被当成「已抽完」⇒ 0 条评论、qualify 报无用户表。
+  `paths.segments()` 已改为 size>0 才算；非空的试跑残留仍需手动删（见 11-11 记录）。
+- `run.sh` 的 conda 激活块必须 `set +u`：vlx 激活钩子引用未绑定的 `NVCC_PREPEND_FLAGS`，
+  `set -u` 会让整段激活中止（batch_local.py / upload_livepipe_ssh.py 已修）。
+- 相对路径 `input.videos`（项目 out/ 下的裁切副本）不再需要 `--video-dir`；
+  `link=true` 时同盘素材用硬链接（16.6 GB 秒过），跨盘自动退回复制。
+- `--retry-failed` 现在能真正重启 `phase=failed/stale` 的任务；`--overwrite` 会强制重新
+  组装并重写 `run.sh`。
+
+## 2026-11-15 · 渠道账号清单 xlsx 拆成可用名单
+
+- 源表 `撞库名单/【渠道】账号清单截止10.20.xlsx`：22 个 sheet（9.5–10.25），一天里常有多场
+  （上午/下午）、多个直播账号（`抖音-奇瑞汽车` / `视频号-风云新能源` / 渠道张/刘…），
+  9.22 一个 sheet 有 5 块、10.20 有 6 栏。`livepipe match` 的 `platform_label` 只认表头
+  正好是 `抖音/视频号/快手/微博`（或 `抖音号` 等别名），`_find_header` 只取第一块 ⇒
+  整表直接喂会找不到平台列或只撞到上午那一块。
+- 新增 `撞库名单/split_account_lists.py`（显式块坐标，不猜），产出
+  `撞库名单/可用名单/<MM-DD>/<slug>.csv` + `<slug>_<平台>.txt` + `README.md` / `manifest.json`。
+  共 32 份场次名单；CSV 平台列之间留空列（`序号,抖音,,序号,视频号`），否则 `_pick_column`
+  的 right 分支会把隔壁表头当人名。
+- 清洗：NFKC、去 `@` 前缀、去 9.14 视频号列的 `1.`/`2.` 行首编号、首尾空白/` `/`\xa0`/
+  零宽字符；**保留**变体选择符（`❤️`）和名字里的标点（`辉、`/`南风过境。`）。同一平台内
+  按 `normalize_name` 去重。
+- 校验：32 份 CSV/TXT 全部用 `list_match.sources.read_name_list` 回读，人数与 manifest 一致；
+  `match --selftest` 106 项全过；09-16 实跑 CSV 与 TXT 结果一致（抖音 20→17 命中、
+  视频号 20→14，`幽兰戴尔/黛尔` 是已知阈值问题）。
+- 已知缺口：09-13 抖音/快手、09-22 三个平台在仓库里还没有 `all_users_*` 交付树；9.30–10.6、
+  10.20/10.24/10.25 没有对应 out 批次。README 已逐条标注。
+
+## 2026-11-15 · 新增 `livepipe verify`（核对 run 产物是否完整）
+
+- 用户要「检查 livepipe run 跑的结果是否完整」。新增只读子命令
+  `python -m livepipe verify <cfg.json>`（`tools/verify_run/`，薄壳 `verify_run.py`，
+  `__main__` 注册）。按 `steps.order − skip`（再叠加 `--only/--skip`，`--only` 会像 run
+  一样强制打开 enabled=false 的步骤）逐项核对盘上产物。
+- 硬错误：comments.jsonl 缺失 / 坏 JSON / 与 summary.unique_comments 不一致、summary.rows=0
+  但有评论、**0 字节 rows.jsonl**（已知崩溃残留）、users.jsonl 缺失、merged_users.json
+  缺失或 n_qualified≠len(users)、各段 users_qualified 并集与 merged 对不上、
+  export/collect 树缺目录/缺图/计数不符、**合格账号没进交付树**。
+- 警告：0 条评论 / 0 个用户、判定缓存缺失、正面数低于本步阈值（旧阈值产物）、
+  frames/ 为空、上下游文件偏旧（parse 重跑后没跑 filter/export/collect 等）、
+  export 平台目录名不一致（`douyin_app_480` 这类自定义档案名没映射成「抖音」）。
+- 提示/不算错：summary 缺 frames_sampled（旧版 parse）、summary.video 与配置不同或不可达
+  （远程 batch / 素材盘没挂载）、标注图张数 < frames_drawn（同一 t 的多条评论共用一张图）。
+- 素材盘没挂载：`config.load(..., check_videos=False)` 不校验 input.videos 存在；
+  verify 读配置失败会自动退回宽松模式。所有 `Path.exists()` 都换成安全包装，
+  权限不足（`/root/...`）不再抛异常。
+- 自检 24 项（临时目录造完整 run，再逐个弄坏：缺 comments/0 字节 rows/缺
+  users_qualified/缺图/合格账号不在树/summary 不一致/坏 JSON/--strict 退出码/--json）。
+- 真语料扫了全部根目录配置：09-16 抖音、10-31 三平台、09-14 抖音等判完整；
+  09-07 抖音 seg1/2、09-16 视频号 seg4、09-05/06/14 快手 seg1 等命中 0 字节 rows 的
+  真实缺口；09-08 系列报「users_qualified/manifest 比下游旧」的断链。判定与盘上事实一致。
+
+## 2026-11-15 · 未命中名单的最近账号也导出标记图
+
+- 用户要求：「未命中名单最近匹配度的，在标记图单独的文件夹展出」。实现为
+  `标记图/未命中/<平台>/<名单名>/<账号目录>/`，与命中图完全分开。
+- `matching.py` 的 `unmatched[].best` 从 4 个字段扩到与 `matches[]` 同形
+  （`level/in_delivery/n_comments/n_positive/count/segs/first_image/dir_exists`），
+  这样导图逻辑可以复用：交付的直接复制，仅直播的交给 `render_missing` 现补。
+- `report.export_images` 与 `render.render_missing` 都拆出「两拨」：命中一拨、未命中最近账号一拨；
+  `render_missing` 的 `accounts/images/skipped/segments` 只统计命中，`unmatched_*`
+  单独计数，避免终端摘要把两拨混在一起。
+- HTML 未命中表新增「最近图」列，链接 `../标记图/未命中/…`。
+- 修复：`_resolve_video` 的 `Path(video).is_file()` 在 `/root/...` 会抛 `PermissionError`，
+  导致 `--video-map` 永远轮不到；改成 `_isfile()` 包装 `OSError`。
+- 验证：`match --selftest` 118 项；09-16 抖音 `--delivered-only` 实跑 2 个未命中各出 8 张；
+  用真实视频 + `--video-map` 验证仅直播的命中与最近账号各现补 1 张。
+
+## 2026-11-15 · verify 增加「视频时间 × seg 时间」核对
+
+- 用户要求检查「视频时间和 seg1 时间是否一致」。口径落在**段视频文件名里的时间区间**
+  （`19：40-20：20`，batch 命名里的 seg 时间）× **实际视频时长**（`ffprobe format.duration`）。
+- 解析支持实际出现过的写法：`19：40-20：20`、`09.09-11.57`、`16： 00-17 25`（空格当冒号）、
+  `16：011-19：00`（多打一位）、`12：29-15-19`（终点用连字符）；裁剪副本 `..._live.mp4`
+  没有区间就跳过。
+- 判定：实际**短于**区间超过容差（默认 120s）⇒ 错误（少录一段/文件不是这一段）；
+  实际**长于**区间 ⇒ 警告（常见于录尾带推荐页/花絮）。`creation_time` 只作参考信息
+  （可能是复制/转码时间；09-13/14 就有 3~4 小时偏差），不参与判定。
+- 选项：`--time-tolerance SEC`、`--no-media-time`、`--video-map 旧前缀=新前缀`
+  （素材盘挪位置，如 `/home/puyu/work/data=/run/media/puyu/MyDisk`）。
+- 真实验证：09-07 快手 seg4 文件名 `14：30-17：23`（173min）实际只有 53.13min，
+  creation_time 17:24 正好对着区间终点 ⇒ 判 fail（这是已知的文件名写错）；
+  09-16 抖音/视频号各段差 ≤40s 判 ok；09-13 视频号 seg1 的 `12：29-15-19` 能正确解析。
+- 自检 36 项（新增时间解析 6 种写法 + 短/长/容差三种判定 + 集成 seg1 fail/seg2 ok +
+  `--no-media-time` 不产检查）。
+
+## 2026-11-15 · 素材盘迁移：8 份配置的视频路径改到 MyDisk
+
+- 旧前缀 `/home/puyu/work/data/`（09-05 风云A9L、09-06 三平台、09-07 快手/视频号）
+  和 `~/LiveMonitorMockScale/data/`（09-07 抖音）已不存在；实际素材在
+  `/run/media/puyu/MyDisk/<同一批次>/...`。
+- 按「旧前缀 → 新前缀」替换 34 个 `input.videos` 路径常量，并同步 8 处文件头注释；
+  目标文件逐个确认存在。改完 `C.load` 严格模式全部通过。
+- 仍在未挂载的 `/run/media/puyu/A1B7-2982` 且没有同名新文件：`08-08CTCC*`、`10-31_*`、
+  风云A9L 年型车（`风云A9L_*.json`）、08-10 艾瑞泽8PRO / 08-26 风云T7 等 glob 配置 —— 未动。
+- 验证：`verify` 不传 `--video-map` 也能跑视频时间核对了；09-07 快手 seg4 仍报
+  「文件名 14:30-17:23 = 173min，实际 53min」的真实问题。
+
+## 2026-11-15 PLATFORM_CN 补档案名别名（平台名不一致警告清零）
+- 病因：09-06/09-07/09-09/09-10 快手、09-07 抖音、09-22 微博的配置给新版式起了档案名
+  （`kuaishou_480` / `kuaishou_720` / `kuaishou_large` / `douyin_app_480` / `weibo_app`）
+  当面板 platform，两处 `PLATFORM_CN`（`tools/export_user_images/common.py` 与
+  `tools/verify_run/common.py`，要求逐项一致）没收 ⇒ 段级导出目录用了档案名，
+  collect 报「平台名不一致」警告。
+- 处置：两处 PLATFORM_CN 各补 5 个别名 + 自检 5 条断言；盘上 24 个段级导出目录
+  直接 `mv` 成中文名（manifest 的 `rel` 不含平台段，改名安全；批次级交付树本来就在中文名下）。
+- 验证：09-06 快手、09-10 快手、09-22 微博 → 0 错误 0 警告；09-08/09-09 快手剩
+  「manifest 比 users_qualified 旧」的 mtime 警告（上一轮重跑 qualify 留下的，计数对得上）；
+  09-07 抖音 seg2 仍是已知的 0 字节 rows.jsonl 残留，待补跑 parse。
+
+## 2026-11-15 补跑 09-14 视频号 / 09-16 视频号 的 0 字节残留段
+- `09-14艾瑞泽8CTCC_视频号` seg1/seg2 与 `09-16老章拆车_视频号` seg4 都是 0 字节
+  rows.jsonl 崩溃残留；用 vlx 解释器跑 `--only panels,parse` 后接
+  `--only filter,qualify,export,collect`，两批 verify 全绿。
+- 交付树：09-14 视频号 30/437 → 40/562；09-16 视频号 36/407 → 48/553。
+- 注意 shell 默认 python 是 anaconda base（没有 rapidocr_onnxruntime），跑 parse 必须用
+  `/home/puyu/anaconda3/envs/vlx/bin/python`；verify 用 base 也能跑。
+- 09-07 视频号 seg1 仍缺 filter 重跑（parse 已新，users.jsonl 旧）。
+- 09-07 视频号 filter 链已补：seg1 合格用户 0→20，交付树 40 账号不变、图 896→1070。
+
+## 2026-11-16 全量撞库跑完（21 场）
+- 18 场常规批次 + 09-22 三份名单，合计名单 1546 人 / 命中 1139 / 未命中 407 / 命中账号 1632；
+  标记图 1138 账号目录 · 22784 张，未命中最近图 359 账号目录 · 2923 张；74 个 HTML，0 坏链。
+- 09-05风云A9L、09-06、09-07 之前补图失败的原因：重跑脚本的 `--video-map` 只覆盖
+  `/root/livepipe_batches/...`，漏了 `/home/puyu/work/data/...` 这一历史前缀。补上
+  `/home/puyu/work/data=/run/media/puyu/MyDisk` 后 5 个场次重跑，补图缺口全部消失。
+- 09-05猎鹰上午仍有 11 个仅直播命中 + 4 个未命中最近账号无图：素材在未挂载的 A1B7-2982。
+- 09-22 批次是 `平台/子账号/segN` 多层布局，`discover_platforms` 不认；在批次下建
+  `.撞库合并/` 虚拟树（`<子账号>__<账号目录>`、`segN__<子账号>`、合并 manifest/judgments），
+  match 直接吃。三份名单 17 / 89 / 305 人命中；HTML 场次名用 `--title` 覆盖成批次名，
+  否则会显示目录名「撞库合并」。旧名 HTML 已删。
+- 剩余 11 块名单（09-30 ~ 10-25）没有对应直播产物，无法撞。
+
+## 2026-11-16 1019-1024 奇瑞创新大会抖音撞库
+- 本批已解析完（4 段、11388 条评论、414 交付账号 / 3645 图），可直接撞。
+- 名单：仓库没有「创新大会」专列，用渠道表 10.20 sheet 的 `10-20_主名单`
+  （抖音 144 / 视频号 327 / 微博 40）。依据：素材 creation_time = 2026-10-20 09:35(+08)，
+  与 10.20 场对应。本批只有抖音 ⇒ 视频号/微博跳过。
+- 结果：命中 70 / 未命中 74 / 命中账号 109（仅直播 52）；标记图 121 目录 1076 张，
+  未命中最近图 81 目录 114 张；补图 0 失败。HTML 180 条链接 0 坏链。
+- 补图必须带 `--video-map /root/livepipe_batches/1019-1024奇瑞创新大会_抖音/videos=/run/media/puyu/MyDisk/2026-1019-1024奇瑞创新大会`。
+
+## 2026-11-16 09-05 起交付目录补材料
+- 目标根：`/home/puyu/github/LiveMonitorMockScale/out`；只处理 2026-09-05 及之后的场次。
+- 交付目录 = `all_users_正面_3张以上`。标准布局在 `<场次>/<平台>/`，09-22 多账号在
+  `<场次>/<平台>/<子账号>/`；`seg*/…all_users_正面_1张以上` 是分片中间产物，
+  `.撞库合并/` 是隐藏虚拟树，本轮均未写。
+- 47 个目录全部用 `/home/puyu/脚本/write_delivery_materials.py` 写入，3418 用户 / 43813 图，
+  真图 0 假图；run-id = `<场次>_<平台>`，09-22 为 `<场次>_<平台>_<子账号>`。
+- 交付材料两处都放：`all_users_正面_3张以上/` 内 + 平台/账号目录根下（用户要求从
+  `<场次>/<平台>/` 直接能看到 `交付清单.txt` / `summary.json`）。
+- 完整性告警 2 处：09-22 抖音/QQ汽车 manifest 的 `_蜜桃气泡-9`、1019-1024 抖音 manifest 的
+  `_秋水伊人_-4`，磁盘上均不存在。
+- 09-05风云/抖音 平台根下 10:28 误跑出的 0 用户材料，已被正确版本覆盖。
+
+## 2026-11-16 2026-0930-1006《全球车的中国路》配置
+- 素材 52 段（9.30–10.06 三平台）在 `/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/`；
+  生成 16 份 `MM-DD_全球车的中国路_*.json`，输出到 `out/2026-0930-1006全球车的中国路/<MM-DD>/<平台>`。
+- 目录名不可信：9.30 的「快手/」「视频号/」互换；10.02「快手/1」里是抖音录屏。先 OCR
+  `聊一聊` / `人气榜` / `小时榜+L1成就馆` 判实际平台再分组。
+- 21 段原片尾巴是「直播已结束」推荐流（最长 3.5h）；按 OCR 短语 5min 网格 + 15s 二分找
+  直播区间，`ffmpeg -c copy` 裁到 `_live/`（29GB，外置盘）。
+- 视频号 rect 顶端要抬到场次横幅（`第N站（…）：…`）之下：横幅带冒号，会被当评论；
+  右下「若主播7天…提醒一次」订阅卡 x1≈450 ⇒ x_ignore_from=440 才丢得掉。
+- 几何：抖音 44.0/86；快手 42.0/81（wrap_indent、wrap_gap 0.85）；视频号 41.0/66（badge_span 44、fan_badge_x_max 66）。
+- 三平台 120s 试跑通过；简历口径 account_key=username（打码只是零星系统名）。
+
+## 2026-11-16 全球车的中国路：16 份配置分到 5 个 batch 队列
+- 队列文件在 `/home/puyu/脚本/ssh/`：`batch_jobs.local.json`（本地 A，4 任务）、
+  `batch_jobs.local 2.json`（本地 B，3 任务，改用 `batch_jobs.local2.state.json` 以便与 A 并行）、
+  `batch_jobs.json`/`batch_jobs1.json`（远程队列 1，state1，3 任务）、
+  `batch_jobs2.json`（远程队列 2，state2，3 任务）、`batch_jobs3.json`（远程队列 3，state3，3 任务）。
+- 每个任务名 = repo 根的 livepipe 配置名（如 `10-01_全球车的中国路_抖音`）。
+- 所有任务都加了 `upload.only_referenced_videos: true`：素材根是整批目录（300GB+），
+  不加会把整盘传上去。本地两份队列的 upload 默认也改成 true。
+- 分发按直播时长粗平衡：远程 16~18h/队列，本地 7.4h / 12.3h。
+
+## 2026-11-16 奇瑞「探秘局」2026-10-24（视频号）配置
+- 素材 `/run/media/puyu/MyDisk/奇瑞探秘局/` 只有视频号 4 段（590×1280，创建时间 2026-10-24）；
+  新建 `10-24奇瑞探秘局_视频号.json`，输出 `out/2026-10-24奇瑞探秘局/视频号`。
+- seg2（9:41-10:25）直播只到 1432.10s、seg4（14:10-14:39）到 1332.44s，之后是结束页；
+  用 seg1 底部输入栏 `聊一聊` 模板做 NCC 二分 + 顺序解码定位，`ffmpeg -c copy` 裁到
+  `out/2026-10-24奇瑞探秘局/media/`（1431.9s / 1332.2s），末帧仍有输入栏。
+- 量到：行距 41.5、y_phase 33（rect y1=660）、x_text 64、badge_span 46、
+  wrap_indent + wrap_gap 0.75（续行 25~26.5px）、rect [0,660,590,1190]、
+  x_ignore_from 350、account_key=username（0 条打码昵称）。
+- 顶部反诈卡（`通知` + 6 行提示）和主题卡（`主题` + CTCC 名称）用 overlay_cards +
+  skip_phrases 清掉；seg3 t=240 切片验证只剩 1 条真评论。seg1 t=1500 切片 14 条评论、
+  0 用户名未识别。
+- ⚠ 测量脚本 seek 坑：PyAV `container.seek(offset, stream=st)` 的 offset 单位是**流时间基**
+  （1/90000），不是微秒；用 `seek(int(ts*1e6), stream=st)` 会跳到 11 倍位置。只传时间
+  不传 stream 才是微秒。本次因此重测了一遍版式。
+
+## 2026-11-16 奇瑞全球创新大会 2026-10-19（6 个账号 × 6 份配置）
+- 素材 `/run/media/puyu/MyDisk/10.19/`：抖音 QQ汽车/奇瑞汽车/风云新能源 + 视频号
+  奇瑞QQ/奇瑞汽车/风云新能源汽车，每个账号一条 9:00–17:00 的完整直播（合计约 48h）。
+- 六条流**都在 ≈17:00 结束直播**，录制文件尾部是「直播已结束」页到 17:04–19:40。
+  用各自底部输入栏模板（`说点什么` / `聊一聊`）做 NCC 二分 + 顺序解码定位最后直播帧，
+  `ffmpeg -c copy` 裁到 `out/2026-10-19奇瑞全球创新大会/media/`（6 个副本，末帧均有输入栏）。
+- 版式只有 3 套：抖音普通（QQ汽车/奇瑞汽车）43.8 / x_text 86 / rect [0,600,590,1196]；
+  抖音大字号（风云新能源）58.5 / x_text 98 / rect [0,635,590,1196]；
+  视频号 41.5 / x_text 64 / rect [0,650,590,1190]（奇瑞汽车 592 宽）。
+  昵称普遍有打码 ⇒ 全部 `account_key=nickname_level_if_masked`。
+- 6 份 `check` / panals / dry-run 全过；60s 切片每账号都有可读评论。
+  过滤词补了两个 OCR 变体：`^康家车米了$`（风云新能源）、`直描`（视频号奇瑞QQ 的 `赞了直播`）。
+- 老 `1019-1024奇瑞创新大会_抖音.json` 的素材目录已不在盘上；10-19 这批更完整（8h），
+  归档到 `out/2026-10-19奇瑞全球创新大会/`，不复用旧交付树。
+- ⚠ 改配置里的平台档案（overlay_cards / skip_phrases 等）后，**必须重新生成
+  `<段目录>/panels.resolved.json`**（`build_parse_args(cfg, seg=s)` 或跑一次 `--only panels`），
+  否则 parse 仍读旧的 resolved 文件，改词不生效。本次 `康家车米了` / `直描` 就踩过。
+
+## 2026-11-16 奇瑞「探秘局」2026-10-25（视频号）配置
+- 素材 `/run/media/puyu/MyDisk/10.25/下午/` 只有视频号下午 2 段（590×1280，创建时间
+  2026-10-25 15:17 / 15:55 = 文件名结束时间）：`14： 01-15： 17.mp4` 76.5min 直播到末尾；
+  `15： 17-15： 55.mp4` 直播在 **1781.97s** 结束，之后是「直播已结束」推荐页。
+- seg2 用输入栏 `聊一聊` 模板 NCC 逐 0.05s 采样（1781.95=0.9999、1782.00=0.438），
+  `ffmpeg -t 1781.8 -c copy` 裁到 `out/2026-10-25奇瑞探秘局/media/wx_pm_15-17-15-55_live.mp4`，
+  末帧 NCC=0.998；seg1 全程都有输入栏，不裁。
+- 版式与 10-24 同机同版：41.5 / y_phase 33 / x_text 64 / badge_span 46 /
+  rect [0,660,590,1190] / wrap_gap_ratio 0.75 / x_ignore_from 350 / account_key=username。
+- 60s 切片（interval 3s、20 帧）：seg1 15 条 / seg2 12 条唯一评论；`[强]×3` 正常。
+  seg2 出现 `赞了直播` 的 OCR 变体 `资了直描` ⇒ overlay_cards 补 `直描`（同 10-19）。
+- ⚠ 用 `--print-config` 生成临时切片配置时，**必须删掉所有 `_` 开头的内部键**
+  （`_videos` / `_segments` / `_judgments_cache`）：`segments()` 优先读 `_segments`，
+  不删就会忽略你改的 `input.videos` / `output.dir`，直接跑原始整段。本次误触发了一次
+  seg1 全量 parse，留下部分 `rows.jsonl`（1811 行 / 前 1126.8s），正式跑可 `--resume` 续用。
+- 已知残留（短切片）：seg1 2 条用户名未识别、`住妮`（佳妮误读）、`）沫沫` 前缀；
+  全量多帧见证后应改善。撞名单 `撞库名单/可用名单/10-25/10-25_探秘局_昵称.txt`（20 个）。
+
+
+## 2026-11-17 迁移 out/ 到外置盘 `/run/media/puyu/C0DE6A4BDE6A39B4/out/`
+- 源：`/home/puyu/github/LiveMonitorMockScale/out` = 161 GiB（474,223 文件 /
+  170,809,653,134 字节 / 20,306 目录 / 1,113 个绝对符号链接）。目标文件系统为 NTFS（ntfs3），
+  199G 可用、预检无非法文件名/大小写冲突、支持符号链接。`rsync -aH --info=progress2`
+  约 16 分钟（~174 MB/s），退出码 0；文件数/字节数一致，40 个跨目录随机抽样 MD5 全同。
+- 目标树内改写：527 份 json/jsonl + 63 份 md/yaml（含 `dataset_v1/v2/data.yaml` 的 `path:`）
+  里的 `/home/puyu/github/LiveMonitorMockScale/out` → 新根；1,113 个符号链接重定向；`.log`
+  属历史记录未动；改写后 json 全部可解析、无悬空链接。随后删除源目录（本地释放 ~161G）。
+- 仓库配置：82 份根 `*.json` + `livepipe/*.json` 的 `"out/…"` 全部改绝对新根；所有根配置与
+  `livepipe/征服8.json`、`livepipe/风云T7.json` 加 `"base_dir": "/run/media/puyu/C0DE6A4BDE6A39B4"`
+  —— 因为 `DEFAULTS.emoji.tables.*.path` 仍是相对 `out/…`，没显式 path 的配置靠 base_dir 落盘。
+  代码默认值（`livepipe/config/defaults.py`、`paths._auto_out_dir`）**故意不改**：仍是相对
+  `out/`，由配置 base_dir 决定落点。
+- `mock_scale` 数据/基线：`eval/baseline*.json`、`mock/data/body_measure.json`、
+  `expand/expand_produce.快手.config.json`、`mock_scale/out/*/report.json` 同步；`livepipe/docs/dataset.html`
+  里的示例 YAML 也同步。`livepipe/examples/*.json` 是模板，保留相对 `out/`。
+- 校验：`livepipe.config.load(check_videos=False)` 88 份中 77 份加载通过，`output.dir` 与 emoji
+  路径全部新根；11 份失败与改动前完全一致（08-09CTCC/8PRO/风云A9L/风云T7/征服8 等历史配置
+  缺 `input`，livepipe/csj 的 `panels.example.json` 本就不存在）。
+
+## 2026-11-17 直播看管 OSS 化技术方案
+- goofys 已挂在 `~/oss-bucket`（0.24.0，北京，`-f` 跑在 pts/10）；OSS 里已有录屏：
+  0930 批次 54 文件/133.4GB、1019 批次 30 文件/86.8GB，`直播产生结果` 为空。
+- 22 份配置（16 全球车 + 6 个 10-19）共 82 段引用：55 段按字节大小 1:1 命中 OSS；
+  27 段是裁尾引用（21 个 `_live` 29GB + 6 个 1019 media 8.9GB），需补传 37.9GB。
+- 本机实测：goofys 写 9.4–12.5MB/s、冷读 6.6MB/s、小文件 10–13 个/s；128MB 文件 rename
+  0.15s（服务端完成）；symlink ENOSYS、hardlink EPERM、`utime` 忽略、statvfs 假 1PB；
+  OSS SDK 单 PUT 5.8MB/s，multipart init/part 可用但 list/abort 403
+  （`oss2.resumable_upload` 会失败）。
+- 方案：dypy 直播直写 OSS（`.part` → rename）；计算读 goofys，结果先落本地 NVMe、任务完成
+  用 size+sha256 同步 OSS；录屏单一副本；`.撞库合并` 的 1,113 个软链不能上 OSS。
+- 环境基线：任何机器需 bypy 1.8.9（百度，`/直播录屏` 已有 10.20上午/下午、10.21–10.25、
+  11.10/11.12 风云T7；配额 14.103TB/已用 1.479TB）+ goofys 0.24.0（静态二进制 + fuse3）。
+  新机器搬 `~/.bypy/bypy.json` 与 `~/.aws/credentials`（0600），跑健康检查后再接队列。
+  技术方案在 `livepipe/docs/oss-migration.html`。
+
+## 2026-11-17 · OSS P0 映射清单
+
+- 22 份配置 82 段：53 整段按字节 1:1 命中，27 裁尾，2 缺失（09-30 抖音 seg1/seg3，
+  6,451,182,921 B）；裁尾 27 个共 40,069,546,585 B（37.32 GiB）。
+- `scripts/build_oss_inventory.py` 两批事件根（50/30 个可用视频）各建一次索引，输出 22 manifests +
+  index/audit/summary + 29 行 CSV；固定 generated_at，两遍 diff 为空。
+- 工具修复：默认根探测、`manifest --out-dir`、`trim_s` 回退、ingest 时长闸门、sync 默认、
+  missing 口径、索引惰性 ffprobe（22 配置 audit 4–5 分钟 → 5.1s）；评审后 310 项自检全绿。
+- 文档原 55/54 文件/37.9GB 与实测不符；P0 日志 `livepipe/docs/oss-p0-devlog.html`。
+- 下一步 P1 补传 29 个对象 46,520,729,506 B，需用户授权。
+
+## 2026-11-17 · OSS P0 评审闭环（评审 + 使用逻辑）
+
+- 评审结论「有条件通过」：6 条 CONFIRMED（1 中危 + 5 低危）全部修复。中危是
+  `indexed_videos` 把 0 字节 `*.baiduyun.p.mp4` 算进索引（51 vs 引擎 50），修后
+  50/30、合计 80，映射数字不变。
+- 使用逻辑结论「合理，需修 2 P0 + 3 P1」：补传后 55/0 反被判失败 → 脚本同时接受
+  P0（53/2/29 行/46,520,729,506 B）与 P1（55/0/27 行/40,069,546,585 B）基线，
+  `acceptance.phase/state` 自动切换；稀疏镜像实测 P1 → EXIT 0。
+- 裁尾配置遇空 OSS 根也 PASS → PASS 文案限定“清单完成”，新增 `--verify-uploads`
+  按 CSV dst 核字节（缺 27 → EXIT 1）；CSV 扩到 10 列（config/seg/kind/src/src_abs/
+  dst/bytes/duration_s/trim_s/note）。
+- 其他修复：verify-media 无时长默认 UNKNOWN+EXIT 1；显式根不存在直接报错；根探测与
+  统计跳过 0 字节/临时名；goofys 版本改为实检；兜底保留 segment_names；两个事件根
+  相同/互相包含 → EXIT 2；旧文档加实测横幅并改 `python3 -m livepipe oss ingest`。
+- 复验：selftest 310 全过；audit22 5.1s；P0 两次 diff 0；P1 稀疏镜像 55/0/27；
+  check-env PASS；devlog 已含评审与使用逻辑章节。
+
+## 2026-11-17 · OSS P1 补传启动
+
+- 用户“P1开始”授权上传 29 个对象 / 46,520,729,506 B：2 个缺失整段回旧存根
+  （`直播data/录屏/2026-0930…/9.30/抖音`），27 个裁尾副本进新契约根
+  （`奇瑞汽车/直播看管/直播录屏/<事件>/_live`）。
+- 新增 `scripts/p1_upload.py`：`.part` → 字节校验 → `os.replace`，已存在同字节跳过，
+  3 并发 × 3 重试；`--verify-only` 只核不写。
+- 实测：单流 6.58MB/s，4 并发聚合 6.26MB/s（挂载/带宽瓶颈）；已试传 5 个小对象
+  831,375,707 B，剩余约 45.69GB 后台跑（约 2 小时）。
+- 完成后：`--verify-only` → `build_oss_inventory.py`（自动 P1 55/0/27）→
+  `--verify-uploads` → 2 个整段 sha256 抽验。配置路径暂不改（切读另开一步）。
+
+## 2026-11-18 · OSS P1 补传完成
+
+- 29/29 对象在目标且字节相符：24 本次上传 45,689,353,799 B + 5 试传已在位
+  831,375,707 B；0 失败 / 0 冲突 / 无残留 `.part`。
+- 墙钟 7,235s（2.01h），按本次写入聚合 6.31 MB/s；单文件峰值 4.13（3.09GB
+  `dy_qr_15-29-17-00_live.mp4`），最慢 0.60（332MB `1003_wechat_15-20-15-40_0-566.mp4`）。
+- 新契约根 27 文件 / 40,069,546,585 B；旧存根补 2 整段 6,451,182,921 B。
+- 验收：`--verify-only` 29/29；`--verify-uploads` 自动切 P1（55 整段 / 27 裁尾 / 0 缺失），
+  27/27 字节一致；`audit` 22 配置 PASS；SHA256 4 样本（2 整段 + 2 裁尾，7,452,754,609 B）
+  两端全部 MATCH。
+- 0930 事件根可用视频 50 → 52（补进 2 整段），总计 82。
+- SHA 抽验脚本第一次把 `csv.DictReader` 当列表下标，整段样本漏选（见 buglog）；
+  修正后 3.2GB × 2 两端哈希各约 259s。
+- 收尾 `--verify-only` 曾覆盖 `p1-upload-report.json`（与上传共用默认 --report）：
+  已改为 verify 默认写 `p1-verify-report.json`；上传报告按 29 行 verify 快照 +
+  `/tmp/p1-upload.log` 逐条重建（`started_at=null`、标 `reconstructed`）。
+- 文档：新增 `livepipe/docs/oss-p1-devlog.html`（流程图 + 逐条状态 + 四层验收）；
+  `oss-migration.html` 横幅更新、实施计划新增 P1.5 切读；README 增 P1 命令小节。
+- 配置路径未改（22 份 `input.videos` 仍指本地）；未删本地、未提交 git。
+
+## 2026-11-18 · OSS P1.5 切读完成
+
+- 先恢复 goofys：挂载点 ENOTCONN、无 goofys 进程；`fusermount3 -u ~/oss-bucket` 后
+  `setsid nohup ~/goofys -f -o allow_other --endpoint http://oss-cn-beijing.aliyuncs.com
+  --subdomain static-cantotimes-com ~/oss-bucket`（SID=自身 PID，不再跟终端）。
+- `scripts/p15_repoint.py`：manifest 整段 `segments[].oss` + `p1-upload-list.csv` 裁尾
+  `src_abs→dst`；只替换配置文本 JSON 字符串。新增 `--verify`（22/22、82/82 目标在位
+  且字节一致）、`--apply` 幂等（无改动不写备份/报告）、`--rollback`。
+- 22 份配置 / 82 段全部 OSS：55 整段 175,302,204,124 B（旧根 `直播data/录屏`）+
+  27 裁尾 40,069,546,585 B（新契约根 `奇瑞汽车/直播看管/直播录屏/<事件>/_live`），
+  合计 215,371,750,709 B；`base_dir` 保持本地。
+- 验收：`p15_repoint.py --verify` EXIT 0；`livepipe check` 22/22 EXIT 0。
+- 样片 A：`10-02_全球车的中国路_抖音` seg3（裁尾 97,153,646 B / 164.7s，新契约根）
+  → 59 帧 / 639 rows / 48 唯一评论 / 225s / rc=0；用户名识别 38/48，多行合并 13，
+  表情 4 条 8 个。
+- 样片 B：`09-30_全球车的中国路_抖音` seg1（整段 3,225,543,521 B / 6192.1s，旧根）
+  中段 t=3000–3060s → 29 帧 / 359 rows / 26 唯一评论 / 121s / rc=0；用户名识别 23/26。
+  临时配置把 `base_dir` 指到 `~/livepipe_batches/10-04_全球车的中国路_抖音`（表情表齐），
+  `output.dir` 指 `/tmp/p15_sample`；正式配置未动。
+- 备份 `out/p1.5/backup/20261117T234234Z/`（切读前本地路径）；报告
+  `out/p1.5/repoint-report.json`（已指回首次备份，删除复核时误建的重复快照）。
+- 文档：新增 `livepipe/docs/oss-p15-devlog.html`；README P1.5 小节；oss-migration 横幅/
+  计划行更新；STATUS 置顶。未删本地、未跑 P2、未提交 git。
+- ⚠ 外置 out 盘 `/run/media/puyu/C0DE6A4BDE6A39B4` 未挂载，样片只落 `/tmp`；
+  正式跑前需挂回。
+
+## 2026-11-18 · OSS P2 结果链路完成
+
+- 新增 `scripts/oss_sync.py`：size 增量（可 `--sha256`）、跳过软链/隐藏/临时名、
+  直接写正式名、3 次重试、4 并发、`--dry-run/--verify-only/--report`、结尾
+  `OSS_SYNC_RESULT {json}`；`scripts/selftest_oss_sync.py` 33 项全过（含 --include）。
+- 修复：goofys rename 在目标目录含 `+`（如 `+1八重樱-3`）时 404（S3 NoSuchKey）；
+  结果同步不再 `.part → rename`，改直接写正式名（结果文件小、失败可重跑）。P1 大文件
+  上传不受影响。
+- `~/脚本/ssh/batch_local.py` / `batch_remote.py`：收/回传成功后自动同步 OSS；
+  `oss_results_root` + `oss_sync` + 任务级 `oss_result`；`--oss-only`；
+  state 增 `oss_state/oss_dst/oss_files/oss_bytes/oss_uploaded/oss_skipped/oss_at`。
+  selftest_batch_local 57 项、batch_remote 45 项全过（新增 --oss-only 端到端与重跑跳过）。
+- 实跑：10-04 视频号 664 文件 / 122,937,029 B →
+  `直播产生结果/2026-0930-1006《全球车的中国路》/10.04/视频号`；续传上传 442 个 /
+  90.01MB（83.7s）、跳过 222、失败 0；`--verify-only` 664/664、0 多出；
+  `--sha256` 0 不一致（111.2s）；重跑上传 0 / 跳过 664；batch_local `--oss-only`
+  rc=0，state `oss_state=synced`。
+- 文档：`livepipe/docs/oss-p2-devlog.html`、README P2 小节、oss-migration 横幅/计划行、
+  `~/脚本/ssh/README.md`；示例配置补 P2 字段。测试配置 `batch_jobs.p2test.json`
+  与 state 留在 `~/脚本/ssh/`。未删本地、未提交 git。
+
+## 2026-11-19 · OSS P3 下载链路完成
+
+- 新增 `scripts/oss_download.py`：`live` 跑下载命令写 OSS `.part`，退出 0 后校验
+  字节/时长 → `os.replace` → manifest；失败不留正式文件（违约写正式名也删）。
+  `baidu` 用 `bypy download` 拉目录到暂存，再逐视频复制成 OSS `.part` 收尾；
+  只处理视频扩展名，manifest 记 `source=baidu:<远端>` / `remote_rel`。
+- 自检 `scripts/selftest_oss_download.py` 22 项全过（成功/幂等/失败/违约/字节闸门/
+  dry-run/baidu 目录/非视频/bypy 失败）。
+- 真实验收：3.2GB 文件（3,229,231,923 B，12,507.435667s）经 `cp {part}` 直写 OSS，
+  536s（约 6.0MB/s），ffprobe + 中段/末段帧解码通过，manifest 齐全；goofys RSS 约 6.0GB。
+  失败路径（真实 OSS）无正式文件；`--clean-part-on-fail` 清 `.part`。
+- 百度：临时目录 `/直播录屏/_p3_probe/2026-11-19`（2,948 B / 1.0s）→ 暂存 →
+  OSS `_p3_probe/11.19/抖音/test`，size/duration 匹配、manifest 来源正确；非视频跳过。
+  测试对象与百度临时目录已清理。
+- 本机没有 dypy，直写用 `cp` 当替身；dypy 真实参数只替换 `--cmd`。未接生产下载队列、
+  未提交 git。
+- 文档：`livepipe/docs/oss-p3-devlog.html`、README P3 小节、oss_ingest README 指向
+  wrapper、oss-migration 横幅/计划行、.wolf 同步。
+
+## 2026-11-19 · OSS P4 影子期开始 + 清盘审计（未删除）
+
+- 新增 `scripts/p4_cleanup.py`：shadow-start/status、audit、plan、apply（影子期满 +
+  0 不可删 + --yes）、rollback-check、migrate-emoji。默认 `--policy results` 要求每个
+  本地文件在保留根有副本；`--policy inputs` 只要求 82 段引用的 OSS 录屏可读。
+- 影子期 2026-11-19T02:06:02Z → 最早 2026-11-26T02:06:02Z；状态在
+  `~/.livepipe_p4_shadow.json`。
+- 审计严格口径：staging 41,856/62.99GB（41,801 有副本，55 个元数据 2.88MB，
+  --allow-metadata 下 safe）；local_out 67,068/13.29GB，49,175/9.56GB 无副本；
+  external_out 474,223/170.81GB，448,095/136.09GB 无副本。inputs 口径：82 段 → 55 个
+  唯一 OSS 对象 ffprobe 全可读，p15 verify 22/22。
+- 准备：表情表 4 套/18.2MB 复制到 `/home/puyu/livepipe_assets/out`，22 份配置
+  base_dir 改到该目录（备份 `~/.livepipe_p4_config_backup/20261119T021318Z/`），
+  livepipe check 22/22；staging 孤儿录屏 2,012,027,943 B 用 P3 wrapper 补到
+  OSS `直播录屏/2026-9-22…/9.22/视频号/奇瑞集团/18-13-19-31.mp4`（334.8s）。
+- rollback-check：82 条本地视频路径 76 条不存在（MyDisk 未挂载）；本地回滚当前不可用。
+- 报告：`out/p4/audit-*.json`、`livepipe/docs/p4-audit-summary.json`、副本
+  `~/.livepipe_p4_audit/`、日志 `livepipe/docs/oss-p4-devlog.html`。未删除任何本地文件、
+  未提交 git。
+
+## 2026-11-19 · P2 回填 out 结果 → OSS（启动）
+
+- 用户要求把 out 结果同步 OSS。新增 `scripts/p2_backfill.py`：外置 out + 本地 out
+  事件树 → `直播产生结果`；两阶段 deliverables（json/all_users/撞库结果）→ all
+  （其余帧图）；排除 media/dataset/emoji/backup；全球车的中国路统一到
+  `2026-0930-1006《全球车的中国路》/<MM.DD>`。
+- 计划 37 任务：交付物 174,270 文件 / 34.93GB；全部 505,983 文件 / 108.83GB。
+- `oss_sync.py` 新增 `--include` 过滤（selftest 33 项）；8 并发实测约 22–30 文件/秒、
+  5.46MB/s；10.04 任务 550 文件 12.5s（上传 378/跳过 172）。
+- 后台跑 deliverables；state `~/.livepipe_p2_backfill/state.json`，日志
+  `~/.livepipe_p2_backfill/run-deliverables.log`。完成后跑 all 并重跑 P4 audit。
+
+## 2026-11-19 · README 更新
+
+- 根 README 新增「OSS 归档与迁移（2026-11）」：goofys 单通道说明、P0–P4 状态表、
+  p2_backfill/P4 命令、当前回填进度、base_dir 迁到 ~/livepipe_assets、自检命令；
+  目录树/文档表/常用任务表补 scripts/ 与 OSS devlog 链接。
+- livepipe/README：标题改 P0–P4；P2 改为直写正式名 + --include + 33 项自检；
+  补 deliverables 174,068 文件 / 34.91GB 与 all 阶段进度；P4 状态改为回填中待复审。
+
+## 2026-11-19 · 队列落地路径统一到事件树
+
+- `~/脚本/ssh/{batch_remote,batch_local}.py` 的 `local_target()`：`output.dir` 是绝对路径
+  （外置盘 `/run/media/.../out/<场次>/<平台>`）时也取最后一个 `/out/` 之后的部分，
+  落到 `out/<场次>/<平台>`，不再退化成 `out/<任务名>/<平台>`。
+- 已移动 6 个任务名目录到 `out/2026-0930-1006全球车的中国路/<天>/<平台>`：
+  09-30 抖音/视频号、10-01 视频号、10-03 抖音/视频号、10-06 视频号；同步 5 个 state
+  的 `local_out`，删除空的任务名目录。
+- 复核：3 台服务器 9 个 SSH 任务（除未跑的 10-01 快手）远端 vs 本地 0 缺 0 异；
+  本地批次 8 个任务（含 p2test）批次 vs 落地 0 缺 0 异。事件树现覆盖 09-30～10-06
+  共 15 个平台目录。
+
+## 2026-11-19 · 全球车的中国路 · 撞库（6 天）
+
+- `python -m livepipe match` 按天跑 `out/2026-0930-1006全球车的中国路/<天>`，名单用
+  `撞库名单/可用名单/<天>/<天>_全球车的中国路.csv`，结果落 `<事件>/撞库结果/<天>/`。
+- 远端跑批次的 `summary.json` 视频是 `/root/livepipe_batches/...`，本机不可读；
+  加 `--video-map /root/livepipe_batches/<任务>/videos/=/run/media/puyu/MyDisk/`
+  （10-02 快手是 `/videos/_live/=/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/`）
+  后「仅直播命中 / 未命中最近账号」补图全部成功。
+- 合计 598 名单名 / 468 命中 / 130 未命中 / 757 命中账号（仅直播 311）/
+  14,875 张标记图 / 21 个 HTML。
+- 注意：`p2_backfill.py` 的 `GLOBAL_TOP` 只遍历 `^\d{2}-\d{2}$` 的天目录，
+  `撞库结果/` 不会被回填 OSS；要同步需给 p2_backfill 加一条映射。
+
+## 2026-11-19 · 腾讯文档「视频统计」填全球车数据
+
+- 文档《直播评论整理_v1(1)》`DYWRrdnBHSHZKWnpo` 页签 000001，132–149 行（09-30～10-06
+  按平台）填了 I 总用户名单数（直播账号数）/ J 撞库命中用户 / K 撞库命中用户张数
+  （标记图/<平台> 图片数）/ M 可用名单数（交付树 users）/ P 3张用户评论总数（交付树 images）。
+- 10-05 两行（无录屏）和 10-01 快手（无产物）留空；逐格回读公式栏校验一致。
+- 首次填在 135–152 行，之后表格被上移 3 行，数值滞留在原绝对行；已重写到 132–149
+  并清掉 150–152 的错位残留，重载页面后核对仍一致。
+- 填法：名称框定位 + 公式栏 contenteditable 输入 + 回车；CDP 的 Ctrl+C/V 在该页无效。
+
+## 2026-11-19 · 百度「直播录屏/奇瑞探秘局」核对（无需新建配置）
+
+- 百度目录 `直播录屏/奇瑞探秘局/{10.24/上午,10.24/下午,10.25/下午}` 共 6 个 mp4，
+  与本地 MyDisk 原件逐个大小一致（合计 14,235,937,800 B），且与 11-17 已归档的
+  `10.24/视频号/奇瑞探秘局/{1,2}`、`10.25/1` 的百度 MD5 相同 ⇒ 同一批文件的再归档。
+- 已有 `10-24奇瑞探秘局_视频号.json` / `10-25奇瑞探秘局_视频号.json` 覆盖；
+  `livepipe check` 均 rc=0。panels 已落盘；10-25 seg1 半截 rows（1811 行），其余未 parse。
+- 顺带重挂了 goofys（`~/oss-bucket` 原为 ENOTCONN），确认 OSS 里没有探秘局素材。
+
+## 2026-11-19 · OSS 根更正为 web/1/ + 服务端前缀迁移
+
+- 用户确认：项目 OSS 根 = `~/oss-bucket/web/1/奇瑞汽车/直播看管/`。桶根
+  `~/oss-bucket/奇瑞汽车/...` 是 P1/P2 写错的前缀。历史原方案是把 `web/1` bind-mount
+  到 `~/oss-bucket`，后来 goofys 直挂桶根，路径语义就错了。
+- 新增 `scripts/oss_relocate_prefix.py`（CopyObject、幂等、verify-only、不删源）：
+  `直播录屏/` 38 对象 42.08GB 已复制并核对 0 缺失；`直播产生结果/` 406,616 对象
+  85.08GB 后台复制（报告 out/oss_relocate/）。本桶 upload_part_copy 60s 超时，
+  全部走 CopyObject（5GB 上限，3GB 实测 0.1s）。
+- 21 份配置 27 处 `_live` 路径改指 web/1，`livepipe check` 22/22；p2_backfill /
+  oss_download / build_oss_inventory / p4_cleanup / oss_ingest 默认根同步；
+  P2 state 148 个 dst 改指（已备份）。
+- 旧前缀暂未删除，复核后再清；P4 audit 暂时把旧前缀当保留根。
+
+## 2026-11-19 · oss_download.baidu 改为不落本地暂存、直写 OSS
+
+- 用户要求「本地暂存不要存直接下载到oss」。原 `baidu` 模式是 `bypy download` →
+  本地暂存 → 复制成 OSS `.part`；试用 bypy 直写 goofys 时发现 1.28GB 文件从第二块
+  （20MB 分块）起 HTTP 206 重试耗尽，正式名下只剩 20MB 截断文件（ffprobe 报
+  moov atom not found）。
+- 新实现：bypy 只做授权与列目录（`_walk_proceed_remote_dir`），内容走 PCS 下载接口
+  发单个 `Range: bytes=offset-(size-1)` 请求、`requests` `stream=True` 顺序写
+  `<final>.part`（一次 open、顺序 write，同 `cp`）；成功后 `finalize_part` 校验
+  字节/时长、改名 + manifest；失败保留 `.part`，`--resume` 从已有字节续传；
+  `--overwrite` 重来。`--staging/--bypy/--processes/--clean-staging` 参数已移除。
+- 自检 `scripts/selftest_oss_download.py` 扩到 32 项（假 bypy 包离线跑：直写、非视频、
+  中途断流留 `.part`、缺 flag 拒绝、resume、dry-run）。
+- 真实入库完成：百度 `/直播录屏/奇瑞探秘局` 6 个原件直写 OSS（14,235,937,800 B，
+  10.25 两段 733s、10.24 四段 1573s），3 个裁尾副本 cp→`.part`→ingest
+  （3,136,808,210 B）；两份探秘局配置 `input.videos` 改指 OSS，`livepipe check` 2/2 rc=0。
+
+## 2026-11-19 · README 补充「跑 livepipe 前先把视频下载到 OSS」
+
+- 根 `README.md`：① livepipe 小节开头加前置条件块；② OSS 小节新增「跑 livepipe
+  之前，视频必须先到 OSS」及三步命令（baidu 直写 / 裁尾 `.part + ingest` / check）。
+- `livepipe/README.md` 顶部与 P3 小节、`livepipe/全流程说明.md` §0 同步：`input.videos`
+  统一读 `~/oss-bucket/...`（本地路径仅离线兜底），不接受百度/bypy 路径；
+  `check`/`run` 不会自动下载，缺文件直接报错。
+
+## 2026-11-19 · 「跑前先入库 OSS」同步到其余文档
+
+- `livepipe/CONFIG.md` 多段素材小节、`livepipe/tools/oss_ingest/README.md` 顶部、
+  `livepipe/docs/oss-migration.html` 配置改法、`oss-p15/p3/p4` 开发日志页头、
+  `livepipe/examples/pipeline.{example,minimal}.json` 均补上同一口径：
+  `input.videos` 统一读 OSS，livepipe 不自动下载，缺失直接报错；新素材先
+  `oss_download.py baidu`（裁尾走 `cp → .part → ingest`）再 `livepipe check`。
+
+## 2026-11-19 · 全流程说明.md 增加「⓪ 素材入库 OSS」
+
+- 开头的步骤图加 ⓪；§0 前置拆出 `0.1 素材入库 OSS`（挂载检查、baidu/live 直写、
+  裁尾副本 `cp → .part → oss ingest`、改配置后 check/dry-run），附实测 6~9MB/s。
+- `V` 与第 3 步配置示例改成 OSS 路径；断点表加「下载中途断了 → --resume」；
+  排错表加「input.videos 文件不存在 → 先入库，livepipe 不会自动下载」；
+  一句话版加 ⓪ 命令。
+
+## 2026-11-19 · OSS 根迁移完成核对
+
+- `直播产生结果/` 406,616 对象 / 85,078,098,111 B 已全部复制到
+  `web/1/奇瑞汽车/直播看管/直播产生结果/`：复制 395,995、断点续传跳过 10,621、
+  失败 0（9,203.8s）；`--verify-only` 0 缺失、两端字节一致
+  （报告 `out/oss_relocate/results_prefix.json`）。
+- `直播录屏/` 38 对象 / 42,081,575,164 B 同样核对通过。
+- 桶根旧前缀尚未删除；P4 audit 暂时把旧前缀列为保留根。
+- 探秘局素材与两份配置由并行会话直写 OSS / 切读（见 STATUS 顶部条目）。
+
+## 2026-11-19 · 探秘局结果也切到 OSS（不在本地留产物）
+
+- 用户要求「结果也不能在本地」。两份探秘局配置的 `output.dir` / `collect.out`
+  改到 `~/oss-bucket/web/1/奇瑞汽车/直播看管/直播产生结果/2026-10-2{4,5}奇瑞探秘局/视频号`；
+  `base_dir` 改到 OSS `…/直播看管/素材`；微信表情表（113 文件 / 6,460,888 B）已传到 `<base_dir>/out/wechat_emoji/`，从 OSS 加载 109 模板约 2.5s。配置里已无外置盘 / `~/livepipe_assets` 引用。
+- 关键坑：goofs 不支持 `open("a")`（EOPNOTSUPP）。`rows.jsonl` 续跑分支已加降级：
+  先试 append，失败则 `open("w")` 重写已有行再继续（`livepipe/parsing/cli/run.py`）。
+  正常抽行的 `w` + 每帧 flush 是支持的（flush 会更新对象大小）。
+- 20s 切片直写 OSS 验证全链 rc=0：panels/rows/frames/comments/summary 都落在 OSS；
+  探针目录已删。`livepipe check` 两份配置均 rc=0。
+- 文档同步：README、livepipe/README、CONFIG.md、全流程说明、oss-migration.html
+  都补了「结果也写 OSS」及 append 降级说明。
+
+## 2026-11-19 · goofs 掉线并恢复挂载
+
+- 23:25 检查时 `/home/puyu/oss-bucket` 全部 ENOTCONN（mount 表仍显示 fuse，但 goofys
+  进程已退出；nautilus 打开了挂载点内文件，`fusermount3 -u` 报 busy）。
+- 处理：`fusermount3 -uz /home/puyu/oss-bucket` 懒卸载；`nohup setsid ~/goofys -f
+  -o allow_other --endpoint http://oss-cn-beijing.aliyuncs.com
+  --subdomain static-cantotimes-com ~/oss-bucket` 重挂；1s 后可 stat。
+- 恢复后核对：`素材/out/wechat_emoji/wechat-emoji.json` 100,815 B 与本地一致；
+  `load_emoji_gallery` 109 模板；两份探秘局配置 `livepipe check` 2/2 rc=0。
+- 长期方案仍是 systemd 托管 goofs（`scripts/bootstrap_oss_env.sh --systemd`）。
+
+## 2026-11-19 · 复核并准备清空桶根旧前缀 `奇瑞汽车/直播看管`
+
+- 用户指出桶根 `~/oss-bucket/奇瑞汽车/直播看管/` 位置不对，应在
+  `~/oss-bucket/web/1/奇瑞汽车/直播看管/`。两个子前缀（直播录屏 38 对象 /
+  42,081,575,164 B；直播产生结果 406,616 对象 / 85,078,098,111 B）逐一核对
+  0 缺失、字节相同；桶根 `奇瑞汽车/` 下全部 406,654 个对象都在这两个前缀内。
+- 新增 `scripts/oss_purge_prefix.py`（`--ensure` 安全副本前缀 + dry-run 默认 +
+  `--delete` 才删；批删后要求源前缀为空）。`直播录屏` dry-run 通过。
+- 实际 `--delete` 被 Claude Code 自动模式分类器以「Cloud Storage Mass Delete」
+  拦截，未删任何对象；命令与理由已写入 STATUS 下一步，等用户批准/自行执行。
+- 经验：OSS 全量 list 406k 对象约十几分钟一轮；核对与删除都要用 oss2 直连，
+  不要走 goofys（缓存会让 `ls` 结果滞后）。
+- 2026-11-19 用户要求「对一下两个路径，缺了补」：新增
+  `scripts/oss_diff_prefixes.py` 双向比对整棵 `奇瑞汽车/直播看管` ↔
+  `web/1/奇瑞汽车/直播看管`。结果：only_old 0、size_diff 0、metadata_diff 0
+  （逐对象大小+ETag 相同）；only_new 16,481 对象 / 256.85GB 是迁移后新写数据。
+  `--fill` 补 0 个 —— 正确位置不缺任何东西，旧前缀是严格子集，可安全删除。
+  两棵 42 万对象的树全量 list 一轮约 117s。

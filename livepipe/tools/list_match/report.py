@@ -8,6 +8,7 @@
     <out>/撞库结果.xlsx         同上三张表（装了 openpyxl 才写）
     <out>/README.md             口径说明（每次重跑都覆盖）
     <out>/标记图/<平台>/<名单名>/<账号目录>/1.jpg …   命中账号的交付图（默认导出）
+    <out>/标记图/未命中/<平台>/<名单名>/<账号目录>/…   未命中的最近账号（复核用）
     <out>/撞库清单/<日期>_<场次>_<平台>.html           给人看的交付清单（默认写）
 
 「标记图」就是交付树里**原样**的图（整帧原图 + 该条评论一个绿框），不裁、不加字；
@@ -23,7 +24,12 @@ import json
 import shutil
 from pathlib import Path
 
-from .common import IMAGE_SUFFIXES, platform_sort_key, safe_dirname
+from .common import (
+    IMAGE_SUFFIXES,
+    UNMATCHED_IMG_DIR,
+    platform_sort_key,
+    safe_dirname,
+)
 from .html import write_html
 from .render import render_missing
 
@@ -193,8 +199,9 @@ def _readme(report: dict) -> str:
         "| `未命中明细.csv` | 没到阈值的名单名 + 平台内最近账号（人工复核用） |",
         "| `撞库结果.xlsx` | 上面三张表（装了 openpyxl 才有） |",
         "| `标记图/` | 命中账号的交付图，按「平台 / 名单姓名 / 账号目录」归档 |",
+        "| `标记图/未命中/` | 未命中名单的**最近账号**图，按同样层级单独归档（复核用） |",
         "| `撞库清单/` | **给人看的 HTML 交付清单**：一平台一页，KPI + 占比条 + "
-        "可搜索/排序的命中名单 + 未命中复核表；多平台另有 `汇总.html` |",
+        "可搜索/排序的命中名单 + 未命中复核表（最近账号可点图）；多平台另有 `汇总.html` |",
         "",
         "## 怎么用分数",
         "",
@@ -207,15 +214,20 @@ def _readme(report: dict) -> str:
         "- 「账号目录」是**相对交付树**的路径（见汇总表最后一列的交付树绝对路径）；"
         "每个命中的账号，图都**原样**放在 `标记图/<平台>/<名单名>/<账号目录>/` 里"
         "（整帧原图 + 评论绿框，不裁、不加字）；一个名单名命中多个账号就有多个子目录。",
+        "- **未命中名单的最近账号**也会出图，单独放在 "
+        "`标记图/未命中/<平台>/<名单名>/<账号目录>/`；最近账号只在直播里时同样从视频"
+        "现补。看图就能判断是阈值卡掉了、还是确实没拍到。",
         "",
         "## 标记图",
         "",
         "```",
         "标记图/<平台>/<名单姓名>/<账号目录>/1.jpg  2.jpg …",
+        "标记图/未命中/<平台>/<名单姓名>/<账号目录>/1.jpg  2.jpg …",
         "```",
         "",
         "- 图**原样复制**自交付树，文件名不变；只复制图片，不改一个像素。",
         "- 一个名单名命中多个账号时，各账号一个子目录，避免混在一起。",
+        "- `未命中/` 下是未命中名单的最近账号（每人在平台内只有一个最近账号）。",
         "- 同一结果目录重跑只覆盖同名文件；**旧名单名留下的 `标记图/` 子目录不会自动删**"
         "（要干净重来就先删掉 `标记图/`）。",
         "- 只要表格、不要图：`--no-images`。",
@@ -259,6 +271,8 @@ def write_reports(
         info["rendered"] = rendered
         info["accounts"] += rendered["accounts"]
         info["images"] += rendered["images"]
+        info["unmatched_accounts"] += rendered["unmatched_accounts"]
+        info["unmatched_images"] += rendered["unmatched_images"]
         paths["images"] = info
     if html:
         paths["html"] = write_html(out_dir, report, log=log)
@@ -269,17 +283,35 @@ def write_reports(
     return paths
 
 
+def _copy_images(src: Path, dst: Path) -> tuple[int, int]:
+    """把目录里的图片**原样**复制过去（文件名不变）；返回 ``(张数, 字节数)``。"""
+    dst.mkdir(parents=True, exist_ok=True)
+    n = size = 0
+    for f in sorted(src.iterdir()):
+        if not f.is_file() or f.suffix.lower() not in IMAGE_SUFFIXES:
+            continue
+        shutil.copy2(f, dst / f.name)
+        n += 1
+        size += f.stat().st_size
+    return n, size
+
+
 def export_images(out_dir: Path, report: dict, log=print) -> dict:
     """把命中账号的交付图**原样**复制到 ``<out>/标记图/<平台>/<名单名>/<账号目录>/``。
+
+    未命中名单的**最近账号**也导一份，放到独立的 ``标记图/未命中/<平台>/<名单名>/
+    <账号目录>/`` —— 人工复核时能直接看图，判断是阈值卡掉还是确实没拍到。
 
     只复制图片文件（``.jpg/.jpeg/.png/.webp/.bmp``），文件名不变、不裁剪、不加字 ——
     交付图本身就是「整帧原图 + 该条评论一个绿框」。同一名单名命中多个账号时各占一个
     子目录；旧名单名留下的目录不会自动删。
 
     ``in_delivery=False`` 的命中（只在直播里、没进交付树）这里跳过，由
-    :func:`render_missing` 从视频现补。
+    :func:`render_missing` 从视频现补；未命中的最近账号同理。
 
-    返回 ``{"dir", "accounts", "images", "missing", "not_delivered", "bytes"}``：
+    返回 ``{"dir", "accounts", "images", "missing", "not_delivered", "bytes",
+    "unmatched_accounts", "unmatched_images", "unmatched_missing",
+    "unmatched_not_delivered", "unmatched_bytes"}``：
     ``missing`` 是交付树里找不到目录的命中数（``--tree`` 换了、目录被清过时会出现）。
     """
     root = out_dir / "标记图"
@@ -304,16 +336,48 @@ def export_images(out_dir: Path, report: dict, log=print) -> dict:
             if dst in seen:                    # 同一名字重复命中同一账号：只导一次
                 continue
             seen.add(dst)
-            dst.mkdir(parents=True, exist_ok=True)
-            for f in sorted(src.iterdir()):
-                if not f.is_file() or f.suffix.lower() not in IMAGE_SUFFIXES:
-                    continue
-                shutil.copy2(f, dst / f.name)
-                image_count += 1
-                total_bytes += f.stat().st_size
+            n, size = _copy_images(src, dst)
             accounts += 1
+            image_count += n
+            total_bytes += size
+
+    # ---- 未命中的最近账号：单独归档，供人工看图复核 ----
+    unm_accounts = unm_images = unm_missing = unm_not_delivered = unm_bytes = 0
+    for label in sorted(report["platforms"], key=platform_sort_key):
+        rep = report["platforms"][label]
+        tree = Path(rep["tree"]) if rep.get("tree") else None
+        for u in rep.get("unmatched") or []:
+            best = u.get("best") or {}
+            if not best:
+                continue
+            if not best.get("in_delivery"):
+                unm_not_delivered += 1
+                continue
+            d = best.get("account_dir") or ""
+            if tree is None or not d:
+                unm_missing += 1
+                continue
+            src = tree / d
+            if not src.is_dir():
+                unm_missing += 1
+                continue
+            dst = (root / UNMATCHED_IMG_DIR / label / safe_dirname(u["list_name"]) / d)
+            if dst in seen:
+                continue
+            seen.add(dst)
+            n, size = _copy_images(src, dst)
+            unm_accounts += 1
+            unm_images += n
+            unm_bytes += size
+
     if missing:
         log(f"[撞库][warn] {missing} 个命中账号的目录不存在，没导出图")
+    if unm_missing:
+        log(f"[撞库][warn] {unm_missing} 个「未命中最近账号」的目录不存在，没导出图")
     return {"dir": root, "accounts": accounts, "images": image_count,
             "missing": missing, "not_delivered": not_delivered,
-            "bytes": total_bytes}
+            "bytes": total_bytes,
+            "unmatched_accounts": unm_accounts, "unmatched_images": unm_images,
+            "unmatched_missing": unm_missing,
+            "unmatched_not_delivered": unm_not_delivered,
+            "unmatched_bytes": unm_bytes}

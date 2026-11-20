@@ -1,0 +1,212 @@
+// ============================================================================
+// 奇瑞QQ3摩登版上市（渠道七七）2026-09-22 · 抖音直播 · 账号「奇瑞集团」
+// ============================================================================
+// 素材：/run/media/puyu/MyDisk/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/抖音/奇瑞集团/18：12-19：48.mp4（590×1280）。
+// 输出：/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/抖音/奇瑞集团/。
+//
+// ⚠ 尾部是「2位相似主播正在直播 / 去直播广场继续看」。实测底部输入栏 `说点什么`
+//   最后出现在 4781.0s（79.7min）⇒ 无损流拷贝截到 4780.8s，
+//   副本 = /run/media/puyu/C0DE6A4BDE6A39B4/out/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/media/dy_jt_18-12-19-48_live.mp4。
+//
+// 量到的版式（2026-11-11，10 帧 OCR，590×1280）：
+//   · 行距 43.5：单行评论首行中心差 42~44（两行评论 68~71）。
+//   · x_text 80：◆N 药丸块 x∈[37,79] · 干净昵称 x1≈81~86 · 续行 x1≈31~46。
+//   · rect [0,665,590,1205]：视频底 ≈560，顶部渐变带（虚化）到 ≈660（实测 650 处仍有
+//     半截被虚化的视频字幕 `球鞋全带上`）⇒ y1=665 落在渐变带之下；输入栏上沿 ≈1222。
+//   · 右侧无商品卡（10 帧均未见）⇒ 不设 x_ignore_from。
+//   · 昵称不打码 ⇒ account_key=username。
+//
+// 跑法：$P -m livepipe run 09-22奇瑞QQ3_抖音奇瑞集团.json --only panels,parse
+//
+// 校验：python3 -m livepipe check 09-22奇瑞QQ3_抖音奇瑞集团.json
+// ============================================================================
+{
+  "base_dir": "/run/media/puyu/C0DE6A4BDE6A39B4",
+  "version": 1,
+  "name": "奇瑞QQ3摩登版上市（渠道七七）2026-09-22 · 抖音手机 App · 竖屏 · 奇瑞集团",
+
+  "platforms": {
+    "douyin_app": {
+      "label": "抖音直播（手机 App 竖屏 590×1280；行首 ◆N 粉丝团药丸在昵称左边）",
+      "emoji": "douyin",
+      "account_key": "username",
+      "row_pitch": 43.5,
+      "y_phase": 21,
+      "x_text": 80,
+      "badge_span": 50,
+      "x2_from": "content",
+      "wrap_gap_ratio": 0.78,
+      "wrap_indent": true,
+      "badge_alias": true,
+      "username_alias": true,
+      "badge_name_recover": true,
+      "colon_bg_max_v": 255,
+      "colon_v_delta": 30,
+      "colon_text_fix": true,
+      "merge_emoji_continuation": true,
+      "emoji_gap_sweep": true,
+      "overlay_cards": "讲解中|立即预约|人已预约|QQ3 ?EV|和Ta的朋友们|^QQ$|^Shoe$|^人气榜$|礼物展馆|挑战榜|去直播广场|^主播$|吸烟酗酒|低俗色情|严禁未成年人|理性消费|诱导打赏|私下交易|人身财产损失|网络诈骗|温馨提示"
+    }
+  },
+
+  "emoji": {
+    "tables": {
+      "douyin": {"build": {"enabled": true}}
+    }
+  },
+
+  "input": {
+    "videos": [
+      "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/media/dy_jt_18-12-19-48_live.mp4",   // seg1 79.7min（原 98.9min 尾部是「相似主播」推荐页，已裁）
+    ],
+    "segment_names": null,
+    "video": null,
+    "rows": null,
+    "text": null,
+    "start": 0.0,
+    "duration": null,
+    "interval": 2.0,
+    "max_frames": null,
+    "resume": true,
+    "sample": {
+      "mode": "adaptive",
+      "stride": 2,
+      "safety_rows": 5.0,
+      "settle_frames": 3,
+      "eps_px": 1.0,
+      "entry_thr": 8.0,
+      "max_gap_s": 5.0,
+      "min_interval": 0.2,
+      "max_interval": 6.0,
+      "min_score": 0.3
+    }
+  },
+
+  "panels": {
+    "mode": "manual",
+    "file": null,
+    "files": null,
+    "overwrite": false,
+    "auto": {
+      "method": "hybrid",
+      "at": 900,
+      "frames": 5,
+      "span": null,
+      "split_x": null,
+      "pad_x": 60,
+      "pad_top": 80,
+      "pad_y": 16,
+      "sub_width": 500,
+      "model": "nvidia/LocateAnything-3B",
+      "quant": "4bit",
+      "device": "cuda",
+      "platforms": {
+        "left": "douyin_app",
+        "right": null
+      },
+      "frame_width": 590
+    },
+    "manual": [
+      {"comments": {"rect": [0, 665, 590, 1205], "platform": "douyin_app"}}
+    ],
+    "batch": {
+      "count": 30,
+      "start": 0.0,
+      "span": 600.0,
+      "anchor": "panel"
+    }
+  },
+
+
+  "parse": {
+    "sep": " ",
+    "max_username_len": 24,
+    "merge_continuation": true,
+    "adjacency": true,
+    "dedup": true,
+    "calibrate": false,
+    "right_pad": 0,
+    "emoji_workers": 8
+  },
+
+  "output": {
+    "dir": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/抖音/奇瑞集团",
+    "write": true,
+    "rows": true,
+    "panels": true,
+    "frames": true,
+    "print": false
+  },
+
+  "filter": {
+    "enabled": true,
+    "source": null,
+    "out": null,
+    "cache": null,
+    "min_positive": 1,
+    "exclude_keywords": [
+      "奇瑞", "4s", "店", "qq3", "汽车",
+      "尹同跃", "张国忠", "鲍思语", "王津华", "王孝伟", "胡敬源", "尹祥领",
+      "王来春", "李晶", "商文江", "杨棉之", "叶盛基", "路风", "黎汝雄",
+      "李学用", "张贵兵", "代立宏", "章红玉", "高新华", "戚士龙", "王琅"
+    ],
+    "nlp": {
+      "api_key": null,
+      "api_key_env": "NLP_API_KEY",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "deepseek-v4.1-flash",
+      "batch_size": 20,
+      "concurrency": 4,
+      "timeout": 60.0,
+      "retries": 3,
+      "limit": null,
+      "prompt": null
+    }
+  },
+
+  "qualify": {
+    "enabled": true,
+    "min_positive": 3,
+    "stage_min": 1
+  },
+
+  "export": {
+    "enabled": true,
+    "base": "frame",
+    "labels": "正面",
+    "min_positive": null,
+    "min_scope": "platform",
+    "users": null,
+    "color": "0,255,0",
+    "width": 3,
+    "pad": 0,
+    "pad_ratio": 0.25,
+    "quality": 90,
+    "force": true
+  },
+
+  "collect": {
+    "enabled": true,
+    "stage_min": null,
+    "platform_dir": null,
+    "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/抖音/奇瑞集团/all_users_正面_3张以上",
+    "force": true
+  },
+
+  "draw": {
+    "enabled": false,
+    "source": null,
+    "at": 8.0,
+    "window": 5.0,
+    "out": null,
+    "width": 5,
+    "quality": 90,
+    "labels": true
+  },
+
+  "steps": {
+    "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
+              "export", "collect", "draw"],
+    "skip": ["emoji_tables", "draw"]
+  }
+}

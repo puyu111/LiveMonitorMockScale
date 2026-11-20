@@ -128,9 +128,10 @@ def selftest() -> int:
     accounts = [
         {"username": "6回头不是彼岸呀", "level": "", "dir": "6回头不是彼岸呀-4",
          "count": 4, "segs": {"seg1": 4}, "first_image": "6回头不是彼岸呀-4/1.jpg",
-         "path": Path(".")},
+         "path": Path("."), "in_delivery": True},
         {"username": "德丽莎", "level": "", "dir": "德丽莎-3", "count": 3,
-         "segs": {"seg2": 3}, "first_image": "", "path": Path(".")},
+         "segs": {"seg2": 3}, "first_image": "", "path": Path("."),
+         "in_delivery": True},
     ]
     entries = [
         {"platform": "抖音", "name": "回头不是彼岸呀", "row": 2, "seq": 1},
@@ -145,6 +146,11 @@ def selftest() -> int:
     close(rep["matches"][0]["score"], 1.0, "命中分数")
     eq(rep["matches"][0]["dir_exists"], True, "目录存在")
     close(rep["unmatched"][0]["best"]["score"], 2 / 3, "未命中留下最近分数", 1e-4)
+    eq(rep["unmatched"][0]["best"]["account"], "德丽莎", "未命中最近账号")
+    eq(rep["unmatched"][0]["best"]["account_dir"], "德丽莎-3",
+       "未命中最近账号目录（供导图）")
+    eq(rep["unmatched"][0]["best"]["in_delivery"], True,
+       "未命中最近账号带交付标记")
 
     # 一个名单名撞出多个账号时，--max-matches 封顶
     accounts3 = [{"username": f"小明{c}", "level": "", "dir": f"小明{c}-1",
@@ -269,6 +275,16 @@ def selftest() -> int:
         eq(_resolve_video(seg, [(str(Path(td) / "old") + "/",
                                  str(Path(td) / "new") + "/")]),
            str(real), "视频路径按前缀重映射")
+        # 旧路径的父级不可 stat（如 /root 下的 700 目录）：is_file 抛异常也不能让重映射失效
+        blocker = Path(td) / "blocker"
+        blocker.write_text("x")
+        seg2 = Path(td) / "seg2"
+        seg2.mkdir()
+        (seg2 / "summary.json").write_text(
+            json.dumps({"video": str(blocker / "v.mp4")}), encoding="utf-8")
+        eq(_resolve_video(seg2, [(str(blocker) + "/",
+                                  str(Path(td) / "new") + "/")]),
+           str(real), "旧路径 stat 报错也能重映射")
 
     # ---- 标记图导出（临时目录里复制几张假图） ----
     with tempfile.TemporaryDirectory() as td:
@@ -278,11 +294,29 @@ def selftest() -> int:
         (acct / "1.jpg").write_bytes(b"jpg1")
         (acct / "2.jpg").write_bytes(b"jpg2")
         (acct / "note.txt").write_text("x")
-        img_report = {"platforms": {"抖音": {"tree": str(tree), "matches": [
-            {"list_name": "小明", "account_dir": "小明-3", "in_delivery": True},
-            {"list_name": "小明", "account_dir": "小明-3", "in_delivery": True},  # 重复：只导一次
-            {"list_name": "小红", "account_dir": "缺-3", "in_delivery": True},    # 源目录不存在
-        ]}}}
+        near = tree / "小刚x-1"
+        near.mkdir(parents=True)
+        (near / "1.jpg").write_bytes(b"near1")
+        (near / "2.jpg").write_bytes(b"near2")
+        img_report = {"platforms": {"抖音": {
+            "tree": str(tree),
+            "matches": [
+                {"list_name": "小明", "account_dir": "小明-3", "in_delivery": True},
+                {"list_name": "小明", "account_dir": "小明-3", "in_delivery": True},  # 重复：只导一次
+                {"list_name": "小红", "account_dir": "缺-3", "in_delivery": True},    # 源目录不存在
+            ],
+            "unmatched": [
+                {"list_name": "小刚",
+                 "best": {"account": "小刚x", "display": "小刚x",
+                          "account_dir": "小刚x-1", "in_delivery": True,
+                          "score": 0.75}},
+                {"list_name": "小蓝",
+                 "best": {"account": "小蓝", "display": "小蓝",
+                          "account_dir": "", "in_delivery": False,
+                          "score": 0.6}},   # 仅直播：由 render_missing 现补
+                {"list_name": "小紫", "best": None},
+            ],
+        }}}
         out = Path(td) / "out"
         info = export_images(out, img_report, log=lambda *a: None)
         eq(info["accounts"], 1, "标记图：账号目录数（重复去重）")
@@ -291,6 +325,24 @@ def selftest() -> int:
         base = out / "标记图" / "抖音" / "小明" / "小明-3"
         eq((base / "1.jpg").read_bytes(), b"jpg1", "标记图：原样复制")
         eq((base / "note.txt").exists(), False, "标记图：非图片不复制")
+        eq(info["unmatched_accounts"], 1, "未命中最近图：账号目录数")
+        eq(info["unmatched_images"], 2, "未命中最近图：只数图片")
+        eq(info["unmatched_not_delivered"], 1, "未命中最近图：仅直播的不在这里复制")
+        ubase = out / "标记图" / "未命中" / "抖音" / "小刚" / "小刚x-1"
+        eq((ubase / "1.jpg").read_bytes(), b"near1", "未命中最近图：原样复制")
+        eq((ubase / "2.jpg").read_bytes(), b"near2", "未命中最近图：第二张")
+
+        # 未命中最近账号的「仅直播」补图走单独计数；缺平台目录时不混进命中计数
+        from .render import render_missing
+        only_live = {"platforms": {"抖音": {
+            "platform_dir": None, "matches": [],
+            "unmatched": [{"list_name": "小蓝", "best": {
+                "account": "小蓝", "display": "小蓝", "level": "",
+                "in_delivery": False}}],
+        }}}
+        got = render_missing(out, only_live, log=lambda *a: None)
+        eq(got["unmatched_skipped"], 1, "未命中仅直播：缺平台目录计入跳过")
+        eq(got["skipped"], 0, "未命中跳过不混进命中补图计数")
 
     # ---- HTML 交付清单（临时目录里造一个平台报告） ----
     eq(_match_kind("小明", {"account": "小明", "score": 1.0}), ("exact", "精确同名"),
@@ -309,6 +361,9 @@ def selftest() -> int:
         mark.mkdir(parents=True)
         (mark / "1.jpg").write_bytes(b"a")
         (mark / "2.jpg").write_bytes(b"b")
+        umark = root / "标记图" / "未命中" / "抖音" / "小刚" / "小刚x-1"
+        umark.mkdir(parents=True)
+        (umark / "1.jpg").write_bytes(b"c")
 
         def plat(name):
             return {
@@ -325,7 +380,9 @@ def selftest() -> int:
                      "n_comments": 1, "n_positive": 1, "count": None},
                 ],
                 "unmatched": [{"list_name": "小刚", "list_seq": 3,
-                               "best": {"display": "小刚x", "score": 0.75}}],
+                               "best": {"account": "小刚x", "display": "小刚x",
+                                        "account_dir": "小刚x-1",
+                                        "in_delivery": True, "score": 0.75}}],
             }
 
         report = {
@@ -345,6 +402,8 @@ def selftest() -> int:
         from urllib.parse import unquote
         eq('href="../标记图/抖音/小明/小明-3/1.jpg"' in unquote(page), True,
            "HTML：首图相对链接")
+        eq('href="../标记图/未命中/抖音/小刚/小刚x-1/1.jpg"' in unquote(page), True,
+           "HTML：未命中最近图链接")
         eq("小红&lt;&amp;" in page, True, "HTML：名字转义")
         eq("共 2 个账号（2 人）" in page, True, "HTML：命中表标题")
         eq("未命中名单 · 共 1 人" in page, True, "HTML：未命中表")

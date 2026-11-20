@@ -112,10 +112,10 @@
       //     `^公众号` 认掉）。
       "overlay_cards": "奇瑞汽车|^广?告[^知]"
 
-      // ✅ 2026-10-12 已迁移：out/ctcc_20260809/seg{1,2,3}/panels.json 原先是
+      // ✅ 2026-10-12 已迁移：/run/media/puyu/C0DE6A4BDE6A39B4/out/ctcc_20260809/seg{1,2,3}/panels.json 原先是
       //   `"platform": "wechat"`（内置的**网页版**档案）+ 把这 6 个数**逐项覆盖在面板条目里**，
       //   现在只剩 `{rect, platform: "wechat_app"}`，数字只留在这一处（备份见
-      //   out/ctcc_20260809/_panels_backup_pre_wechat_app/）。迁移脚本自己断言过两种写法解析出的
+      //   /run/media/puyu/C0DE6A4BDE6A39B4/out/ctcc_20260809/_panels_backup_pre_wechat_app/）。迁移脚本自己断言过两种写法解析出的
       //   行网格**逐个相同**（只有 platform 这个**名字**不同，而 comments.jsonl 里不存平台名
       //   ⇒ 三段产物逐字节不变）；迁移后用 `--only panels,parse` 零 OCR 复算过三段，
       //   comments.jsonl 与迁移前（OCR 跑批产物）逐行一致 —— 也就是说 `--rows` 复算这条路
@@ -170,14 +170,14 @@
     "enabled": true,                    // false ⇒ 关掉表情识别，只出 OCR 文字        取反 --no-emoji
     "tables": {                         // 表情表资产（platforms.<p>.emoji 指向这里的键）
       "wechat": {
-        "path": "out/wechat_emoji/wechat-emoji.json",   // 微信 2021 新版表（109 个模板）
+        "path": "/run/media/puyu/C0DE6A4BDE6A39B4/out/wechat_emoji/wechat-emoji.json",   // 微信 2021 新版表（109 个模板）
         "build": {
           "enabled": false,             //   false ⇒ 不重建，假定表已存在（建表：见下面命令）
           "mode": "fetch",              //   从微信表情包接口抓一套（不联网枚举就先用已有的表）
-          "out": "out/wechat_emoji",
+          "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/wechat_emoji",
           "src": null,                  //   已有图目录 ⇒ 离线重建                            --src
           "no_sheet": false             //   ⚠ 置 true 就不出对照贴图；跑新素材前先看对照图
-                                        //   建表命令：python3 livepipe/wechat_emoji_table.py --out out/wechat_emoji
+                                        //   建表命令：python3 livepipe/wechat_emoji_table.py --out /run/media/puyu/C0DE6A4BDE6A39B4/out/wechat_emoji
         }
       }
     }
@@ -234,7 +234,7 @@
     },
     // mode=manual：手写面板，**一段一项**（顺序与 input.videos 展开的段顺序一致）。
     // 段目录里的 panels.json 已经在了 ⇒ 本步不动它（overwrite=false）；这一段的作用是
-    // 「白纸重来/删掉某个 segN/panels.json 时，靠它就能把矩形恢复出来」，别让数字只活在 out/ 里。
+    // 「白纸重来/删掉某个 segN/panels.json 时，靠它就能把矩形恢复出来」，别让数字只活在 /run/media/puyu/C0DE6A4BDE6A39B4/out/ 里。
     "manual": [
       {                                //   seg1  10：06-10：37.mp4
         "comments": {
@@ -270,7 +270,7 @@
   "output": {
     // 多段时这里是**段的父目录**：实际各写 <dir>/seg1、<dir>/seg2、<dir>/seg3；
     // 跨段的两个产物也落在这儿：merged_users.json（qualify）+ <平台>/all_users_正面_3张以上/（collect）。
-    "dir": "out/exeed_20260810",         // 输出根目录                                            --out
+    "dir": "/run/media/puyu/C0DE6A4BDE6A39B4/out/exeed_20260810",         // 输出根目录                                            --out
     "write": true,                      // 是否写盘（comments.jsonl + summary.json 成对）
     "rows": true,                       // 另存 rows.jsonl（**可回喂复算**）             --dump-rows <段目录>/rows.jsonl
     "panels": true,                     // mode=auto 时把定位结果存成 panels.json         --dump-panels <段目录>/panels.json
@@ -320,7 +320,7 @@
   },
 
   // -------------------------------------------------------------------------
-  // 跨段的两步（**合并进管线**，替代以前 out/ctcc_20260809/merge_segments.py 那个独立脚本）
+  // 跨段的两步（**合并进管线**，替代以前 /run/media/puyu/C0DE6A4BDE6A39B4/out/ctcc_20260809/merge_segments.py 那个独立脚本）
   //   顺序有依赖：filter（逐段）→ qualify（跨段判合格）→ export（逐段）→ collect（拼树）。
   // -------------------------------------------------------------------------
 
@@ -375,7 +375,7 @@
     // 逐段步（panels/parse/filter/export/draw）三段各跑一遍；全局步（emoji_tables/qualify/collect）整批一次。
     "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
               "export", "collect", "draw"],
-    "skip": ["emoji_tables", "draw"]    // 表情表已建好（out/wechat_emoji/）；独立描框用不上
+    "skip": ["emoji_tables", "draw"]    // 表情表已建好（/run/media/puyu/C0DE6A4BDE6A39B4/out/wechat_emoji/）；独立描框用不上
   }
 }
 
@@ -403,12 +403,12 @@
 //        --only collect                     # 只重拼交付树
 //      注意 `--only` 之前会先套 `steps.skip`：skip 里的步骤点名也拉不回来，
 //      所以本件只把 emoji_tables / draw 放进 skip，filter 那一串留着不 skip。
-//   ③ 先看后交：产物在 out/ctcc_20260809/视频号/all_users_正面_3张以上/，
+//   ③ 先看后交：产物在 /run/media/puyu/C0DE6A4BDE6A39B4/out/ctcc_20260809/视频号/all_users_正面_3张以上/，
 //      核对完再整个目录拷到 work/data/12-2026-08-09CTCC职业联赛（8.9）/视频号/。
 //
 // 两个跨段步的**产物**（出问题时先看这两个）：
-//   out/ctcc_20260809/merged_users.json       名单 + 每个账号各段各几条（判合格的依据）
-//   out/ctcc_20260809/视频号/all_users_正面_3张以上/manifest.json   交付树清单（含图数核对 +
+//   /run/media/puyu/C0DE6A4BDE6A39B4/out/ctcc_20260809/merged_users.json       名单 + 每个账号各段各几条（判合格的依据）
+//   /run/media/puyu/C0DE6A4BDE6A39B4/out/ctcc_20260809/视频号/all_users_正面_3张以上/manifest.json   交付树清单（含图数核对 +
 //                                             **逐图 images**：t/roi/label/content… rel 已重写成合并树路径）
 //
 // 其它平台的配置见 livepipe/weibo.json（微博手机 App 竖屏）·

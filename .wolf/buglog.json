@@ -597,5 +597,597 @@
       "render",
       "video_map"
     ]
+  },
+  {
+    "date": "2026-11-10",
+    "error_message": "用 PyAV 做无损 stream copy 裁剪录屏尾段时，`out.add_stream(template=in_stream)` 报 `TypeError: add_stream() takes at least 1 positional argument (0 given)`。",
+    "root_cause": "PyAV 18.1.0 移除了 `add_stream()` 的 `template=` 关键字（旧版 PyAV 可用）；新 API 改为独立的 `add_stream_from_template()`。",
+    "fix": "改用 `out.add_stream_from_template(in_stream)`（等价于按输入流的编解码参数建输出流，可直接 stream copy）。2026-09-09 猎鹰批次的三个 `*_live.mp4` 裁剪副本即用此法生成；`add_stream(in_stream.codec_context)` 也可以，但模板法更明确。",
+    "tags": [
+      "pyav",
+      "stream-copy",
+      "trim",
+      "media",
+      "api-change"
+    ]
+  },
+  {
+    "date": "2026-11-10",
+    "error_message": "对 1968×3150 的长录屏调用 `cv2.VideoCapture.set(cv2.CAP_PROP_POS_FRAMES, near_end)` 返回 False，无法定位到末段取帧。",
+    "root_cause": "OpenCV 的 FFmpeg 后端对超大分辨率 / 长 GOP 文件不能可靠地按帧号随机定位，`set` 直接失败（返回 False），随后 `read()` 拿到的不是目标位置。",
+    "fix": "改用 PyAV：`container.seek(int(t * av.time_base))` 定位到目标附近，再逐帧解码取最后一帧（`frame.to_ndarray(format='bgr24')`）。本次快手 1968×3150 末段裁剪 / 末帧确认即用此法。",
+    "tags": [
+      "pyav",
+      "opencv",
+      "seek",
+      "video",
+      "large-resolution"
+    ]
+  },
+  {
+    "date": "2026-11-10",
+    "error_message": "快手 1968×3150 长录屏 `16：11-17：06.mp4`（55.3min）前段 OCR 正常、后段整段读不出（画面上下颠倒），但 ffprobe 显示文件没有 rotation 元数据。",
+    "root_cause": "文件不是整段旋转：前 260.6s 画面正立，之后编码进画面的像素本身上下颠倒（rotation=0）。对整文件加 `-display_rotation 180` 会把正立的前段也翻倒，不加则后段不可读。",
+    "fix": "按翻转点拆成两个无损流拷贝：正立段 `ffmpeg -i 原 -t 260.6186 -map 0 -c copy a_upright.mp4`；倒置段 `ffmpeg -ss 260.6186 -display_rotation 180 -i 原 -map 0 -c copy b_rot180.mp4`（OpenCV 默认 CAP_PROP_ORIENTATION_AUTO=1，读帧自动转正）。切点取翻转后的第一个关键帧 260.6186s；配置里该文件拆成两段（快手 7 段）。已用 OCR 验证 b 段 16:16–17:06 时间戳/评论均可读。",
+    "tags": [
+      "ffmpeg",
+      "rotation",
+      "opencv",
+      "video",
+      "screen-recording",
+      "kuaishou"
+    ]
+  },
+  {
+    "date": "2026-11-10",
+    "error_message": "09-10 快手 720×1560 短切片（seg1 t=1800~1920s）的 comments.jsonl 里出现匿名垃圾行（`「官方扶持！` / `加「官方扶持」` / `来白短视频` / `来白推` / `消风…丝团灯牌`），以及 `4粉丝团清风徐来` 这类带粉丝团药丸前缀的假账号。",
+    "root_cause": "① 进房/粉丝团灯牌通知的 OCR 变体（官方扶持、来白、丝团灯牌）不在 overlay_cards 短语表里；② `清风徐来在粉丝农场收获了金萝卜！` 那一行被 group_rows 判成小数槽位的折行，走 continuation 分支绕过 classify_line 的 overlay_cards；③ `N粉丝团` 药丸与昵称被 OCR 并成一个文字框（x1=126 > x_text=105），前缀留在用户名里，现有 badge_alias 只在同句有干净读法时归一。",
+    "fix": "配置层：`09-10猎鹰智驾_快手.json` 两档 overlay_cards 追加 `官方扶持|^来白|丝团灯牌|团灯牌`；短切片逐条复测命中，真评论 `昔梦美食：我爸那辈人就信奇瑞发动机` 不命中。②③ 是管线既有行为，配置无开关，已在配置文件头与 STATUS 注明边界；全量跑完后按 users.jsonl 里的 `*粉丝团*` 账号人工核对，若量大再考虑在 parsing/text/badges.py 扩展 `_FAN_BADGE_RE` 支持 `粉丝团`。",
+    "tags": [
+      "kuaishou",
+      "overlay_cards",
+      "ocr",
+      "config",
+      "livepipe",
+      "09-10"
+    ]
+  },
+  {
+    "date": "2026-11-10",
+    "error_message": "09-12 CTCC 三份末段第一次裁切（1507.5 / 1742.4 / 6905.6s）的末帧仍是「直播已结束」页；抖音末帧甚至是整屏广告（`万能账户悄悄吃掉你的收益` 那一屏），不重裁会被 OCR 读成大量匿名评论。",
+    "root_cause": "直播终点是用 cv2.VideoCapture.set(CAP_PROP_POS_MSEC) 采样得到的；该定位在这些长录屏上不可靠（本仓库已有同类记录），采到的「live」点实际已经越过直播终点。另外「直播已结束」四个字比底部输入栏消失晚 2~3s，按它判也会多切一点。",
+    "fix": "改用 PyAV `container.seek(int(t*av.time_base))` 解码取帧；判据改为**底部输入栏**（抖音/快手 `说点什么`、视频号 `聊一聊`）在不在，对终点做 0.5s 二分。实测最后直播点 1505.34 / 1738.26 / 6903.02s，各留 0.2s 余量重裁为 1505.1 / 1738.0 / 6902.7s；三份末帧复核 OCR 均有输入栏、无「直播已结束」，配置与 .wolf 文档同步更新。",
+    "tags": [
+      "09-12",
+      "ctcc",
+      "trim",
+      "pyav",
+      "opencv",
+      "ocr",
+      "livepipe"
+    ]
+  },
+  {
+    "date": "2026-11-11",
+    "error_message": "远程批次 09-10 视频号：./run.sh 的建表步骤四个平台全部「跳过（build.enabled=false）」，随后 parse 报「表情表 /root/livepipe_batches/09-10猎鹰智驾_视频号/out/wechat_emoji/wechat-emoji.json 里一条可用的模板都没有（图没下全？）」，该面板跳过表情识别。",
+    "root_cause": "两层叠加：① emoji.tables.*.build.enabled 的默认值是 false（livepipe/config/defaults.py），09-10 配置没有写 emoji 段 ⇒ run.sh 特意跑的 --only emoji_tables 只打「跳过」空转，远程不下载任何表情图；② upload_livepipe_ssh.py 在上传表情表时只加入 *-emoji.json 一个文件，不传同目录 img/（109 张 png / 888K）⇒ gallery.load_emoji_gallery 按 <表目录>/img/<img> 找图，远程 109 条记录全 missing，gal 为空抛 SystemExit，video_rows 捕获后降级为「跳过表情识别」。",
+    "fix": "在 09-10 配置里加 emoji.tables.wechat.build.enabled=true（深合并，只覆盖这一个字段），重传后远程 ./run.sh --only emoji_tables 从 codeload.github.com 拉 4.7MB tarball、解出 109 张 png 到 <base_dir>/out/wechat_emoji/img 并重建表；远程 load_emoji_gallery 验证 109 个模板、阈值 0.8/0.85。注意建表脚本无图片缓存，每次 run.sh 都会重下，需要时用 LIVEPIPE_SKIP_EMOJI=1。/ 待办：upload_livepipe_ssh.py 传表时应把 img/ 一起纳入上传计划。",
+    "tags": [
+      "09-10",
+      "wechat",
+      "emoji",
+      "emoji_tables",
+      "ssh-upload",
+      "livepipe",
+      "remote"
+    ]
+  },
+  {
+    "date": "2026-11-11",
+    "error_message": "同一根因波及 09-10 及以后所有批次：抖音 4 份（09-10/09-12/09-13/10-31）与视频号 09-12/09-13/10-31 的配置都没有开 build.enabled，远程批次既没有 img/、也不会自建表。",
+    "root_cause": "与 09-10 视频号同因：upload_livepipe_ssh.py 只传 *-emoji.json、不传 img/；而这些配置要么没写 emoji 段（抖音/视频号），要么 build.enabled=false。",
+    "fix": "给 7 份配置补 emoji.tables.<src>.build.enabled=true（抖音 214 张走 www.douyin.com 官方表情接口，约 1 分钟；视频号 109 张走 codeload.github.com tarball）。服务器实测：抖音 214、快手 207（原本就开着）、视频号 109 全部建表成功；10-31 两份因外置盘未挂载，check 跳过视频存在性，用 _parse_json + _deep_merge 单独验证语法与开关。",
+    "tags": [
+      "09-10",
+      "09-12",
+      "09-13",
+      "10-31",
+      "douyin",
+      "wechat",
+      "kuaishou",
+      "emoji_tables",
+      "remote"
+    ]
+  },
+  {
+    "date": "2026-11-11",
+    "error_message": "09-16 素材量版式时，用 PyAV 按 t 秒抽帧，t=60/300/900/1500/2100 抽出来的帧竟然完全相同（评论内容 40 分钟不变），差点把片尾的评论列表当成整场的版式。",
+    "root_cause": "container.seek(offset, stream=st) 的 offset 单位是 **stream.time_base**（本批 1/90000），不是微秒。按 int(t*1_000_000) 传，等价于 seek 到 1111 分钟之后 ⇒ 每次都落到片尾最后一帧。",
+    "fix": "改成 c.seek(int(t / float(st.time_base)), stream=st)，再逐帧 decode 到 pts>=t；修正后 t=60/300/900/1500/2100 返回 60.02/300.00/900.02/1500.02/2100.01s。measure/scan 脚本（/tmp 下的临时脚本）同步改。",
+    "tags": [
+      "pyav",
+      "seek",
+      "time_base",
+      "measure",
+      "09-16",
+      "老章拆车"
+    ]
+  },
+  {
+    "date": "2026-11-11",
+    "error_message": "跑 09-14艾瑞泽8CTCC_视频号 时 parse 第一步崩：ModuleNotFoundError: No module named 'rapidocr_onnxruntime'；换成正确的解释器再跑，seg1 又变成『已有 rows.jsonl ⇒ 复算』并产出 0 条评论。",
+    "root_cause": "两件事叠在一起：① 用户用的是 base conda 的 `python`（/home/puyu/anaconda3/bin/python），OCR 依赖 rapidocr_onnxruntime 只装在 vlx 环境；② 之前中断的运行在 <段目录>/rows.jsonl 留下 **0 字节文件**，而 config/paths.py:segments 只判 `rw.exists()` 就把它当复算输入 ⇒ 跳过 OCR、从空文件复算出 0 条评论（还会把已有 comments.jsonl 覆盖成空）。",
+    "fix": "① 用 /home/puyu/anaconda3/envs/vlx/bin/python 跑（每份配置头部都写了 P=…）；② 删掉 0 字节的 rows.jsonl（本次 seg1/seg2）再 `--only panels,parse`。代码层待改：`rw.exists()` 应同时判 `rw.stat().st_size > 0`，否则中断过的主机永远算不出评论且不报错。",
+    "tags": [
+      "livepipe",
+      "rows",
+      "resume",
+      "0-byte",
+      "conda",
+      "rapidocr",
+      "09-14",
+      "视频号"
+    ]
+  },
+  {
+    "date": "2026-11-11",
+    "error_message": "09-22 微博 590×1280 首次按评论行距 78.5 解析：60s 切片 33 条唯一评论里 31 条「多行合并」，用户名把「榜N」和后半句一起吞掉、正文跨两条评论粘连（`沟里六块腹肌的奶茶：我不如加点钱上风云了，推 灵活看不过来来了：…`），text_box 高达 338px。",
+    "root_cause": "row_pitch 取了**评论行距** 78.5，而折行续行只离首行 26px（0.33 个行距）⇒ 低于 group_rows 把「同一视觉行的兄弟碎片」认领进来的 0.4×pitch 闸（31.4px）。续行被认成折行后，把它的首行当 sib 一起塞进 k±0.5 小数槽；assemble_row 按 x1 排序（续行 x1=27 < 首行 x1=28）⇒ 顺序倒置，再叠上下一条评论的头就粘成一长句。写 52（单行评论间距）会好一些但两行评论与下一条差 1.51 个行距，实测丢 8 条。",
+    "fix": "row_pitch 取**评论行距的一半** 39.2：两行评论正好 2 槽、单行评论 1.32 槽、续行 0.66 槽（>0.4 不被当 sib、<0.73 过续行闸）。同一 60s 切片实测 44 条唯一评论（78.5→33、52→36），用户名/正文顺序正确、无重复；裁切 6 条为面板顶部首行已滚出的孤续行。",
+    "tags": [
+      "livepipe",
+      "微博",
+      "weibo",
+      "row_pitch",
+      "wrap_at_text_left",
+      "assemble_row",
+      "09-22",
+      "奇瑞QQ3"
+    ]
+  },
+  {
+    "date": "2026-11-14",
+    "error_message": "09-22 视频号三份批次首次 batch_local --apply 全部 rc=1：parse 报 ModuleNotFoundError: No module named 'rapidocr_onnxruntime'；修好解释器后重跑又在 qualify 报「一段的用户表都没有」，parse 显示「解析: 0 条评论」。",
+    "root_cause": "两段独立问题：① batch_jobs.local.json 没写 conda_env，生成的 run.sh 用 base 解释器，base 没装 rapidocr；② 第一次失败时 parse 已创建 0 字节 rows.jsonl，paths.segments() 只看 rw.exists() ⇒ 重跑走「零 OCR 复算」从空文件解析出 0 条评论。另：vlx 激活钩子引用未绑定变量 NVCC_PREPEND_FLAGS，run.sh 的 set -u 会让 conda activate 整段中止。",
+    "fix": "① batch_jobs.local.json 设 conda_env=vlx（/home/puyu/anaconda3/envs/vlx/bin/python）；② livepipe/config/paths.py segments()：rows.jsonl 要求 size>0 才算已有行序；③ batch_local.py / upload_livepipe_ssh.py 生成的 run.sh 在 conda activate 前后 set +u / set -u；④ batch_local.py --retry-failed 能真正重启 phase=failed/stale 的任务，--overwrite 强制重新组装并重写 run.sh。",
+    "tags": [
+      "batch_local",
+      "conda",
+      "vlx",
+      "rapidocr_onnxruntime",
+      "rows.jsonl",
+      "resume",
+      "qualify",
+      "09-22",
+      "奇瑞QQ3"
+    ]
+  },
+  {
+    "date": "2026-11-15",
+    "error_message": "撞库补图时 `--video-map` 不生效：export 报 PermissionError [Errno 13] Permission denied: '/root/livepipe_batches/09-16老章拆车_抖音/videos/老章说车/19：40-20：20.mp4'。",
+    "root_cause": "``render._resolve_video`` 先用 ``Path(video).is_file()`` 试探 summary.json 里的旧路径；旧路径父目录 ``/root`` 无读权限时 ``stat`` 抛 ``PermissionError``，函数在进入 ``video_map`` 循环前就异常退出，重映射永远轮不到。",
+    "fix": "新增 ``_isfile()`` 包装 ``try/except OSError``，原路径与重映射候选都用它；自检加一条「路径中间是普通文件（NotADirectoryError）」覆盖异常分支。",
+    "tags": [
+      "list_match",
+      "撞库",
+      "--video-map",
+      "render_missing",
+      "PermissionError",
+      "/root"
+    ]
+  },
+  {
+    "date": "2026-11-15",
+    "error_message": "verify 报「各段导出目录的平台名不一致（kuaishou_large、快手）」：export 按档案名建了 kuaishou_large/kuaishou_480/kuaishou_720/douyin_app_480/weibo_app 目录，没落到中文平台目录。",
+    "root_cause": "配置给新版式起了档案名（kuaishou_480/kuaishou_720/kuaishou_large/douyin_app_480/weibo_app）当面板 platform，但 PLATFORM_CN（export_user_images/common.py 与 verify_run/common.py 两处副本）没收这些名字，platform_dir() 原样透传 ⇒ 同一平台拆成两个目录名。",
+    "fix": "两处 PLATFORM_CN 同步补 5 个别名（kuaishou_480/kuaishou_720/kuaishou_large→快手，douyin_app_480→抖音，weibo_app→微博），自检补 5 条断言；盘上 24 个段级导出目录直接 mv 成中文名（manifest 内 rel 路径不含平台段，改名安全）。09-06 快手、09-10 快手、09-22 微博 verify 转 0 错误 0 警告。",
+    "tags": [
+      "export",
+      "verify",
+      "PLATFORM_CN",
+      "平台名",
+      "档案名",
+      "collect"
+    ]
+  },
+  {
+    "date": "2026-11-16",
+    "error_message": "全量撞库重跑后，09-05风云A9L、09-06、09-07 仍有大量「仅直播命中」和「未命中最近账号」补不了图：export 报「取原帧要视频：summary.json 里没有 video，用 --video 指定（当前 '/home/puyu/work/data/...'）」。",
+    "root_cause": "重跑脚本给所有场次共用一份 --video-map 列表，但列表只覆盖 /root/livepipe_batches/... 前缀（远程批次）；这三批是本地老批次，summary.json 里记的是 /home/puyu/work/data/...，重映射匹配不上，回落到不存在的旧路径。素材实际都在 /run/media/puyu/MyDisk 下且文件名一致。",
+    "fix": "补 --video-map /home/puyu/work/data=/run/media/puyu/MyDisk 后重跑 09-05风云A9L下午、09-06上午/下午、09-07上午/下午 5 场，rc=0 且补图警告清零（09-05风云A9L 未命中最近图 12→20 账号，09-06 抖音段、09-07 快手段全部出图）。09-05猎鹰上午因素材在未挂载的 A1B7-2982，暂无法补。",
+    "tags": [
+      "match",
+      "render",
+      "video-map",
+      "素材路径",
+      "补图",
+      "work/data"
+    ]
+  },
+  {
+    "date": "2026-11-16",
+    "error_message": "新批次 2026-0930-1006《全球车的中国路》素材目录名与实际平台不符：9.30「快手/」里是视频号录屏、「视频号/」里是快手录屏；10.02「快手/1」里是抖音录屏。按目录名写配置会把行距/表情表配错，整片认不出。",
+    "root_cause": "录屏归档按设备/批次编号命名（1/2 子目录混装），目录名不是平台事实；同一天三个平台的录屏被交叉放进不同文件夹。",
+    "fix": "写配置前先 OCR 一帧按画面关键词判平台（视频号=`聊一聊`；快手=`小时榜`/`L1成就馆`/`打卡领亲密值`；抖音=`人气榜`/`人气票`），按实际平台重新分组；配置头保留来源目录，便于复核。16 份配置全部按实际平台生成。",
+    "tags": [
+      "livepipe",
+      "config",
+      "platform",
+      "素材归档",
+      "全球车的中国路"
+    ],
+    "verified": {
+      "date": "2026-11-16",
+      "how": "对 52 段逐段 OCR 分类并按实际平台重建 16 个分组；三平台各做 120s 试跑（抖音 57 / 快手 37 / 视频号 15 条唯一评论）。",
+      "result": "平台判定与抽帧目检一致；9.30 两个文件夹内容互换、10.02 快手/1=抖音 已确认。"
+    }
+  },
+  {
+    "date": "2026-11-16",
+    "error_message": "视频号配置的评论 rect 顶端压在场次横幅上：`第三站（10.5-6日）：奇瑞QQ-…` 带冒号被当评论读进交付（用户名=`第三站…`）；右下「若主播7天内再次开播 / 提醒一次」订阅卡也被并进上一条评论。",
+    "root_cause": "locate 的 y1 取首条含冒号行再上放 80px，视频底部的场次横幅本身带冒号 ⇒ 被当成评论行；订阅卡文字块左沿≈450，旧 x_ignore_from=500 拦不住。",
+    "fix": "逐段 OCR 找横幅行（`第[一二三…]站`/`主驾开播`/`安全驾`，块宽>200px），rect y1 抬到横幅底+3（视频号约 631–634）；视频号 x_ignore_from 改 440（评论块 x1≤100、订阅卡 x1≈450）；overlay_cards 补 `若主播7天|再次开播|提醒一次`。",
+    "tags": [
+      "livepipe",
+      "panels",
+      "rect",
+      "banner",
+      "wechat_app",
+      "全球车的中国路"
+    ],
+    "verified": {
+      "date": "2026-11-16",
+      "how": "10.06 视频号 120s 试跑（调整前/后各一次）比对 comments.jsonl。",
+      "result": "调整前 16 条（含横幅假评论 + 一条被卡片串接的评论）；调整后 15 条，横幅/订阅卡均不再出现。"
+    }
+  },
+  {
+    "date": "2026-11-16",
+    "error_message": "用 `--print-config` 生成的临时切片配置跑 parse 时，实际解析的是原始整段视频，并把 rows.jsonl 写进真实产出目录（而不是 /tmp 的切片输出）。",
+    "root_cause": "`--print-config` 输出带有内部缓存键 `_videos` / `_segments` / `_judgments_cache`；`segments()` 见到 `_segments` 就直接返回，忽略后来修改的 `input.videos` / `output.dir`。",
+    "fix": "生成临时切片配置时先剔除所有 `_` 开头的键，再改输入/输出；误跑进程已停止，保留 seg1 的部分 rows.jsonl（1811 行 / 前 1126.8s）供正式跑 `--resume` 续用。该经验已记入 cerebrum。",
+    "tags": [
+      "livepipe",
+      "config",
+      "print-config",
+      "slice",
+      "segments"
+    ],
+    "verified": {
+      "date": "2026-11-16",
+      "how": "对比 /proc/<pid>/fd：fd 8 打开原始视频、fd 3 写入真实 out 目录；剔除 `_` 键后重跑 60s 切片。",
+      "result": "两个切片按 /tmp/lp1025check/out3 输出正常跑完（seg1 15 条 / seg2 12 条唯一评论）；真实 seg1 只留下可续跑的 rows.jsonl。"
+    }
+  },
+  {
+    "date": "2026-11-17",
+    "error_message": "迁移 out 到外置盘时，路径改写脚本重复运行，给 66 份 JSON 配置各插入了两行 \"base_dir\"。",
+    "root_cause": "insert_base_dir() 只根据配置结构（默认表情表缺 path）决定插入，没有先检查文件中是否已存在 \"base_dir\" 键 ⇒ 脚本不幂等，第二次运行重复插入。",
+    "fix": "/tmp/rewrite_out_paths.py 的 insert_base_dir() 开头加 re.search(r'^\\s*\"base_dir\"\\s*:', t, re.M) 命中即返回；再写去重脚本删掉重复行（保留一行）。",
+    "tags": [
+      "json",
+      "config",
+      "base_dir",
+      "idempotency",
+      "migration",
+      "out"
+    ],
+    "verified": {
+      "date": "2026-11-17",
+      "how": "重跑改写脚本输出 changed 0 files；grep -c base_dir 每份配置恒为 1；用 livepipe.config.load(check_videos=False) 校验可加载配置的 output.dir 与 emoji 路径全部在新根。",
+      "result": "88 份配置中 77 份正常加载，11 份加载失败与改动前完全一致（历史遗留空 input / 示例配置）。"
+    }
+  },
+  {
+    "date": "2026-11-17",
+    "error_message": "livepipe oss --selftest 在 finalize 用例崩溃：OssIngestError: 待收尾文件不存在：.../gate.mp4.part。",
+    "root_cause": "tests/README 要求“探不到时长就拒绝收尾”，ingest.finalize_part 默认却允许 duration_s=None 并改名；首个用例改名后，后续用例复用同一 .part 报不存在。三方语义不一致。",
+    "fix": "finalize_part 默认要求 duration_s>0，新增 allow_no_duration / --allow-no-duration 逃生阀；expect_duration 始终优先；selftest 拆独立文件并补 0/负数/NaN 用例。",
+    "tags": [
+      "oss_ingest",
+      "ingest",
+      "selftest",
+      "duration",
+      "semantics"
+    ],
+    "verified": {
+      "date": "2026-11-17",
+      "how": "python3 -m livepipe oss --selftest；并跑 selftest_manifest / selftest_sync。",
+      "result": "299 项全过，EXIT=0。"
+    }
+  },
+  {
+    "date": "2026-11-17",
+    "error_message": "10-19 六个 _live 裁尾段 trim_s 全为 null，P1 上传清单缺裁尾区间。",
+    "root_cause": "_trim_range 只认配置 start+duration 或文件名 _<start>-<end>；10-19 的 dy_qq_16-31-17-00_live.mp4 两者都没有，直接 return None。",
+    "fix": "文件名校验失败但已探到有效 duration_s 时，回退 [start or 0, start+duration_s]；补自检用例。",
+    "tags": [
+      "oss_ingest",
+      "trim_s",
+      "manifest",
+      "10-19"
+    ],
+    "verified": {
+      "date": "2026-11-17",
+      "how": "重生成 10-19奇瑞创新大会_抖音奇瑞汽车.json。",
+      "result": "seg5 trim_s=[0.0, 5455.716033]；6 个 media 裁尾均为 0-<duration>。"
+    }
+  },
+  {
+    "date": "2026-11-17",
+    "error_message": "P0 上传清单 2 个整段 dst 丢失事件目录：~/oss-bucket/直播data/录屏/9.30/...（应为 .../录屏/2026-0930-1006《全球车的中国路》/9.30/...）。",
+    "root_cause": "生成脚本一度把索引根放宽为父目录 直播data/录屏（412 对象），dst 少了 event 层；同时两个事件的 81 个对象混在同一候选池，存在跨事件同字节误配风险。",
+    "fix": "两批各自用事件根建索引（global 51 / 1019 30），匹配限定事件内；dst 用父根+事件目录拼接；脚本加 CSV 29 行/P1 字节/trim_s 非空硬校验。",
+    "tags": [
+      "oss_inventory",
+      "p1",
+      "dst",
+      "index",
+      "cross-event"
+    ],
+    "verified": {
+      "date": "2026-11-17",
+      "how": "两遍 scripts/build_oss_inventory.py --out-dir /tmp/idem1|2；diff -r；核对 CSV。",
+      "result": "exit 0/0，diff 为空；29 行、46,520,729,506 B；2 个 full dst 含事件目录。"
+    }
+  },
+  {
+    "date": "2026-11-17",
+    "error_message": "P0 summary 的 coverage.indexed_videos 写 51，映射引擎实际只有 50：0 字节百度云临时文件被算进索引。",
+    "root_cause": "scripts/build_oss_inventory.py 的 scan_oss_entries 只按视频扩展名过滤，没有复用 manifest 的临时名/0 字节规则。",
+    "fix": "scan_oss_entries 复用 common.is_temp_name 并跳过 size<=0；两批改为 50/30、合计 80；README 定义“可用视频”。",
+    "tags": [
+      "oss_inventory",
+      "coverage",
+      "temp-file",
+      "review"
+    ],
+    "verified": {
+      "date": "2026-11-17",
+      "how": "重跑 build_oss_inventory.py 并核对 summary.coverage",
+      "result": "global 50 / 1019 30 / total 80；53/27/2 与字节不变"
+    }
+  },
+  {
+    "date": "2026-11-17",
+    "error_message": "P1 补传后重跑 P0 脚本得到 55/0，却因基线只认 53/2 而 EXIT 1，操作者做完补传反而拿不到绿色验收。",
+    "root_cause": "acceptance.state 写死“待 P1 补传”，校验只接受一套 EXPECTED，phase 没有按实际数字判定。",
+    "fix": "新增 P1_EXPECTED（55/0/27 行/40,069,546,585 B），detect_phase 整组吻合才切换；acceptance.phase/state 自动生成；补传后用 --verify-uploads 核 dst 字节。",
+    "tags": [
+      "oss_inventory",
+      "acceptance",
+      "p1",
+      "exit-code"
+    ],
+    "verified": {
+      "date": "2026-11-17",
+      "how": "55 个稀疏文件搭 P1 镜像跑脚本；另跑 verify_upload_rows 正负例",
+      "result": "P1 镜像 55/0/27 EXIT 0、phase=p1；缺 27 个副本身 EXIT 1"
+    }
+  },
+  {
+    "date": "2026-11-17",
+    "error_message": "verify-media 对非视频/损坏成品探不到时长时仍打印 PASS 并返回 0。",
+    "root_cause": "_cmd_verify_media 把 duration None 当作可接受状态。",
+    "fix": "默认输出 UNKNOWN 并返回 1；新增 --allow-unknown-duration 显式放行；README/usage 同步。",
+    "tags": [
+      "oss_ingest",
+      "verify-media",
+      "false-positive",
+      "review"
+    ],
+    "verified": {
+      "date": "2026-11-17",
+      "how": "selftest 新增 2 项并全量跑",
+      "result": "无时长 EXIT 1；加标志 EXIT 0；310 项全过"
+    }
+  },
+  {
+    "date": "2026-11-17",
+    "error_message": "只有裁尾段的配置对着空 OSS 根 audit 仍打印“结论：PASS”，看起来像补传已完成。",
+    "root_cause": "audit 的 missing 只统计非裁尾段，PASS 文案没有说明裁尾副本不在检查范围。",
+    "fix": "有裁尾时 PASS 改为“清单完成：…… N 段裁尾副本不在本次检查内”；P1 落盘用 build_oss_inventory.py --verify-uploads。",
+    "tags": [
+      "oss_ingest",
+      "audit",
+      "trim",
+      "semantics"
+    ],
+    "verified": {
+      "date": "2026-11-17",
+      "how": "空根 + 09-30 快手（2 裁尾）实跑；--verify-uploads 跑 P1 镜像",
+      "result": "文案带范围说明；落盘缺 27 → EXIT 1"
+    }
+  },
+  {
+    "date": "2026-11-17",
+    "error_message": "显式 --oss-root 指向不存在路径时 audit 只报全量缺失，没有“根不存在/检查挂载”的提示。",
+    "root_cause": "resolve_oss_root 对显式路径不校验存在性（strict 只作用于自动候选）。",
+    "fix": "strict 模式下显式路径不是目录即抛 OssIngestError；check-env 继续用 strict=False。",
+    "tags": [
+      "oss_ingest",
+      "root",
+      "error-message",
+      "review"
+    ],
+    "verified": {
+      "date": "2026-11-17",
+      "how": "python3 -m livepipe oss audit 10-04... --oss-root /tmp/NO-SUCH-OSS",
+      "result": "打印“显式 OSS 根不存在”，EXIT 1；自检 310 全过"
+    }
+  },
+  {
+    "date": "2026-11-17",
+    "error_message": "配置加载失败走 JSONC 兜底时，清单里的段名从自定义名（如“开场”）静默变成 seg1/seg2。",
+    "root_cause": "_fallback_segments 只读 input.video/videos/start/duration，忽略 input.segment_names。",
+    "fix": "兜底读取 segment_names；长度与展开段数不符才退回 segN。",
+    "tags": [
+      "oss_ingest",
+      "manifest",
+      "fallback",
+      "segment-names",
+      "review"
+    ],
+    "verified": {
+      "date": "2026-11-17",
+      "how": "selftest_manifest 的 JSONC 兜底用例加 segment_names",
+      "result": "seg 字段保留“开场”；310 项全过"
+    }
+  },
+  {
+    "date": "2026-11-18",
+    "error_message": "P1 收尾的 SHA256 抽样命令报 TypeError: 'DictReader' object is not subscriptable，2 个整段样本全部漏选，只验了 2 个裁尾。",
+    "root_cause": "临时脚本把 csv.DictReader 当 list 直接下标 rows['kind']；DictReader 只能迭代。",
+    "fix": "改 list(csv.DictReader(...)) 后再筛选整段；重跑整段 SHA256（/tmp/p1-sha256-full.log）。",
+    "tags": [
+      "oss",
+      "p1",
+      "sha256",
+      "csv",
+      "ad-hoc-script"
+    ],
+    "verified": {
+      "date": "2026-11-18",
+      "how": "重跑整段 SHA256 双向比对",
+      "result": "seg1/seg3 均 MATCH，各约 259s"
+    }
+  },
+  {
+    "date": "2026-11-18",
+    "error_message": "P1 收尾复核执行 p1_upload.py --verify-only，把 p1-upload-report.json 覆盖成 27 条 present，29 条逐条上传耗时/速度证据丢失。",
+    "root_cause": "--verify-only 与正式上传共用同一个默认 --report 路径（p1-upload-report.json），核对结果直接覆盖上传报告。",
+    "fix": "--report 默认改为 None：verify-only 未显式指定时写 p1-verify-report.json，正式上传仍写 p1-upload-report.json；上传报告按 29 行 verify 快照 + /tmp/p1-upload.log 逐条重建（started_at 无法恢复记 null，标 reconstructed）。",
+    "tags": [
+      "oss",
+      "p1",
+      "uploader",
+      "report",
+      "data-loss"
+    ],
+    "verified": {
+      "date": "2026-11-18",
+      "how": "重跑 --verify-only 后 md5sum -c 上传报告未变；两份报告并存（29 条上传 / 27 条核对）",
+      "result": "上传报告 md5 OK，verify 写独立文件"
+    }
+  },
+  {
+    "date": "2026-11-18",
+    "error_message": "P2 结果同步首批 3 个文件失败：os.replace(.part → 正式名) 报 Errno 2 No such file or directory；goofys 日志为 S3 NoSuchKey / RenameOp ENOENT。失败集中在 all_users_正面_3张以上/+1八重樱-3/。",
+    "root_cause": "goofys 的 rename 实现对目标路径含 '+' 的目录会 404（源 .part key 找不到）；直接写正式名正常。",
+    "fix": "scripts/oss_sync.py 结果文件改为直接写正式名（结果文件小、失败可重跑），不再依赖 rename；上传前清理旧 .part；selftest_oss_sync.py 增加含 '+' 目录用例（30 项）。",
+    "tags": [
+      "oss",
+      "p2",
+      "sync",
+      "goofys",
+      "rename",
+      "plus-sign"
+    ],
+    "verified": {
+      "date": "2026-11-18",
+      "how": "真实任务 10-04 视频号 664 文件同步后续传 442 个 0 失败；--verify-only 664/664、--sha256 0 不一致；重跑 0 上传 / 664 跳过",
+      "result": "同步与复验全绿"
+    }
+  },
+  {
+    "date": "2026-11-19",
+    "error_message": "SSH/本地队列回传时，output.dir 为绝对路径（外置盘 /run/media/.../out/<场次>/<平台>）的任务落到 out/<任务名>/<平台>/，与事件树 out/<场次>/<平台>/ 不一致；P2 回填需 LEGACY_DAYS 硬编码映射，且抖音/快手任务名目录未被覆盖。",
+    "root_cause": "batch_remote.py / batch_local.py 的 local_target() 只对相对 out/... 走事件树；绝对路径分支退化为「任务名/末级目录」，没有利用路径里的 /out/ 后缀。",
+    "fix": "两个脚本的 local_target() 增加 after_out()：绝对路径（以及无 output.dir 时的远程产物路径）取最后一个 /out/ 之后的部分，落到 <local_out_root>/<场次>/<平台>。已把 6 个任务名目录（09-30 抖音/视频号、10-01 视频号、10-03 抖音/视频号、10-06 视频号）移入 out/2026-0930-1006全球车的中国路/<天>/<平台>，并同步 state 的 local_out。",
+    "tags": [
+      "batch_remote",
+      "batch_local",
+      "local_target",
+      "output-dir",
+      "event-tree",
+      "path-layout"
+    ],
+    "verified": {
+      "date": "2026-11-19",
+      "how": "verify_remote.py 重新解析 3 个远程队列并逐文件比大小；本地 state 的 out_dir vs local_out 同样比对",
+      "result": "SSH 9 任务（除未跑的 10-01 快手）与本地批次 8 任务全部 0 缺 0 异"
+    }
+  },
+  {
+    "date": "2026-11-19",
+    "error_message": "P1 裁尾副本（42.08GB / 38 对象）和 P2 回填结果（85.08GB / 406,616 对象）被写到桶根前缀 奇瑞汽车/直播看管/…；项目实际 OSS 根是 web/1/奇瑞汽车/直播看管/，导致 22 份配置的 OSS 路径、P3/P4 默认落点全部读不到正确位置。",
+    "root_cause": "历史做法是在 ~/oss-bucket 上 bind-mount 桶内 web/1 子树，脚本和文档按 ~/oss-bucket/奇瑞汽车/... 写；后来 goofys 直接挂到 ~/oss-bucket（桶根），路径语义变成桶根，P1/P2 期间无人发现，写到了同名的错误前缀。",
+    "fix": "新增 scripts/oss_relocate_prefix.py：服务端 CopyObject（实测 3GB 秒级；本桶 upload_part_copy 会 60s 超时，不要用）把两个前缀复制到 web/1 下，源保留待复核；21 份配置 27 个 _live 路径改指 web/1；p2_backfill/oss_download/build_oss_inventory/p4_cleanup/oss_ingest 默认根全部改成 web/1；P2 state 的 148 个 dst 同步改指新根（备份 state.json.bak-20261119-prefix）。livepipe check 22/22 通过。",
+    "tags": [
+      "oss",
+      "goofs",
+      "path-prefix",
+      "web/1",
+      "p1",
+      "p2",
+      "relocate",
+      "copy-object",
+      "multipart-copy"
+    ],
+    "verified": {
+      "date": "2026-11-19",
+      "how": "oss_relocate_prefix.py --verify-only：直播录屏 38/38 对象、42,081,575,164 B、0 缺失；结果前缀复制完成后同法核对；livepipe check 22 份配置 rc=0。"
+    }
+  },
+  {
+    "date": "2026-11-19",
+    "error_message": "oss_download.py baidu 模式让 bypy 直接把 1.28GB 的录屏下载到 goofys 挂载点，第二块起 HTTP 206 反复重试（Maximum retries reached），最终只在正式名下留下 20,971,520 B（正好一个 bypy 分块）的截断 mp4，ffprobe 报 moov atom not found。",
+    "root_cause": "bypy 1.8.9 的下载器按 dl_chunk_size=20MB 分块，每块单独开文件：offset>0 时用 'r+b' + seek 写。goofys 对这种「重新 open + 随机偏移写」的大文件不可靠，第一块写完后后续 Range 请求全部失败。P3 文档早先只验证过 bypy → 本地暂存 → cp 到 OSS，没验证过 bypy 直写挂载点。",
+    "fix": "scripts/oss_download.py 的 baidu 模式去掉本地暂存：bypy 只用来授权与列目录（_walk_proceed_remote_dir），文件内容用 PCS 下载接口（const.DPcsUrl+'file'，带 access_token）发一个 Range: bytes=offset-(size-1) 请求，requests stream=True 顺序写 <final>.part（一次 open、顺序 write，与 cp 相同的写模式），成功后 finalize_part 校验字节/时长、改名并写 manifest；失败保留 .part，--resume 从 .part 字节数续传。离线自检 scripts/selftest_oss_download.py 扩到 30 项（直写/非视频/中途断流留 .part/resume/dry-run）。",
+    "tags": [
+      "oss",
+      "goofs",
+      "bypy",
+      "baidu",
+      "streaming",
+      "range",
+      "part",
+      "resume",
+      "p3"
+    ],
+    "verified": {
+      "date": "2026-11-19",
+      "how": "真实直写 14.24GB：/直播录屏/奇瑞探秘局 6 个原件 → OSS 奇瑞探秘局/{10.24,10.25}（10.25 两段 733s、10.24 四段 1573s），字节与本地 MyDisk 原件逐一相同（合计 14,235,937,800 B），manifest 时长 3462.14/2696.94/4496.31/1790.92/4592.85/2292.96s；3 个裁尾副本 cp → .part → ingest 成功（3,136,808,210 B）；10-24/10-25 配置 input.videos 改指 OSS 后 livepipe check 均 rc=0。离线自检 32/32。"
+    }
+  },
+  {
+    "date": "2026-11-19",
+    "error_message": "把 livepipe 的 output.dir 指到 OSS（goofs 挂载）后，parse 的断点续跑在 rows.jsonl 上直接崩：OSError [Errno 95] Operation not supported（open('a')）。",
+    "root_cause": "goofs 不支持 FUSE append 模式（'a'）。livepipe 正常抽行用 'w' + 每帧 flush 是支持的（实测 60 次 flush/3.9MB 共 0.39s，且 flush 后外部 stat 能看到新大小），只有续跑分支的 open('a') 不支持。",
+    "fix": "livepipe/parsing/cli/run.py：续跑时先尝试 open('a')；OSError 则改 open('w')，把 load_rows 读回的已有行重写一遍再继续写新行。这样 rows.jsonl 可以直接落 OSS，续跑语义不变。实测 20s 切片（输出到 OSS 探针目录）：panels.json / rows.jsonl / frames/*.jpg / comments.jsonl / summary.json 全部写成功，11 条评论、rc=0；探针目录已删除。",
+    "tags": [
+      "oss",
+      "goofs",
+      "fuse",
+      "append",
+      "eopnotsupp",
+      "rows.jsonl",
+      "resume",
+      "output",
+      "livepipe"
+    ],
+    "verified": {
+      "date": "2026-11-19",
+      "how": "20s 切片直写 OSS 全链 rc=0；goofs open('a') 复现 ENOTSUP；output/collect 配置切到 直播产生结果 后 livepipe check 2/2 rc=0。"
+    }
+  },
+  {
+    "date": "2026-11-19",
+    "error_message": "goofs 挂载突然掉线：/home/puyu/oss-bucket 下所有路径（直播录屏/奇瑞探秘局、素材/out/wechat_emoji）返回 ENOTCONN（Transport endpoint is not connected）；此时 livepipe check 会读不到视频/表情表。",
+    "root_cause": "goofs 进程已退出（mount 表里仍留着 fuse 条目，属于失效挂载）。历史上 goofs 以 -f 跑在终端会话里，未用 systemd 托管，终端断开/异常就会掉。另外 nautilus（PID 183305）打开了挂载点内的文件，普通 fusermount3 -u 报 Device or resource busy。",
+    "fix": "先 fusermount3 -uz /home/puyu/oss-bucket 懒卸载（绕过 nautilus 的占用），再 nohup setsid /home/puyu/goofys -f -o allow_other --endpoint http://oss-cn-beijing.aliyuncs.com --subdomain static-cantotimes-com /home/puyu/oss-bucket 重挂（日志 /tmp/goofys_remount.log）。1s 后 stat 可用；wechat-emoji.json 100,815 B 与本地一致，表情表 109 模板加载正常，两份探秘局配置 check 2/2 rc=0。",
+    "tags": [
+      "goofs",
+      "fuse",
+      "enotconn",
+      "remount",
+      "nautilus",
+      "systemd",
+      "ops"
+    ],
+    "verified": {
+      "date": "2026-11-19",
+      "how": "重挂后 stat 素材/录屏目录、load_emoji_gallery（109 模板）、livepipe check 10-24/10-25 均 rc=0。"
+    }
   }
 ]

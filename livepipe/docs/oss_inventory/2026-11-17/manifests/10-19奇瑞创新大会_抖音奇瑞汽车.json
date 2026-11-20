@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_抖音奇瑞汽车.json",
+  "generated_from": {
+    "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_抖音奇瑞汽车.json",
+    "oss_root": "/home/puyu/oss-bucket/直播data/录屏/10.19",
+    "disk_root": null,
+    "generated_at": "2026-11-17T00:00:00Z"
+  },
+  "segments": [
+    {
+      "seg": "seg1",
+      "disk": "/run/media/puyu/MyDisk/10.19/抖音/奇瑞汽车/8： 59-10： 23.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/奇瑞汽车/8： 59-10： 23.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3224952398,
+      "duration_s": 5095.04,
+      "trim_s": null
+    },
+    {
+      "seg": "seg2",
+      "disk": "/run/media/puyu/MyDisk/10.19/抖音/奇瑞汽车/10： 23-12： 05.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/奇瑞汽车/10： 23-12： 05.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3225279532,
+      "duration_s": 6150.472856,
+      "trim_s": null
+    },
+    {
+      "seg": "seg3",
+      "disk": "/run/media/puyu/MyDisk/10.19/抖音/奇瑞汽车/12： 26-13： 57.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/奇瑞汽车/12： 26-13： 57.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3225400619,
+      "duration_s": 6711.120156,
+      "trim_s": null
+    },
+    {
+      "seg": "seg4",
+      "disk": "/run/media/puyu/MyDisk/10.19/抖音/奇瑞汽车/13： 58-15： 29.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/奇瑞汽车/13： 58-15： 29.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3224705277,
+      "duration_s": 5482.700333,
+      "trim_s": null
+    },
+    {
+      "seg": "seg5",
+      "disk": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/dy_qr_15-29-17-00_live.mp4",
+      "oss": null,
+      "trimmed": true,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3089242130,
+      "duration_s": 5455.716033,
+      "trim_s": [
+        0.0,
+        5455.716033
+      ]
+    }
+  ]
+}

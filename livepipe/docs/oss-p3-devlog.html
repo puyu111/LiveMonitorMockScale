@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OSS P3 下载链路开发日志</title>
+<style>
+:root{--bg:#f6f7f4;--card:#fff;--ink:#17201c;--muted:#5d6a63;--line:#dfe4df;
+--accent:#0f766e;--soft:#d8f0eb;--trim:#c2760a;--trimsoft:#fdf0d8;--bad:#c0392b;
+--codes:#eef1ee;--shadow:0 1px 2px rgba(20,40,30,.05),0 8px 24px rgba(20,40,30,.04)}
+@media(prefers-color-scheme:dark){:root{--bg:#101513;--card:#18201d;
+--ink:#e7ede9;--muted:#9fada6;--line:#2a3530;--accent:#57c7b8;--soft:#143630;
+--trim:#e2a33c;--trimsoft:#2f2413;--bad:#ef8074;--codes:#111815;--shadow:none}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);
+font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+"Microsoft YaHei",sans-serif;padding:0 18px 56px}
+main{max-width:1060px;margin:0 auto}header{padding:52px 0 24px}
+.eyebrow{font-size:12px;letter-spacing:.14em;color:var(--accent);font-weight:700}
+h1{font-size:clamp(28px,4vw,40px);margin:8px 0 10px;letter-spacing:-.01em}
+.lede{color:var(--muted);font-size:17px;max-width:780px;margin:0}
+.meta{color:var(--muted);font-size:13px;margin-top:12px}
+.verdict{margin:26px 0 28px;padding:20px 22px;background:var(--card);
+border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;
+box-shadow:var(--shadow)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+gap:12px;margin:0 0 36px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;
+padding:15px;box-shadow:var(--shadow)}
+.kpi b{display:block;font-size:25px;line-height:1.15}
+.kpi span{display:block;font-size:13px;margin-top:4px}
+.kpi em{display:block;font-size:11.5px;color:var(--muted);font-style:normal}
+section{margin:0 0 38px}h2{font-size:20px;margin:0 0 6px}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+padding:16px;box-shadow:var(--shadow);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;
+border-bottom:1px solid var(--line);padding:7px 8px;white-space:nowrap}
+td{border-bottom:1px solid var(--line);padding:7px 8px;vertical-align:top}
+tr:last-child td{border-bottom:0}.num{text-align:right;font-variant-numeric:tabular-nums}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+font-size:12px;word-break:break-all}
+.ok{color:var(--accent);font-weight:700}.bad{color:var(--bad);font-weight:700}
+pre{background:var(--codes);border-radius:8px;padding:13px 14px;overflow:auto;
+font-size:12.5px;line-height:1.55;margin:0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+background:var(--codes);padding:1px 5px;border-radius:4px;font-size:12.5px}
+.note{background:var(--soft);border-radius:10px;padding:14px 16px;font-size:13.5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}.card{overflow-x:auto}table{min-width:560px}}
+footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);
+padding-top:14px}
+ul{margin:8px 0 0;padding-left:22px}li{margin:5px 0}
+</style></head><body><main>
+<header>
+  <p class="eyebrow">开发日志 · 2026-11-19 · 直播看管</p>
+  <h1>OSS P3 下载链路：直写 OSS 的 .part，百度来源先暂存再入库</h1>
+  <p class="lede">新增 <code>scripts/oss_download.py</code>：直播让下载器把流写到
+  OSS 的 <code>&lt;名&gt;.mp4.part</code>，成功后才校验字节/时长、改名并写
+  <code>.manifest.json</code>；百度来源用 bypy 拉整个目录到本地暂存，再逐个复制成
+  OSS <code>.part</code> 收尾。失败绝不留正式文件。</p>
+  <p class="meta">入口 <code>scripts/oss_download.py</code> · 自检
+  <code>scripts/selftest_oss_download.py</code> · 收尾复用
+  <code>python -m livepipe oss ingest</code> 的 <code>finalize_part</code></p>
+  <p class="meta"><b>2026-11-19 更正：</b>项目 OSS 根实际是 <code>~/oss-bucket/web/1/奇瑞汽车/直播看管/</code>；文中 <code>~/oss-bucket/奇瑞汽车/…</code> 是当时写错的桶根前缀。相关对象已用 <code>scripts/oss_relocate_prefix.py</code> 服务端复制到 <code>web/1/…</code>，配置与工具默认根已改指。</p>
+  <p class="meta"><b>2026-11-19 更新：</b><code>baidu</code> 模式已改为<b>不落本地暂存</b>。bypy 自带的 20MB 分块下载在 goofys 上大文件失败（第二块起 HTTP 206 重试耗尽，只留 20MB 截断文件）；现在 bypy 只做授权与列目录，文件内容按 PCS 单请求 <code>Range</code> 顺序流式写入 OSS 的 <code>.part</code>，失败保留 <code>.part</code>、<code>--resume</code> 续传。下文「暂存」描述保留为当时的验收记录。</p>
+  <p class="meta"><b>运行前置：</b>livepipe 不会自动下载素材。跑 <code>run</code> 前，<code>input.videos</code> 指向的视频必须已经在 OSS：百度来源先用 <code>scripts/oss_download.py baidu</code> 直写，裁尾副本走 <code>cp → .part → python3 -m livepipe oss ingest</code>；<code>livepipe check</code> 通过后再跑。</p>
+</header>
+
+<div class="verdict">
+  <b>结论：P3 完成。</b>直播路径用一个真实 3.2GB 文件做了 OSS 直写：
+  3,229,231,923 B 写成 <code>.part</code>，收尾后 ffprobe 读到 12,507.4s，
+  正式文件与 manifest 都在预期路径；百度路径用 bypy 拉了一个远端目录，
+  2,948 B / 1.0s 的测试视频落到 OSS，字节、时长、manifest 全部匹配。
+  失败路径（命令非 0 / 下载器违约写正式名 / 字节闸门不符）均不留正式文件。
+</div>
+
+<div class="kpis">
+  <div class="kpi"><b>3.23 GB</b><span>单文件直写 OSS</span><em>3,229,231,923 B</em></div>
+  <div class="kpi"><b>12,507.4s</b><span>收尾后 ffprobe 时长</span><em>与源文件一致</em></div>
+  <div class="kpi"><b>2,948 B</b><span>bypy 目录测试</span><em>1.0s / manifest</em></div>
+  <div class="kpi"><b>22</b><span>离线自检</span><em>0 失败</em></div>
+  <div class="kpi"><b>0</b><span>失败留下的正式文件</span><em>三种失败路径</em></div>
+</div>
+
+<section>
+  <h2>两条路径</h2>
+  <div class="card">
+    <table>
+      <tr><th>来源</th><th>链路</th><th>落点</th></tr>
+      <tr><td>直播（dypy 等）</td>
+      <td>下载器直接写 <code>&lt;root&gt;/&lt;事件&gt;/&lt;日期&gt;/&lt;平台&gt;/&lt;账号&gt;/&lt;名&gt;.mp4.part</code>
+      → 校验 → <code>os.replace</code> → manifest</td>
+      <td><code>直播录屏/&lt;事件&gt;/…/&lt;名&gt;.mp4</code></td></tr>
+      <tr><td>百度网盘</td>
+      <td><code>bypy download</code> 远端目录 → 本地暂存 → 逐文件复制成 OSS
+      <code>.part</code> → 同一套校验/改名/manifest</td>
+      <td><code>直播录屏/&lt;dest-rel&gt;/…</code></td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>live：下载器只负责写 .part，收尾统一做</h2>
+  <div class="card">
+    <table>
+      <tr><th>项</th><th>行为</th></tr>
+      <tr><td>命令</td><td><code>--cmd</code> 里的 <code>{part}</code> / <code>{final}</code> /
+      <code>{dir}</code> 替换成转义路径；也提供 <code>OSS_PART/OSS_FINAL/OSS_DIR</code>
+      环境变量。dypy 参数不写死，换下载器只改 <code>--cmd</code></td></tr>
+      <tr><td>成功后</td><td>必须存在 <code>.part</code>；<code>--expect-bytes</code> /
+      <code>--expect-duration</code> 做闸门；默认要求 ffprobe 读到有效时长；改名后写
+      manifest（字节/时长/事件/日期/平台/账号/来源）</td></tr>
+      <tr><td>失败</td><td>命令非 0 → 不留正式文件（下载器违约写了正式名也会删掉）；
+      <code>.part</code> 默认保留续传，<code>--clean-part-on-fail</code> 可删</td></tr>
+      <tr><td>幂等</td><td>正式文件已存在且可读 → 直接返回 0，不重跑命令；
+      <code>--clean-part</code> 开始前清旧半成品，<code>--resume</code> 允许续传</td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>baidu：bypy 只拉目录，入库仍走 .part</h2>
+  <div class="card">
+    <table>
+      <tr><th>项</th><th>行为</th></tr>
+      <tr><td>下载</td><td><code>bypy -v --processes N --on-dup skip download
+      &lt;远端&gt; &lt;暂存&gt;</code>；失败直接返回，不复制任何文件到 OSS</td></tr>
+      <tr><td>入库</td><td>只挑视频扩展名；每个文件复制成
+      <code>&lt;final&gt;.part</code>，核对字节后调用同一套收尾（时长必须可读）</td></tr>
+      <tr><td>元数据</td><td>manifest 记 <code>source=baidu:&lt;远端目录&gt;</code> 与
+      <code>remote_rel</code></td></tr>
+      <tr><td>暂存</td><td>默认保留；<code>--clean-staging</code> 全部成功后删除</td></tr>
+      <tr><td>落点</td><td><code>--dest-rel</code> 直接给 OSS 根下相对目录；不写则用
+      <code>event/day/platform/account</code></td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>验收：真实 OSS 写入</h2>
+  <p class="sub">测试路径都在 <code>直播录屏/_p3_probe/</code>，验收后已清理。</p>
+  <div class="card">
+    <table>
+      <tr><th>用例</th><th>输入</th><th>结果</th></tr>
+      <tr><td>3.2GB 直写</td>
+      <td>3,229,231,923 B 源文件，<code>--cmd "cp &lt;源&gt; {part}"</code>，
+      期望字节 + 期望时长 12,507.435667s</td>
+      <td><b class="ok">正式文件生成，字节一致，ffprobe 12,507.4s</b>，
+      manifest 字节/时长一致；直写耗时 <b>536s（约 6.0 MB/s）</b></td></tr>
+      <tr><td>百度目录</td>
+      <td>bypy 下载 <code>/直播录屏/_p3_probe/2026-11-19</code>（1 个测试视频）
+      → OSS <code>_p3_probe/11.19/抖音/test</code></td>
+      <td><b class="ok">2,948 B、1.0s，manifest 记录 baidu 来源</b>；
+      非视频不复制；暂存目录已清理</td></tr>
+      <tr><td>失败：命令非 0</td><td><code>--cmd "echo boom &gt; {part}; exit 3"</code>（真实 OSS）</td>
+      <td class="ok">EXIT 1，无正式文件；<code>--clean-part-on-fail</code> 连 .part 一起删</td></tr>
+      <tr><td>失败：下载器写正式名</td><td><code>--cmd "cp 源 {final}; exit 1"</code></td>
+      <td class="ok">正式文件被删除</td></tr>
+      <tr><td>失败：字节闸门</td><td><code>--expect-bytes</code> 多 1 字节</td>
+      <td class="ok">拒绝收尾，<code>.part</code> 保留</td></tr>
+    </table>
+  </div>
+  <div class="note" style="margin-top:14px"><b>现场观察：</b>3.2GB 单文件直写期间
+  goofys RSS 约 <b>6.0GB</b>（机器 15GB，验收时剩余可用约 4GB）；写入墙钟
+  536s，收尾后的可读性用 ffprobe + 中段/末段帧解码验证。小内存机器建议先做
+  256MB 级别压测，或退回「本地暂存 → 后台上传」的兜底路径。</div>
+</section>
+
+<section>
+  <h2>自检：22 项离线</h2>
+  <p class="sub">用 ffmpeg 生成的 1 秒小 mp4 和假 bypy，不碰 OSS/百度。</p>
+  <div class="card">
+    <table>
+      <tr><th>覆盖</th><th>结果</th></tr>
+      <tr><td>live 成功 / 幂等 / 命令失败 / 违约写正式名 / 字节闸门 / dry-run</td>
+      <td class="ok">6 组断言全过</td></tr>
+      <tr><td>baidu 目录下载 → 暂存 → OSS / 非视频跳过 / manifest 来源 / bypy 失败</td>
+      <td class="ok">4 组断言全过</td></tr>
+      <tr><td>总计</td><td><b class="ok">22 项，0 失败</b></td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>没有做什么</h2>
+  <ul>
+    <li><b>没有真跑 dypy：</b>本机没有 dypy；3.2GB 直写用 <code>cp</code> 作为
+    下载器替身，验证的是「下载器写 OSS <code>.part</code> → 收尾」这一段。dypy 的
+    真实参数以它自己的 <code>--help</code> 为准，只替换 <code>--cmd</code>。</li>
+    <li><b>没有把结果/下载接进队列：</b>P3 只做下载与入库；直播排期/队列仍由
+    dypy 侧负责。</li>
+    <li><b>没有保留 3.2GB 测试对象：</b>验收后删除测试文件与 Baidu 临时目录。</li>
+    <li><b>没有提交 git：</b>脚本与文档留在工作区。</li>
+  </ul>
+</section>
+
+<section>
+  <h2>怎么复现</h2>
+  <pre><b># 直播：下载器写 {part}，成功后收尾</b>
+python3 scripts/oss_download.py live \
+  --event 2026-11-20XX --day 11.20 --platform 抖音 --account 奇瑞汽车 \
+  --name 10-00-11-16 --cmd 'dypy 直播 &lt;参数&gt; --out {part}'
+
+<b># 百度：列目录后 PCS 流式直写 OSS（无本地暂存；--resume 续传）</b>
+python3 scripts/oss_download.py baidu \
+  --remote /直播录屏/10.20上午 \
+  --dest-rel 2026-10-20XX/10.20/抖音/奇瑞集团
+
+<b># 离线自检</b>
+python3 scripts/selftest_oss_download.py
+</pre>
+</section>
+
+<footer>
+数据源：真实 OSS 测试文件与 <code>.manifest.json</code>（验收后已删除）；
+<code>/tmp/p3_live.log</code>（3.2GB 直写）；Baidu 测试目录
+<code>/直播录屏/_p3_probe</code> 与暂存 <code>/tmp/p3_staging</code>（已清理）。
+本次只做下载链路，未接队列、未提交 git。
+</footer>
+</main></body></html>

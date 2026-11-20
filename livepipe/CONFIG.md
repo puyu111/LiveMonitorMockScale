@@ -762,6 +762,13 @@ RapidOCR 在裁切边界上**不是平移不变的**：被边界切断的行会�
 "output": { "dir": "out/ctcc" }                     // ← 这里是**段的父目录**
 ```
 
+> **跑之前：视频必须先到 OSS。** 本项目统一从 OSS 读素材，`videos` / `video` 里写
+> `~/oss-bucket/...`（goofs 挂载）路径；本地路径仅作离线兜底，**不接受百度/bypy 路径**
+> （livepipe 用 `cv2.VideoCapture` 直接打开并反复 seek）。新素材先
+> `python3 scripts/oss_download.py baidu --remote /直播录屏/<目录> --dest-rel '<事件>/<日期>'`
+> 直写 OSS（裁尾副本走 `cp → .part → python3 -m livepipe oss ingest`），再
+> `livepipe check`。`check` / `run` **不会自动下载**，缺文件直接报错。
+
 - 展开后按**文件名排序** = 时间顺序（录屏文件名普遍带时间前缀），段名依次是 `seg1`、`seg2`…
   想改名字用 `input.segment_names`（如 `["上午","午间","下午"]`）。
 - 每段的输出落到 **`<output.dir>/<段名>/`**：`comments.jsonl`、`summary.json`、`rows.jsonl`、
@@ -1032,6 +1039,16 @@ ROI 取「文字框 ∪ 徽章 ∪ 表情框」的并集 —— 第 2 类的 OCR
 > `comments.jsonl` 与 `summary.json` 由同一次 `--out` **成对产出**，故合并为一个 `write`。
 > `frames: true` 需要 `write: true`；**全片长跑务必 `frames: false`**（3147 张 ≈ 1.7GB）。
 
+> **结果也可以直接写 OSS**：`output.dir` 支持 goofs 挂载路径（`~/oss-bucket/...`）。
+> 2026-11-19 起 `10-24/10-25奇瑞探秘局_视频号.json` 的 `output.dir` / `collect.out`
+> 都指到 `~/oss-bucket/web/1/奇瑞汽车/直播看管/直播产生结果/<事件>/<日期>/<平台>`，
+> 本地不留结果。两个代价：goofs **不支持 append 模式**，`rows.jsonl` 续跑会自动退化为
+> 「重写已有行再继续」；标注图/交付图是逐个小文件写，比本地 NVMe 慢。
+>
+> `base_dir` 同样可以写 OSS。表情表默认按 `<base_dir>/out/<源>_emoji/` 找；探秘局两份
+> 配置的 `base_dir` = `…/直播看管/素材`，表在 `<base_dir>/out/wechat_emoji/`。
+> 从 OSS 加载 109 个模板约 2.5s（进程内缓存，一次 run 只读一次）。
+
 ---
 
 ## `draw` — 独立描框步骤
@@ -1182,7 +1199,7 @@ python livepipe/user_filter.py --comments out/x/comments.jsonl --dry-run
 | `enabled` | bool | `false` | 是否跑这一步 |
 | `stage_min` | int \| null | `null` | 各段导出目录名里的数字；`null` ⇒ `qualify.stage_min` |
 | `platform_dir` | string \| null | `null` | 交付树里的平台目录名（`视频号`…）；`null` ⇒ 从各段导出目录自动认 |
-| `out` | string \| null | `null` | 交付树根；`null` ⇒ `<output.dir>/<平台目录>/all_users_正面_<合计阈值>张以上` |
+| `out` | string \| null | `null` | 交付树根；`null` ⇒ `<output.dir>/<平台目录>/all_users_正面_<合计阈值>张以上`。可直接写 OSS 挂载路径（`~/oss-bucket/...`） |
 | `force` | bool | `false` | 目标非空时整棵重来（默认报错退出） |
 
 **动作**：按**账号身份**把各段的 `<账号名>-<本段条数>/` 并成一个 `<账号名>-<合计条数>/`，

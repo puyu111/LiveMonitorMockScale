@@ -1,0 +1,1438 @@
+{
+  "version": 1,
+  "generated_at": "2026-11-17T00:00:00Z",
+  "totals": {
+    "configs": 22,
+    "refs": 82,
+    "full_mapped": 55,
+    "trimmed": 27,
+    "missing": 0,
+    "local_missing": 0,
+    "failed_configs": 0
+  },
+  "details": [
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/09-30_全球车的中国路_快手.json",
+      "group": "global",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+      "ok": true,
+      "error": null,
+      "refs": 2,
+      "full_mapped": 0,
+      "trimmed": 2,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 0,
+        "trimmed": 3006789272,
+        "missing": 0,
+        "total": 3006789272
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/930_kuaishou_9-29-12-35_0-6885.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 1752035866,
+          "duration_s": 6885.633778,
+          "trim_s": [
+            0.0,
+            6885.633778
+          ]
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/930_kuaishou_13-37-15-37_0-5076.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 1254753406,
+          "duration_s": 5076.213544,
+          "trim_s": [
+            0.0,
+            5076.213544
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/09-30_全球车的中国路_抖音.json",
+      "group": "global",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+      "ok": true,
+      "error": null,
+      "refs": 4,
+      "full_mapped": 3,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 9676742877,
+        "trimmed": 166572698,
+        "missing": 0,
+        "total": 9843315575
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/9.30/抖音/9：29-11：12.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/9.30/抖音/9：29-11：12.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225543521,
+          "duration_s": 6192.072956,
+          "trim_s": null
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/9.30/抖音/11：12-13：07.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/9.30/抖音/11：12-13：07.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225559956,
+          "duration_s": 6909.742211,
+          "trim_s": null
+        },
+        {
+          "seg": "seg3",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/9.30/抖音/13：07-14：53.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/9.30/抖音/13：07-14：53.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225639400,
+          "duration_s": 6397.963333,
+          "trim_s": null
+        },
+        {
+          "seg": "seg4",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/930_douyin_14-54-15-38_0-407.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 166572698,
+          "duration_s": 407.679578,
+          "trim_s": [
+            0.0,
+            407.679578
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/09-30_全球车的中国路_视频号.json",
+      "group": "global",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+      "ok": true,
+      "error": null,
+      "refs": 4,
+      "full_mapped": 3,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 9678057483,
+        "trimmed": 3110035513,
+        "missing": 0,
+        "total": 12788092996
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/9.30/快手/9：29-10：52.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/9.30/快手/9：29-10：52.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225761736,
+          "duration_s": 5024.800667,
+          "trim_s": null
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/9.30/快手/10：52-12：08.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/9.30/快手/10：52-12：08.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225840116,
+          "duration_s": 4563.462333,
+          "trim_s": null
+        },
+        {
+          "seg": "seg3",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/9.30/快手/12：08-13：41.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/9.30/快手/12：08-13：41.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3226455631,
+          "duration_s": 5547.482667,
+          "trim_s": null
+        },
+        {
+          "seg": "seg4",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/930_wechat_13-41-15-04_0-4827.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3110035513,
+          "duration_s": 4827.607933,
+          "trim_s": [
+            0.0,
+            4827.607933
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-01_全球车的中国路_快手.json",
+      "group": "global",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+      "ok": true,
+      "error": null,
+      "refs": 3,
+      "full_mapped": 1,
+      "trimmed": 2,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 3228808205,
+        "trimmed": 1751147743,
+        "missing": 0,
+        "total": 4979955948
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.01/快手/1/9：59-13：17.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.01/快手/1/9：59-13：17.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3228808205,
+          "duration_s": 11869.688456,
+          "trim_s": null
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1001_kuaishou_13-17-14-34_0-848.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 222941190,
+          "duration_s": 848.140744,
+          "trim_s": [
+            0.0,
+            848.140744
+          ]
+        },
+        {
+          "seg": "seg3",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1001_kuaishou_14-36-19-13_5779-12388.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 1528206553,
+          "duration_s": 6609.427,
+          "trim_s": [
+            5779.0,
+            12388.0
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-01_全球车的中国路_抖音.json",
+      "group": "global",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+      "ok": true,
+      "error": null,
+      "refs": 5,
+      "full_mapped": 3,
+      "trimmed": 2,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 9675188475,
+        "trimmed": 4668142462,
+        "missing": 0,
+        "total": 14343330937
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.01/抖音/1/9：59-11：15.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.01/抖音/1/9：59-11：15.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3224747054,
+          "duration_s": 4531.276644,
+          "trim_s": null
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.01/抖音/1/11：15-12：50.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.01/抖音/1/11：15-12：50.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225024037,
+          "duration_s": 5720.823,
+          "trim_s": null
+        },
+        {
+          "seg": "seg3",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1001_douyin_12-50-14-33_0-2432.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 1583677862,
+          "duration_s": 2432.503256,
+          "trim_s": [
+            0.0,
+            2432.503256
+          ]
+        },
+        {
+          "seg": "seg4",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.01/抖音/2/14：34-16：08.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.01/抖音/2/14：34-16：08.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225417384,
+          "duration_s": 5685.277333,
+          "trim_s": null
+        },
+        {
+          "seg": "seg5",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1001_douyin_16-11-19-14_0-6716.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3084464600,
+          "duration_s": 6717.030867,
+          "trim_s": [
+            0.0,
+            6716.0
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-01_全球车的中国路_视频号.json",
+      "group": "global",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+      "ok": true,
+      "error": null,
+      "refs": 4,
+      "full_mapped": 3,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 9678331662,
+        "trimmed": 2005390060,
+        "missing": 0,
+        "total": 11683721722
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.01/视频号/1/10：00-11：16.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.01/视频号/1/10：00-11：16.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225832995,
+          "duration_s": 4578.624,
+          "trim_s": null
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.01/视频号/1/11：16-12：43.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.01/视频号/1/11：16-12：43.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3226098626,
+          "duration_s": 5237.942,
+          "trim_s": null
+        },
+        {
+          "seg": "seg3",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1001_wechat_12-43-14-00_0-2854.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 2005390060,
+          "duration_s": 2854.413689,
+          "trim_s": [
+            0.0,
+            2854.413689
+          ]
+        },
+        {
+          "seg": "seg4",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.01/视频号/2/15：52-17：23.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.01/视频号/2/15：52-17：23.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3226400041,
+          "duration_s": 5528.393644,
+          "trim_s": null
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-02_全球车的中国路_快手.json",
+      "group": "global",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+      "ok": true,
+      "error": null,
+      "refs": 2,
+      "full_mapped": 0,
+      "trimmed": 2,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 0,
+        "trimmed": 5300770408,
+        "missing": 0,
+        "total": 5300770408
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1002_kuaishou_10-32-14-07_0-10720.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 2922492758,
+          "duration_s": 10720.038844,
+          "trim_s": [
+            0.0,
+            10720.038844
+          ]
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1002_kuaishou_14-31-18-26_0-9538.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 2378277650,
+          "duration_s": 9538.816,
+          "trim_s": [
+            0.0,
+            9538.816
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-02_全球车的中国路_抖音.json",
+      "group": "global",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+      "ok": true,
+      "error": null,
+      "refs": 5,
+      "full_mapped": 3,
+      "trimmed": 2,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 9677078295,
+        "trimmed": 3310692143,
+        "missing": 0,
+        "total": 12987770438
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.02/抖音/10：32-11：53.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.02/抖音/10：32-11：53.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225779063,
+          "duration_s": 4926.109333,
+          "trim_s": null
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.02/抖音/11：54-13：27.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.02/抖音/11：54-13：27.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225536049,
+          "duration_s": 5627.5808,
+          "trim_s": null
+        },
+        {
+          "seg": "seg3",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1002_douyin_13-28-14-08_0-164.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 97153646,
+          "duration_s": 164.741978,
+          "trim_s": [
+            0.0,
+            164.741978
+          ]
+        },
+        {
+          "seg": "seg4",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.02/快手/1/14：30-16：00.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.02/快手/1/14：30-16：00.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225763183,
+          "duration_s": 5378.342578,
+          "trim_s": null
+        },
+        {
+          "seg": "seg5",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1002_douyin_16-00-17-40_0-5432.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3213538497,
+          "duration_s": 5432.504,
+          "trim_s": [
+            0.0,
+            5432.504
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-02_全球车的中国路_视频号.json",
+      "group": "global",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+      "ok": true,
+      "error": null,
+      "refs": 6,
+      "full_mapped": 4,
+      "trimmed": 2,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 12904113229,
+        "trimmed": 1066885117,
+        "missing": 0,
+        "total": 13970998346
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.02/视频号/1/10：32-11：51.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.02/视频号/1/10：32-11：51.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225769480,
+          "duration_s": 4752.426667,
+          "trim_s": null
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.02/视频号/1/11：51-13：08.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.02/视频号/1/11：51-13：08.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225847339,
+          "duration_s": 4622.775411,
+          "trim_s": null
+        },
+        {
+          "seg": "seg3",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1002_wechat_13-09-14-31_0-1316.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 943810846,
+          "duration_s": 1316.913,
+          "trim_s": [
+            0.0,
+            1316.913
+          ]
+        },
+        {
+          "seg": "seg4",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.02/视频号/2/14：31-15：59.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.02/视频号/2/14：31-15：59.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3226413155,
+          "duration_s": 5283.158533,
+          "trim_s": null
+        },
+        {
+          "seg": "seg5",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.02/视频号/2/15：59-17：26.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.02/视频号/2/15：59-17：26.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3226083255,
+          "duration_s": 5247.988,
+          "trim_s": null
+        },
+        {
+          "seg": "seg6",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1002_wechat_17-27-18-27_0-239.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 123074271,
+          "duration_s": 239.107367,
+          "trim_s": [
+            0.0,
+            239.107367
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-03_全球车的中国路_快手.json",
+      "group": "global",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+      "ok": true,
+      "error": null,
+      "refs": 2,
+      "full_mapped": 1,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 3229231923,
+        "trimmed": 877546258,
+        "missing": 0,
+        "total": 4106778181
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.03/快手/11：02-14：30.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.03/快手/11：02-14：30.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3229231923,
+          "duration_s": 12507.435667,
+          "trim_s": null
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1003_kuaishou_14-31-15-40_0-3576.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 877546258,
+          "duration_s": 3576.213333,
+          "trim_s": [
+            0.0,
+            3576.213333
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-03_全球车的中国路_抖音.json",
+      "group": "global",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+      "ok": true,
+      "error": null,
+      "refs": 3,
+      "full_mapped": 2,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 6450951872,
+        "trimmed": 2857339103,
+        "missing": 0,
+        "total": 9308290975
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.03/抖音/11：01-12：30.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.03/抖音/11：01-12：30.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225313894,
+          "duration_s": 5381.014489,
+          "trim_s": null
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.03/抖音/12：30-14：04.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.03/抖音/12：30-14：04.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225637978,
+          "duration_s": 5672.524333,
+          "trim_s": null
+        },
+        {
+          "seg": "seg3",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1003_douyin_14-05-15-36_0-5095.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 2857339103,
+          "duration_s": 5095.017667,
+          "trim_s": [
+            0.0,
+            5095.017667
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-03_全球车的中国路_视频号.json",
+      "group": "global",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+      "ok": true,
+      "error": null,
+      "refs": 4,
+      "full_mapped": 3,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 9678084760,
+        "trimmed": 331998928,
+        "missing": 0,
+        "total": 10010083688
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.03/视频号/11：00-12：26.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.03/视频号/11：00-12：26.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225916032,
+          "duration_s": 5158.518,
+          "trim_s": null
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.03/视频号/12：26-13：54.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.03/视频号/12：26-13：54.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3226115628,
+          "duration_s": 5298.257333,
+          "trim_s": null
+        },
+        {
+          "seg": "seg3",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.03/视频号/13：54-15：20.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.03/视频号/13：54-15：20.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3226053100,
+          "duration_s": 5154.572333,
+          "trim_s": null
+        },
+        {
+          "seg": "seg4",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1003_wechat_15-20-15-40_0-566.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 331998928,
+          "duration_s": 566.916378,
+          "trim_s": [
+            0.0,
+            566.916378
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-04_全球车的中国路_抖音.json",
+      "group": "global",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+      "ok": true,
+      "error": null,
+      "refs": 1,
+      "full_mapped": 1,
+      "trimmed": 0,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 1081459667,
+        "trimmed": 0,
+        "missing": 0,
+        "total": 1081459667
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.04/抖音/11：26-12：11.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.04/抖音/11：26-12：11.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 1081459667,
+          "duration_s": 2734.091333,
+          "trim_s": null
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-04_全球车的中国路_视频号.json",
+      "group": "global",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+      "ok": true,
+      "error": null,
+      "refs": 1,
+      "full_mapped": 0,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 0,
+        "trimmed": 1400465253,
+        "missing": 0,
+        "total": 1400465253
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1004_wechat_11-26-12-12_0-2113.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 1400465253,
+          "duration_s": 2113.813333,
+          "trim_s": [
+            0.0,
+            2113.813333
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-06_全球车的中国路_抖音.json",
+      "group": "global",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+      "ok": true,
+      "error": null,
+      "refs": 3,
+      "full_mapped": 2,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 6450723880,
+        "trimmed": 221633902,
+        "missing": 0,
+        "total": 6672357782
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.06/抖音/10：31-11：44.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.06/抖音/10：31-11：44.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225005929,
+          "duration_s": 4410.168844,
+          "trim_s": null
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.06/抖音/11：44-13：21.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.06/抖音/11：44-13：21.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225717951,
+          "duration_s": 5839.076944,
+          "trim_s": null
+        },
+        {
+          "seg": "seg3",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1006_douyin_13-22-16-49_0-538.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 221633902,
+          "duration_s": 538.905778,
+          "trim_s": [
+            0.0,
+            538.905778
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-06_全球车的中国路_视频号.json",
+      "group": "global",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+      "ok": true,
+      "error": null,
+      "refs": 3,
+      "full_mapped": 2,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 6451648447,
+        "trimmed": 540735037,
+        "missing": 0,
+        "total": 6992383484
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.06/视频号/10：31-11：42.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.06/视频号/10：31-11：42.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225535433,
+          "duration_s": 4232.765356,
+          "trim_s": null
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.06/视频号/11：42-13：11.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.06/视频号/11：42-13：11.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3226113014,
+          "duration_s": 5361.664478,
+          "trim_s": null
+        },
+        {
+          "seg": "seg3",
+          "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1006_wechat_13-11-14-57_0-1166.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 540735037,
+          "duration_s": 1166.914833,
+          "trim_s": [
+            0.0,
+            1166.914833
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_抖音QQ汽车.json",
+      "group": "1019",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/10.19",
+      "ok": true,
+      "error": null,
+      "refs": 6,
+      "full_mapped": 5,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 16128867257,
+        "trimmed": 834998990,
+        "missing": 0,
+        "total": 16963866247
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/10.19/抖音/QQ汽车/9： 01-10： 10.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/QQ汽车/9： 01-10： 10.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225200957,
+          "duration_s": 4196.599344,
+          "trim_s": null
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/10.19/抖音/QQ汽车/10： 10-11： 21.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/QQ汽车/10： 10-11： 21.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225100149,
+          "duration_s": 4260.6418,
+          "trim_s": null
+        },
+        {
+          "seg": "seg3",
+          "disk": "/run/media/puyu/MyDisk/10.19/抖音/QQ汽车/11： 22-13： 00.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/QQ汽车/11： 22-13： 00.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3226017317,
+          "duration_s": 5924.943333,
+          "trim_s": null
+        },
+        {
+          "seg": "seg4",
+          "disk": "/run/media/puyu/MyDisk/10.19/抖音/QQ汽车/13： 01-14： 46.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/QQ汽车/13： 01-14： 46.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3226215437,
+          "duration_s": 6318.503078,
+          "trim_s": null
+        },
+        {
+          "seg": "seg5",
+          "disk": "/run/media/puyu/MyDisk/10.19/抖音/QQ汽车/14： 46-16： 31.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/QQ汽车/14： 46-16： 31.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3226333397,
+          "duration_s": 6338.552,
+          "trim_s": null
+        },
+        {
+          "seg": "seg6",
+          "disk": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/dy_qq_16-31-17-00_live.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 834998990,
+          "duration_s": 1730.474067,
+          "trim_s": [
+            0.0,
+            1730.474067
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_抖音奇瑞汽车.json",
+      "group": "1019",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/10.19",
+      "ok": true,
+      "error": null,
+      "refs": 5,
+      "full_mapped": 4,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 12900337826,
+        "trimmed": 3089242130,
+        "missing": 0,
+        "total": 15989579956
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/10.19/抖音/奇瑞汽车/8： 59-10： 23.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/奇瑞汽车/8： 59-10： 23.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3224952398,
+          "duration_s": 5095.04,
+          "trim_s": null
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/10.19/抖音/奇瑞汽车/10： 23-12： 05.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/奇瑞汽车/10： 23-12： 05.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225279532,
+          "duration_s": 6150.472856,
+          "trim_s": null
+        },
+        {
+          "seg": "seg3",
+          "disk": "/run/media/puyu/MyDisk/10.19/抖音/奇瑞汽车/12： 26-13： 57.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/奇瑞汽车/12： 26-13： 57.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225400619,
+          "duration_s": 6711.120156,
+          "trim_s": null
+        },
+        {
+          "seg": "seg4",
+          "disk": "/run/media/puyu/MyDisk/10.19/抖音/奇瑞汽车/13： 58-15： 29.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/奇瑞汽车/13： 58-15： 29.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3224705277,
+          "duration_s": 5482.700333,
+          "trim_s": null
+        },
+        {
+          "seg": "seg5",
+          "disk": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/dy_qr_15-29-17-00_live.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3089242130,
+          "duration_s": 5455.716033,
+          "trim_s": [
+            0.0,
+            5455.716033
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_抖音风云新能源.json",
+      "group": "1019",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/10.19",
+      "ok": true,
+      "error": null,
+      "refs": 6,
+      "full_mapped": 5,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 16132877626,
+        "trimmed": 747125465,
+        "missing": 0,
+        "total": 16880003091
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/10.19/抖音/风云新能源/SVID_20261019_090202_1.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/风云新能源/SVID_20261019_090202_1.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3226173522,
+          "duration_s": 4951.244,
+          "trim_s": null
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/10.19/抖音/风云新能源/SVID_20261019_090202_2.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/风云新能源/SVID_20261019_090202_2.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3226610624,
+          "duration_s": 5552.066667,
+          "trim_s": null
+        },
+        {
+          "seg": "seg3",
+          "disk": "/run/media/puyu/MyDisk/10.19/抖音/风云新能源/SVID_20261019_090202_3.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/风云新能源/SVID_20261019_090202_3.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3226905306,
+          "duration_s": 5828.525,
+          "trim_s": null
+        },
+        {
+          "seg": "seg4",
+          "disk": "/run/media/puyu/MyDisk/10.19/抖音/风云新能源/SVID_20261019_090202_4.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/风云新能源/SVID_20261019_090202_4.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3227018611,
+          "duration_s": 5878.012,
+          "trim_s": null
+        },
+        {
+          "seg": "seg5",
+          "disk": "/run/media/puyu/MyDisk/10.19/抖音/风云新能源/SVID_20261019_090202_5.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/风云新能源/SVID_20261019_090202_5.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3226169563,
+          "duration_s": 5132.507667,
+          "trim_s": null
+        },
+        {
+          "seg": "seg6",
+          "disk": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/dy_fy_16-38-17-00_live.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 747125465,
+          "duration_s": 1369.938189,
+          "trim_s": [
+            0.0,
+            1369.938189
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_视频号奇瑞QQ.json",
+      "group": "1019",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/10.19",
+      "ok": true,
+      "error": null,
+      "refs": 5,
+      "full_mapped": 4,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 12907629647,
+        "trimmed": 1689390397,
+        "missing": 0,
+        "total": 14597020044
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/10.19/视频号/奇瑞QQ/9： 01~10： 24.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/奇瑞QQ/9： 01~10： 24.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3225829823,
+          "duration_s": 5010.568333,
+          "trim_s": null
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/10.19/视频号/奇瑞QQ/10： 25~12： 10.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/奇瑞QQ/10： 25~12： 10.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3226956960,
+          "duration_s": 6357.256333,
+          "trim_s": null
+        },
+        {
+          "seg": "seg3",
+          "disk": "/run/media/puyu/MyDisk/10.19/视频号/奇瑞QQ/12： 11~14： 09.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/奇瑞QQ/12： 11~14： 09.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3227820459,
+          "duration_s": 7101.964333,
+          "trim_s": null
+        },
+        {
+          "seg": "seg4",
+          "disk": "/run/media/puyu/MyDisk/10.19/视频号/奇瑞QQ/14： 09~15： 58.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/奇瑞QQ/14： 09~15： 58.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3227022405,
+          "duration_s": 6556.312333,
+          "trim_s": null
+        },
+        {
+          "seg": "seg5",
+          "disk": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/wx_qq_15-58-17-00_live.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 1689390397,
+          "duration_s": 3737.716,
+          "trim_s": [
+            0.0,
+            3737.716
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_视频号奇瑞汽车.json",
+      "group": "1019",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/10.19",
+      "ok": true,
+      "error": null,
+      "refs": 3,
+      "full_mapped": 2,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 6464020160,
+        "trimmed": 1741127534,
+        "missing": 0,
+        "total": 8205147694
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/10.19/视频号/奇瑞汽车/8： 59~12： 06.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/奇瑞汽车/8： 59~12： 06.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3231844071,
+          "duration_s": 11250.564989,
+          "trim_s": null
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/10.19/视频号/奇瑞汽车/12： 07~15： 21.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/奇瑞汽车/12： 07~15： 21.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3232176089,
+          "duration_s": 11669.173689,
+          "trim_s": null
+        },
+        {
+          "seg": "seg3",
+          "disk": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/wx_qr_15-21-17-00_live.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 1741127534,
+          "duration_s": 5946.605189,
+          "trim_s": [
+            0.0,
+            5946.605189
+          ]
+        }
+      ]
+    },
+    {
+      "config": "/home/puyu/github/LiveMonitorMockScale/10-19奇瑞创新大会_视频号风云新能源汽车.json",
+      "group": "1019",
+      "oss_root": "/home/puyu/oss-bucket/直播data/录屏/10.19",
+      "ok": true,
+      "error": null,
+      "refs": 5,
+      "full_mapped": 4,
+      "trimmed": 1,
+      "missing": 0,
+      "local_missing": 0,
+      "bytes": {
+        "full_mapped": 12908050833,
+        "trimmed": 1351518172,
+        "missing": 0,
+        "total": 14259569005
+      },
+      "segments": [
+        {
+          "seg": "seg1",
+          "disk": "/run/media/puyu/MyDisk/10.19/视频号/风云新能源汽车/9： 01~10： 45.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/风云新能源汽车/9： 01~10： 45.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3226733608,
+          "duration_s": 6239.082667,
+          "trim_s": null
+        },
+        {
+          "seg": "seg2",
+          "disk": "/run/media/puyu/MyDisk/10.19/视频号/风云新能源汽车/10： 45-12： 34.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/风云新能源汽车/10： 45-12： 34.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3227223254,
+          "duration_s": 6560.642333,
+          "trim_s": null
+        },
+        {
+          "seg": "seg3",
+          "disk": "/run/media/puyu/MyDisk/10.19/视频号/风云新能源汽车/12： 35-14： 30.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/风云新能源汽车/12： 35-14： 30.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3227447989,
+          "duration_s": 6912.832,
+          "trim_s": null
+        },
+        {
+          "seg": "seg4",
+          "disk": "/run/media/puyu/MyDisk/10.19/视频号/风云新能源汽车/14： 30-16： 13.mp4",
+          "oss": "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/风云新能源汽车/14： 30-16： 13.mp4",
+          "trimmed": false,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 3226645982,
+          "duration_s": 6192.585333,
+          "trim_s": null
+        },
+        {
+          "seg": "seg5",
+          "disk": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/wx_fy_16-13-17-00_live.mp4",
+          "oss": null,
+          "trimmed": true,
+          "source_oss": null,
+          "oss_missing": false,
+          "bytes": 1351518172,
+          "duration_s": 2821.710433,
+          "trim_s": [
+            0.0,
+            2821.710433
+          ]
+        }
+      ]
+    }
+  ]
+}

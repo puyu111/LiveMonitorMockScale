@@ -1,0 +1,218 @@
+// ============================================================================
+// 奇瑞「2026 全球创新大会（CGIC 2026 · 芜湖）」2026-10-19 · 视频号 · 账号「奇瑞汽车」
+// （手机 App 竖屏 592×1280）→ 结构化评论
+//
+// 素材 = 「/run/media/puyu/MyDisk/10.19/视频号/奇瑞汽车/」下 3 段录屏（8:59-17:00）：
+//   1 `8： 59~12： 06.mp4`  187.5min
+//   2 `12： 07~15： 21.mp4` 194.5min
+//   3 `15： 21~19： 40.mp4` 原 259.1min：直播在 **5946.87s** 结束（≈17:00），
+//     之后是「直播已结束」页 ⇒ 无损裁到 5946.6s，副本
+//     `/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/wx_qr_15-21-17-00_live.mp4`。
+//   本目录其余 5 条流实测也都在 17:00 结束直播。
+//
+// 版式（2026-11-16 实测）：本账号是 **592×1280**（其余视频号账号 590）：
+//   · 行距 41.5 / y_phase 0 / x_text 64 / badge_span 46
+//   · rect [0,650,592,1190]（视频画面下沿 ≈644、输入栏 `聊一聊` 上沿 1203）
+//   · 续行贴左沿（x1≈21~34），开 wrap_indent；续行 ~0.6 行距 ⇒ wrap_gap_ratio 0.75
+//   · 无药丸昵称 x1≈35~39、带药丸昵称 x1≈69~70；昵称有打码（`大**` / `塔**`）
+//     ⇒ account_key=nickname_level_if_masked
+//   · 底部左侧长期压着广告卡（`广告` / `奇瑞汽车` / `HER` / `点击了解详情`）
+//     ⇒ overlay_cards + skip_phrases
+//
+// 跑法：
+//   P=/home/puyu/anaconda3/envs/vlx/bin/python
+//   export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+//   $P -m livepipe run 10-19奇瑞创新大会_视频号奇瑞汽车.json --only panels,parse
+//   NLP_API_KEY=sk-xxxx $P -m livepipe run 10-19奇瑞创新大会_视频号奇瑞汽车.json \
+//       --only filter,qualify,export,collect
+//   产物：/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/视频号/奇瑞汽车/all_users_正面_3张以上/
+// 校验：python3 -m livepipe check 10-19奇瑞创新大会_视频号奇瑞汽车.json
+// ============================================================================
+{
+  "base_dir": "/home/puyu/livepipe_assets",
+  "version": 1,
+  "name": "奇瑞2026全球创新大会 2026-10-19 · 视频号手机 App · 竖屏 · 奇瑞汽车",
+
+  "platforms": {
+    "wechat_app": {
+      "label": "视频号直播（手机 App 竖屏 592×1280；等级标 ✦N 在昵称左边）",
+      "emoji": "wechat",
+      "account_key": "nickname_level_if_masked",
+
+      "row_pitch": 41.5,
+      "y_phase": 0,
+      "x_text": 64,
+      "badge_span": 46,
+      "x2_from": "window",
+
+      "wrap_indent": true,
+      "wrap_gap_ratio": 0.75,
+
+      "badge_alias": true,
+      "username_alias": true,
+      "x_ignore_from": 350,
+
+      "colon_bg_max_v": 255,
+      "colon_v_delta": 30,
+      "colon_v_min": 80,
+      "colon_text_fix": true,
+      "colon_text_fix_masked_only": true,
+
+      // 反诈卡、主题/公众号卡、底部广告卡、系统通知；只作用于没有冒号的行。
+      "overlay_cards": "欢迎来到直播间|直播间内禁止|未成年人打赏|禁止主播|诱导观|私下交易|违法违规|色情低俗|诱导欺|抽烟酗酒|理性消费|谨慎判断|财产及人身损失|及时投诉|主题|公众号|CHANGE|抢先看|^广告$|点击了解详情|^HER$|^奇瑞汽车$|赞了直播|关注了主播|加入了直播间|分享了直播|推荐了直播|预约了下一场直播|来了$|^口$|^》口$|^\\+\\+$|^[A-Za-z0-9@#%&+=×?·._\\-/]{1,16}$",
+      "skip_phrases": [
+        "广告",
+        "奇瑞汽车",
+        "HER",
+        "点击了解详情",
+        "主题",
+        "公众号",
+        "CHANGE改变",
+        "2026奇瑞全球创新大会",
+        "直播已结束",
+        "推荐直播",
+        "前往直播广场"
+      ]
+    }
+  },
+
+  "emoji": {
+    "enabled": true,
+    "tables": {"wechat": {"build": {"enabled": true}}}
+  },
+
+  "input": {
+    "videos": [
+      "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/奇瑞汽车/8： 59~12： 06.mp4",
+      "/home/puyu/oss-bucket/直播data/录屏/10.19/视频号/奇瑞汽车/12： 07~15： 21.mp4",
+      "/home/puyu/oss-bucket/web/1/奇瑞汽车/直播看管/直播录屏/2026-10-19奇瑞全球创新大会/_live/wx_qr_15-21-17-00_live.mp4"
+    ],
+    "segment_names": null,
+    "video": null,
+    "rows": null,
+    "text": null,
+    "start": 0.0,
+    "duration": null,
+    "interval": 2.0,
+    "max_frames": null,
+    "resume": true,
+    "sample": {
+      "mode": "adaptive",
+      "stride": 2,
+      "safety_rows": 5.0,
+      "settle_frames": 3,
+      "eps_px": 1.0,
+      "entry_thr": 8.0,
+      "max_gap_s": 5.0,
+      "min_interval": 0.2,
+      "max_interval": 6.0,
+      "min_score": 0.3
+    }
+  },
+
+  "panels": {
+    "mode": "manual",
+    "file": null,
+    "files": null,
+    "overwrite": false,
+    "auto": {
+      "method": "hybrid",
+      "at": 900,
+      "frames": 5,
+      "span": null,
+      "split_x": null,
+      "pad_x": 60,
+      "pad_top": 80,
+      "pad_y": 16,
+      "sub_width": 500,
+      "model": "nvidia/LocateAnything-3B",
+      "quant": "4bit",
+      "device": "cuda",
+      "platforms": {"left": "wechat_app", "right": null},
+      "frame_width": 592
+    },
+    "manual": [
+      {"comments": {"rect": [0, 650, 592, 1190], "platform": "wechat_app"}},
+      {"comments": {"rect": [0, 650, 592, 1190], "platform": "wechat_app"}},
+      {"comments": {"rect": [0, 650, 592, 1190], "platform": "wechat_app"}}
+    ],
+    "batch": {"count": 30, "start": 0.0, "span": 600.0, "anchor": "panel"}
+  },
+
+  "parse": {
+    "sep": " ",
+    "max_username_len": 24,
+    "merge_continuation": true,
+    "adjacency": true,
+    "dedup": true,
+    "calibrate": false,
+    "right_pad": 0,
+    "emoji_workers": 8
+  },
+
+  "output": {
+    "dir": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/视频号/奇瑞汽车",
+    "write": true,
+    "rows": true,
+    "panels": true,
+    "frames": true,
+    "print": false
+  },
+
+  "filter": {
+    "enabled": true,
+    "source": null,
+    "out": null,
+    "cache": null,
+    "min_positive": 1,
+    "exclude_keywords": [
+      "奇瑞", "4s", "店", "qq3", "汽车",
+      "尹同跃", "张国忠", "鲍思语", "王津华", "王孝伟", "胡敬源", "尹祥领",
+      "王来春", "李晶", "商文江", "杨棉之", "叶盛基", "路风", "黎汝雄",
+      "李学用", "张贵兵", "代立宏", "章红玉", "高新华", "戚士龙", "王琅"
+    ],
+    "nlp": {
+      "api_key": null,
+      "api_key_env": "NLP_API_KEY",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "deepseek-v4.1-flash",
+      "batch_size": 20,
+      "concurrency": 4,
+      "timeout": 60.0,
+      "retries": 3,
+      "limit": null,
+      "prompt": null
+    }
+  },
+
+  "qualify": {"enabled": true, "min_positive": 3, "stage_min": 1},
+
+  "export": {
+    "enabled": true,
+    "base": "frame",
+    "labels": "正面",
+    "min_positive": null,
+    "min_scope": "platform",
+    "users": null,
+    "color": "0,255,0", "width": 3,
+    "pad": 0, "pad_ratio": 0.25, "quality": 90,
+    "force": true
+  },
+
+  "collect": {
+    "enabled": true,
+    "stage_min": null,
+    "platform_dir": null,
+    "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/视频号/奇瑞汽车/all_users_正面_3张以上",
+    "force": true
+  },
+
+  "draw": {"enabled": true, "source": null, "at": 8.0, "window": 5.0,
+           "out": null, "width": 5, "quality": 90, "labels": true},
+
+  "steps": {
+    "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
+              "export", "collect", "draw"],
+    "skip": ["emoji_tables", "draw"]
+  }
+}

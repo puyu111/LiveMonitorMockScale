@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "config": "/home/puyu/github/LiveMonitorMockScale/10-02_全球车的中国路_抖音.json",
+  "generated_from": {
+    "config": "/home/puyu/github/LiveMonitorMockScale/10-02_全球车的中国路_抖音.json",
+    "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+    "disk_root": null,
+    "generated_at": "2026-11-17T00:00:00Z"
+  },
+  "segments": [
+    {
+      "seg": "seg1",
+      "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.02/抖音/10：32-11：53.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.02/抖音/10：32-11：53.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3225779063,
+      "duration_s": 4926.109333,
+      "trim_s": null
+    },
+    {
+      "seg": "seg2",
+      "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.02/抖音/11：54-13：27.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.02/抖音/11：54-13：27.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3225536049,
+      "duration_s": 5627.5808,
+      "trim_s": null
+    },
+    {
+      "seg": "seg3",
+      "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1002_douyin_13-28-14-08_0-164.mp4",
+      "oss": null,
+      "trimmed": true,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 97153646,
+      "duration_s": 164.741978,
+      "trim_s": [
+        0.0,
+        164.741978
+      ]
+    },
+    {
+      "seg": "seg4",
+      "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/10.02/快手/1/14：30-16：00.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.02/快手/1/14：30-16：00.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3225763183,
+      "duration_s": 5378.342578,
+      "trim_s": null
+    },
+    {
+      "seg": "seg5",
+      "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/1002_douyin_16-00-17-40_0-5432.mp4",
+      "oss": null,
+      "trimmed": true,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3213538497,
+      "duration_s": 5432.504,
+      "trim_s": [
+        0.0,
+        5432.504
+      ]
+    }
+  ]
+}

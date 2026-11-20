@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OSS P0 开发日志</title>
+<style>
+:root{
+  --bg:#f6f7f4;--card:#ffffff;--ink:#17201c;--muted:#5d6a63;--line:#dfe4df;
+  --accent:#0f766e;--accent-soft:#d8f0eb;--full:#0f766e;--trim:#c2760a;
+  --miss:#c0392b;--trim-soft:#fdf0d8;--miss-soft:#fbe3e0;--code:#eef1ee;
+  --shadow:0 1px 2px rgba(20,40,30,.05),0 8px 24px rgba(20,40,30,.04);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#101513;--card:#18201d;--ink:#e7ede9;--muted:#9fada6;
+  --line:#2a3530;--accent:#57c7b8;--accent-soft:#143630;--full:#57c7b8;
+  --trim:#e2a33c;--miss:#ef8074;--trim-soft:#2f2413;--miss-soft:#331b18;
+  --code:#111815;--shadow:none;}
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+  "Hiragino Sans GB","Microsoft YaHei",sans-serif;padding:0 18px 64px}
+main{max-width:1080px;margin:0 auto}
+header{padding:56px 0 26px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);font-weight:700;margin:0 0 10px}
+h1{font-size:clamp(28px,4vw,40px);line-height:1.2;margin:0 0 12px;
+  letter-spacing:-.01em}
+.lede{font-size:17px;color:var(--muted);max-width:760px;margin:0}
+.meta{margin-top:14px;font-size:13px;color:var(--muted)}
+.verdict{margin:30px 0 34px;padding:20px 22px;background:var(--card);
+  border:1px solid var(--line);border-left:4px solid var(--accent);
+  border-radius:10px;box-shadow:var(--shadow)}
+.verdict b{color:var(--accent)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:12px;margin:0 0 42px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:16px 16px 14px;box-shadow:var(--shadow)}
+.kpi b{display:block;font-size:27px;line-height:1.1;letter-spacing:-.02em}
+.kpi span{display:block;font-size:13px;margin-top:5px}
+.kpi em{display:block;font-size:11.5px;color:var(--muted);font-style:normal;
+  margin-top:3px}
+section{margin:0 0 44px}
+h2{font-size:20px;margin:0 0 6px;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:20px;box-shadow:var(--shadow)}
+.flow{width:100%;height:auto;display:block}
+.flow .box rect{fill:var(--card);stroke:var(--line)}
+.flow .t1{font:600 15px/1 sans-serif;fill:var(--ink);text-anchor:middle}
+.flow .t2{font:13px/1 sans-serif;fill:var(--ink);text-anchor:middle}
+.flow .t3{font:10.5px/1 sans-serif;fill:var(--muted);text-anchor:middle}
+.flow .ln{stroke:var(--muted);stroke-width:1.4}
+.flow .arrow{fill:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-weight:600;color:var(--muted);font-size:11.5px;
+  letter-spacing:.03em;padding:7px 8px;border-bottom:1px solid var(--line);
+  white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cfg{font-weight:600}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:11.5px;word-break:break-all}
+.small{font-size:10.5px;color:var(--muted)}
+.muted{color:var(--muted)}
+.st{color:var(--muted);text-align:center}
+.kind{white-space:nowrap}
+.segbar{display:inline-flex;height:9px;width:min(var(--w,120px),100%);
+  border-radius:5px;overflow:hidden;background:var(--code);vertical-align:middle}
+.segbar i{display:block;height:100%}
+.segbar .full{background:var(--full)}
+.segbar .trim{background:var(--trim)}
+.segbar .miss{background:var(--miss)}
+.bar{min-width:120px}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:var(--muted);
+  margin-top:12px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;
+  margin-right:6px;vertical-align:-1px}
+.legend .full{background:var(--full)}.legend .trim{background:var(--trim)}
+.legend .miss{background:var(--miss)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:12px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.note{background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:16px}
+.note h3{margin:0 0 6px;font-size:14px}
+.note p{margin:0;font-size:13px;color:var(--muted)}
+.note .big{font-size:22px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+.tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;
+  background:var(--accent-soft);color:var(--accent);font-weight:600}
+.tag.warn{background:var(--trim-soft);color:var(--trim)}
+.tag.bad{background:var(--miss-soft);color:var(--miss)}
+pre{background:var(--code);border:1px solid var(--line);border-radius:9px;
+  padding:13px 15px;overflow-x:auto;font-size:12px;line-height:1.55;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre b{color:var(--accent);font-weight:600}
+ul{margin:8px 0 0;padding-left:20px}
+li{margin:4px 0}
+details{border:1px solid var(--line);border-radius:10px;padding:12px 16px;
+  background:var(--card);margin-top:12px}
+summary{cursor:pointer;font-weight:600;font-size:13.5px}
+footer{color:var(--muted);font-size:12px;border-top:1px solid var(--line);
+  padding-top:16px}
+@media print{body{background:#fff}header{padding-top:20px}
+  .card,.kpi,.verdict,.note{box-shadow:none}}
+</style>
+<main>
+<header>
+  <p class="eyebrow">LiveMonitorMockScale · OSS 迁移 P0</p>
+  <h1>22 份配置的 OSS 映射清单</h1>
+  <p class="lede">把 82 个视频段逐一钉到 OSS 对象上：能一一对应的按字节认领，
+  裁尾段单独标记，找不到的如实报缺口。下面是本次开发的真实数据与结论。</p>
+  <p class="meta">2026-11-17 · 多 agent 开发（计划 / 两个开发 / 评审 / 使用逻辑审查）</p>
+  <p class="meta"><b>2026-11-19 更正：</b>项目 OSS 根实际是 <code>~/oss-bucket/web/1/奇瑞汽车/直播看管/</code>；文中 <code>~/oss-bucket/奇瑞汽车/…</code> 是当时写错的桶根前缀。相关对象已用 <code>scripts/oss_relocate_prefix.py</code> 服务端复制到 <code>web/1/…</code>，配置与工具默认根已改指。</p>
+</header>
+
+<div class="verdict">
+  <b>结论：P0 清单完成。</b> 22 份配置共 82 段，已认领 53 个整段、
+  标记 27 个裁尾段，2 个整段在 OSS 上确实没有同字节对象。
+  补传这 2 段（6.45 GB）后，即达到迁移文档的
+  <b>55 整段 / 27 裁尾 / 0 缺失</b>。
+</div>
+
+<div class="kpis">
+  <div class="kpi"><b>22</b><span>份配置</span><em>两个批次</em></div>
+  <div class="kpi"><b>82</b><span>个视频段</span><em>全片 + 裁尾</em></div>
+  <div class="kpi"><b>53</b><span>整段 1:1 命中</span><em>字节完全相等</em></div>
+  <div class="kpi"><b>27</b><span>个裁尾段</span><em>37.3 GiB 待补</em></div>
+  <div class="kpi"><b>2</b><span>个缺失整段</span><em>6.01 GiB</em></div>
+  <div class="kpi"><b>0</b><span>本地缺失</span><em>素材盘全部可读</em></div>
+</div>
+
+<section>
+  <h2>一张图看懂映射过程</h2>
+  <p class="sub">每个事件只建一次 OSS 索引，本批配置共用；映射限定在事件内，不跨场次找候选。</p>
+  <div class="card">
+<svg class="flow" viewBox="0 0 1040 210" role="img" aria-label="P0 映射流程">
+  <defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="4.5"
+      orient="auto"><path d="M0,0 L9,4.5 L0,9 z" class="arrow"/></marker></defs>
+  <g class="box"><rect x="8" y="46" width="220" height="96" rx="12"/>
+    <text x="118" y="80" class="t1">配置 JSON</text>
+    <text x="118" y="107" class="t2">22 份 · 2 个批次</text>
+    <text x="118" y="128" class="t3">0930–1006 十六份 / 10.19 六份</text></g>
+  <line x1="230" y1="94" x2="272" y2="94" class="ln" marker-end="url(#ar)"/>
+  <g class="box"><rect x="274" y="46" width="220" height="96" rx="12"/>
+    <text x="384" y="80" class="t1">段引用</text>
+    <text x="384" y="107" class="t2">82 个视频段</text>
+    <text x="384" y="128" class="t3">全片引用 / _live 裁尾</text></g>
+  <line x1="496" y1="94" x2="538" y2="94" class="ln" marker-end="url(#ar)"/>
+  <g class="box"><rect x="540" y="46" width="230" height="96" rx="12"/>
+    <text x="655" y="80" class="t1">双源核对</text>
+    <text x="655" y="107" class="t2">本地 stat × OSS 索引</text>
+    <text x="655" y="128" class="t3">0930：50 可用 / 10.19：30 可用</text></g>
+  <line x1="772" y1="94" x2="814" y2="94" class="ln" marker-end="url(#ar)"/>
+  <g class="box"><rect x="816" y="30" width="216" height="128" rx="12"/>
+    <text x="924" y="62" class="t1">判定</text>
+    <text x="924" y="88" class="t2">53 全片 · 27 裁尾</text>
+    <text x="924" y="110" class="t2">2 缺失</text>
+    <text x="924" y="136" class="t3">manifest ×22 · CSV 29 行</text></g>
+</svg></div>
+</section>
+
+<section>
+  <h2>覆盖情况</h2>
+  <p class="sub">82 段里 53 段整段命中、27 段是裁尾副本、
+  2 段缺 OSS 对象。</p>
+  <div class="card">
+    <div style="margin-bottom:14px">
+      <span class="segbar" style="--w:980px"><i class="full" style="width:64.63%"></i><i class="trim" style="width:32.93%"></i><i class="miss" style="width:2.44%"></i></span>
+    </div>
+    <div class="legend">
+      <span><i class="full"></i>整段命中 53（64.6%）</span>
+      <span><i class="trim"></i>裁尾 27（32.9%）</span>
+      <span><i class="miss"></i>缺失 2（2.4%）</span>
+    </div>
+    <table style="margin-top:16px">
+      <tr><th>批次</th><th class="num">配置</th><th class="num">引用</th>
+      <th class="num">整段</th><th class="num">裁尾</th><th class="num">缺失</th>
+      <th>分布</th><th>OSS 索引</th></tr>
+      <tr><td class="cfg">2026-0930-1006《全球车的中国路》</td><td class="num">16</td><td class="num">52</td><td class="num">29</td><td class="num">21</td><td class="num">2</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:55.77%"></i><i class="trim" style="width:40.38%"></i><i class="miss" style="width:3.85%"></i></span></td><td class="muted">50 个可用（51 个文件）</td></tr><tr><td class="cfg">10.19 奇瑞全球创新大会</td><td class="num">6</td><td class="num">30</td><td class="num">24</td><td class="num">6</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:80.00%"></i><i class="trim" style="width:20.00%"></i></span></td><td class="muted">30 个可用</td></tr>
+    </table>
+  </div>
+  <details>
+    <summary>展开 22 份配置逐项数据</summary>
+    <table>
+      <tr><th>配置</th><th class="num">引用</th><th class="num">整段</th>
+      <th class="num">裁尾</th><th class="num">缺失</th><th>分布</th><th></th></tr>
+      <tr><td class="cfg">09-30_全球车的中国路_快手.json</td><td class="num">2</td><td class="num">0</td><td class="num">2</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="trim" style="width:100.00%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">09-30_全球车的中国路_抖音.json</td><td class="num">4</td><td class="num">1</td><td class="num">1</td><td class="num">2</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:25.00%"></i><i class="trim" style="width:25.00%"></i><i class="miss" style="width:50.00%"></i></span></td><td class="st">✗</td></tr><tr><td class="cfg">09-30_全球车的中国路_视频号.json</td><td class="num">4</td><td class="num">3</td><td class="num">1</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:75.00%"></i><i class="trim" style="width:25.00%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-01_全球车的中国路_快手.json</td><td class="num">3</td><td class="num">1</td><td class="num">2</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:33.33%"></i><i class="trim" style="width:66.67%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-01_全球车的中国路_抖音.json</td><td class="num">5</td><td class="num">3</td><td class="num">2</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:60.00%"></i><i class="trim" style="width:40.00%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-01_全球车的中国路_视频号.json</td><td class="num">4</td><td class="num">3</td><td class="num">1</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:75.00%"></i><i class="trim" style="width:25.00%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-02_全球车的中国路_快手.json</td><td class="num">2</td><td class="num">0</td><td class="num">2</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="trim" style="width:100.00%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-02_全球车的中国路_抖音.json</td><td class="num">5</td><td class="num">3</td><td class="num">2</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:60.00%"></i><i class="trim" style="width:40.00%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-02_全球车的中国路_视频号.json</td><td class="num">6</td><td class="num">4</td><td class="num">2</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:66.67%"></i><i class="trim" style="width:33.33%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-03_全球车的中国路_快手.json</td><td class="num">2</td><td class="num">1</td><td class="num">1</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:50.00%"></i><i class="trim" style="width:50.00%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-03_全球车的中国路_抖音.json</td><td class="num">3</td><td class="num">2</td><td class="num">1</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:66.67%"></i><i class="trim" style="width:33.33%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-03_全球车的中国路_视频号.json</td><td class="num">4</td><td class="num">3</td><td class="num">1</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:75.00%"></i><i class="trim" style="width:25.00%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-04_全球车的中国路_抖音.json</td><td class="num">1</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:100.00%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-04_全球车的中国路_视频号.json</td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="trim" style="width:100.00%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-06_全球车的中国路_抖音.json</td><td class="num">3</td><td class="num">2</td><td class="num">1</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:66.67%"></i><i class="trim" style="width:33.33%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-06_全球车的中国路_视频号.json</td><td class="num">3</td><td class="num">2</td><td class="num">1</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:66.67%"></i><i class="trim" style="width:33.33%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-19奇瑞创新大会_抖音QQ汽车.json</td><td class="num">6</td><td class="num">5</td><td class="num">1</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:83.33%"></i><i class="trim" style="width:16.67%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-19奇瑞创新大会_抖音奇瑞汽车.json</td><td class="num">5</td><td class="num">4</td><td class="num">1</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:80.00%"></i><i class="trim" style="width:20.00%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-19奇瑞创新大会_抖音风云新能源.json</td><td class="num">6</td><td class="num">5</td><td class="num">1</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:83.33%"></i><i class="trim" style="width:16.67%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-19奇瑞创新大会_视频号奇瑞QQ.json</td><td class="num">5</td><td class="num">4</td><td class="num">1</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:80.00%"></i><i class="trim" style="width:20.00%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-19奇瑞创新大会_视频号奇瑞汽车.json</td><td class="num">3</td><td class="num">2</td><td class="num">1</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:66.67%"></i><i class="trim" style="width:33.33%"></i></span></td><td class="st">✔</td></tr><tr><td class="cfg">10-19奇瑞创新大会_视频号风云新能源汽车.json</td><td class="num">5</td><td class="num">4</td><td class="num">1</td><td class="num">0</td><td class="bar"><span class="segbar" style="--w:100.0px"><i class="full" style="width:80.00%"></i><i class="trim" style="width:20.00%"></i></span></td><td class="st">✔</td></tr>
+    </table>
+  </details>
+</section>
+
+<section>
+  <h2>真实样例：10-01 视频号</h2>
+  <p class="sub">同一份配置里三种情况都出现了，正好用来说明判定规则。</p>
+  <div class="card">
+    <table>
+      <tr><th>段</th><th class="num">字节</th><th class="num">时长</th>
+      <th>类型</th><th>OSS 对象 / 裁尾区间</th></tr>
+      <tr><td>seg1</td><td class="num">3,225,832,995</td>
+        <td class="num">4578.624s</td><td><span class="tag">整段</span></td>
+        <td class="mono">10.01/视频号/1/10：00-11：16.mp4</td></tr>
+      <tr><td>seg3</td><td class="num">2,005,390,060</td>
+        <td class="num">2854.414s</td><td><span class="tag warn">裁尾</span></td>
+        <td class="mono">_live/1001_wechat_12-43-14-00_0-2854.mp4 · trim [0, 2854.414]</td></tr>
+      <tr><td>seg4</td><td class="num">3,226,400,041</td>
+        <td class="num">5528.394s</td><td><span class="tag">整段</span></td>
+        <td class="mono">10.01/视频号/2/15：52-17：23.mp4</td></tr>
+    </table>
+    <div class="legend"><span>整段按字节精确匹配；裁尾段不猜源对象，只记录区间，P1 直接上传副本。</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>裁尾源能不能自动回溯？</h2>
+  <p class="sub">按 <code>_live</code> 文件名里的时间区间在 OSS 文件名里找，
+  18/27 能唯一对上；
+  其余不臆造，统一交给 P1 直传副本。</p>
+  <div class="card">
+    <table>
+      <tr><th>裁尾文件</th><th>区间</th><th>匹配</th><th>OSS 源</th><th>说明</th></tr>
+      <tr><td class="mono">1001_wechat_12-43-14-00_0-2854.mp4</td><td class="mono">12:43-14:00</td><td>唯一命中</td><td class="mono">10.01/视频号/1/12：43-14：00.mp4</td><td>文件名时间区间在同平台目录唯一命中</td></tr><tr><td class="mono">930_kuaishou_9-29-12-35_0-6885.mp4</td><td class="mono">9:29-12:35</td><td>未命中</td><td class="mono">—</td><td>起点能在 OSS 找到对象，但区间被拆分 / 仅部分覆盖，没有单一源对象</td></tr><tr><td class="mono">930_douyin_14-54-15-38_0-407.mp4</td><td class="mono">14:54-15:38</td><td>未命中</td><td class="mono">—</td><td>OSS 同日期目录里没有同名区间、也没有重叠对象</td></tr>
+    </table>
+    <div class="legend">
+      <span>唯一命中 18</span>
+      <span>不可自动匹配 9</span>
+      <span>多候选 0</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>验收口径：两行，不合并</h2>
+  <div class="grid2">
+    <div class="note">
+      <h3>本次 P0 基线 <span class="tag warn">清单完成</span></h3>
+      <p class="big">22 / 82 / 53 / 27 / 2</p>
+      <p>配置 / 引用 / 整段 / 裁尾 / 缺失；本地缺失 0，失败配置 0。
+      2 段缺口有明确路径与字节数，待 P1 补传闭环。</p>
+    </div>
+    <div class="note">
+      <h3>补传后的最终值 <span class="tag">自动切 P1</span></h3>
+      <p class="big">22 / 82 / 55 / 27 / 0</p>
+      <p>补传 2 个整段（6,451,182,921 字节）后，与迁移文档的
+      “55 整段 / 27 裁尾 / 0 缺失”一致，脚本会自动切到 P1 基线并仍返回 0；加 <code>--verify-uploads</code> 再按 CSV 的 dst 核字节。</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>缺口就这 2 段</h2>
+  <div class="card">
+    <table>
+      <tr><th>配置</th><th>段</th><th>本地文件</th><th class="num">字节</th>
+      <th class="num">时长</th></tr>
+      <tr><td class="cfg">09-30_全球车的中国路_抖音.json</td><td>seg1</td><td class="mono">9：29-11：12.mp4</td><td class="num">3,225,543,521</td><td class="num">6192.1s</td></tr><tr><td class="cfg">09-30_全球车的中国路_抖音.json</td><td>seg3</td><td class="mono">13：07-14：53.mp4</td><td class="num">3,225,639,400</td><td class="num">6398.0s</td></tr>
+    </table>
+    <p class="sub" style="margin:12px 0 0">OSS 的 <code>9.30/抖音/</code> 只有 1 个文件
+    （<code>11：12-13：07.mp4</code>，3,225,559,956 字节），与这两段的字节都不相等，
+    确认是没传过，不是匹配错。</p>
+  </div>
+</section>
+
+<section>
+  <h2>P1 上传清单：29 个对象</h2>
+  <p class="sub">27 个裁尾副本 + 2 个缺失整段，
+  合计 46,520,729,506 字节（46.52 GB / 43.33 GiB）。
+  迁移文档原 P1 清单只有 27 个裁尾副本；本次多出 2 个整段补传，
+  因为文档的 55 段目标以这 2 段已存在为前提。</p>
+  <div class="card">
+    <table>
+      <tr><th>类型</th><th>源文件</th><th class="num">字节</th>
+      <th>trim</th><th>目标路径（前 6 行样例）</th></tr>
+      <tr><td class="kind">整段补传</td><td class="mono small">9：29-11：12.mp4</td><td class="num">3,225,543,521</td><td class="mono">—</td><td class="mono small">~/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/9.30/抖音/9：29-11：12.mp4</td></tr><tr><td class="kind">整段补传</td><td class="mono small">13：07-14：53.mp4</td><td class="num">3,225,639,400</td><td class="mono">—</td><td class="mono small">~/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/9.30/抖音/13：07-14：53.mp4</td></tr><tr><td class="kind">裁尾副本</td><td class="mono small">930_kuaishou_9-29-12-35_0-6885.mp4</td><td class="num">1,752,035,866</td><td class="mono">0-6885.634</td><td class="mono small">~/oss-bucket/奇瑞汽车/直播看管/直播录屏/2026-0930-1006《全球车的中国路》/_live/930_kuaishou_9-29-12-35_0-6885.mp4</td></tr><tr><td class="kind">裁尾副本</td><td class="mono small">930_kuaishou_13-37-15-37_0-5076.mp4</td><td class="num">1,254,753,406</td><td class="mono">0-5076.214</td><td class="mono small">~/oss-bucket/奇瑞汽车/直播看管/直播录屏/2026-0930-1006《全球车的中国路》/_live/930_kuaishou_13-37-15-37_0-5076.mp4</td></tr><tr><td class="kind">裁尾副本</td><td class="mono small">930_douyin_14-54-15-38_0-407.mp4</td><td class="num">166,572,698</td><td class="mono">0-407.680</td><td class="mono small">~/oss-bucket/奇瑞汽车/直播看管/直播录屏/2026-0930-1006《全球车的中国路》/_live/930_douyin_14-54-15-38_0-407.mp4</td></tr><tr><td class="kind">裁尾副本</td><td class="mono small">930_wechat_13-41-15-04_0-4827.mp4</td><td class="num">3,110,035,513</td><td class="mono">0-4827.608</td><td class="mono small">~/oss-bucket/奇瑞汽车/直播看管/直播录屏/2026-0930-1006《全球车的中国路》/_live/930_wechat_13-41-15-04_0-4827.mp4</td></tr>
+    </table>
+    <div class="legend"><span>完整清单：<code>out/oss_inventory/2026-11-17/p1-upload-list.csv</code>，10 列
+    config/seg/kind/src/src_abs/dst/bytes/duration_s/trim_s/note，UTF-8 with BOM。
+    dst 按迁移文档契约生成，新根 <code>直播录屏</code> 尚不存在，P1 前先确认事件目录命名。</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>开发中发现并修掉的问题</h2>
+  <p class="sub">全部由真实运行暴露，不是纸面推演。</p>
+  <div class="card">
+    <table>
+      <tr><th>现象</th><th>根因</th><th>修法</th><th>验证</th></tr>
+      <tr><td><code>--selftest</code> 崩溃</td>
+        <td>ingest 默认允许无时长收尾，与 README/用例相反；断言失败后 .part 已被改名，后续报“文件不存在”</td>
+        <td>默认要求有效时长，新增 <code>--allow-no-duration</code></td>
+        <td>自检 310 项全过</td></tr>
+      <tr><td>三个自检套件全红</td>
+        <td>missing 口径、sync 默认哈希与用例各说各话</td>
+        <td>统一 missing/local_missing 口径；sync 默认只比大小并改文档</td>
+        <td>三套件全绿</td></tr>
+      <tr><td>默认根审计报 82 缺失</td>
+        <td>默认根 <code>奇瑞汽车/直播看管</code> 下只有空的结果目录</td>
+        <td>按候选顺序自动选真实录屏根并打印实际根</td>
+        <td>不传 <code>--oss-root</code> 得到 53/27/2</td></tr>
+      <tr><td>10-19 六个裁尾 <code>trim_s=null</code></td>
+        <td>文件名没有 <code>_&lt;start&gt;-&lt;end&gt;</code> 时直接放弃</td>
+        <td>用已探到的时长回退成 <code>[0, duration]</code></td>
+        <td>seg5 → <code>[0, 5455.716]</code></td></tr>
+      <tr><td>入口 usage 名不对</td>
+        <td><code>python -m livepipe oss</code> 没把 prog 传进 parser</td>
+        <td><code>main(prog=...)</code> + 入口显式传入</td>
+        <td><code>usage: python -m livepipe oss</code></td></tr>
+      <tr><td>P1 目标路径丢事件目录</td>
+        <td>生成脚本一度把索引根放宽到整棵 <code>直播data/录屏</code>（412 个对象）</td>
+        <td>两批各自用事件根（50 / 30 个可用对象），dst 用父根 + 事件目录拼</td>
+        <td>29 行 dst 含事件目录，跨事件零碰撞</td></tr>
+      <tr><td>默认根 audit 要 4–5 分钟</td>
+        <td>建索引时对每个 OSS 对象都跑一次 ffprobe</td>
+        <td>改成惰性探测：只有同尺寸多候选时才探，结果缓存</td>
+        <td>22 配置从约 4 分钟降到约 5 秒（本次 5.1s），输出不变</td></tr>
+      <tr><td>0 字节百度云临时文件被算进索引</td>
+        <td><code>scan_oss_entries</code> 只按扩展名过滤，统计 51，映射引擎实际 50</td>
+        <td>复用 <code>is_temp_name</code> + 跳过 0 字节；两批改为 50 / 30，共 80</td>
+        <td><code>coverage.total_indexed_videos=80</code>，映射数字不变</td></tr>
+      <tr><td>补传后 55/0 反而 EXIT 1</td>
+        <td>脚本只认 P0 基线（53 整段 / 2 缺失 / 29 行），P1 完成后被判“多出 2 段”</td>
+        <td>同时接受 P0 与 P1 基线，<code>acceptance.phase/state</code> 按实际数字自动切换</td>
+        <td>P1 稀疏镜像实跑：55/0/27、27 行、40,069,546,585 B，EXIT 0</td></tr>
+      <tr><td>裁尾配置遇空 OSS 根也报 PASS</td>
+        <td>裁尾段只校验本地 <code>_live</code>，<code>audit</code> 的 PASS 文案不说明范围</td>
+        <td>PASS 文案改为“清单完成：…… N 段裁尾副本不在本次检查内”；P1 落盘用 <code>--verify-uploads</code></td>
+        <td>空根 + 2 裁尾：PASS 带范围说明；<code>--verify-uploads</code> 缺 27 → EXIT 1</td></tr>
+      <tr><td><code>verify-media</code> 探不到时长仍返回 0</td>
+        <td>没有时长直接打印 PASS，损坏成品 / 非视频也通过</td>
+        <td>默认 <code>UNKNOWN</code> + EXIT 1，新增 <code>--allow-unknown-duration</code></td>
+        <td>自检新增 2 项：无时长 1、加标志 0</td></tr>
+      <tr><td>CSV 交接信息不全</td>
+        <td>只有 src/dst/bytes/duration/trim/kind，<code>~</code> 未展开，看不出哪条为什么传</td>
+        <td>加 config/seg/note/src_abs 列，note 说明两类目标；BOM 用途写进 README</td>
+        <td>29 行、10 列；dst 仍可被脚本直接解析</td></tr>
+      <tr><td>显式 <code>--oss-root</code> 写错只报全量缺失</td>
+        <td><code>resolve_oss_root</code> 对显式路径不查存在性</td>
+        <td>strict 模式要求目录存在并提示检查挂载；<code>check-env</code> 仍走非 strict</td>
+        <td>假路径 → “显式 OSS 根不存在”，EXIT 1</td></tr>
+      <tr><td>兜底解析丢自定义段名</td>
+        <td>配置加载失败时 <code>input.segment_names</code> 被忽略，清单退回 segN</td>
+        <td>兜底读取同一字段（长度不符才退回 segN）</td>
+        <td>JSONC 兜底用例：段名“开场”保留</td></tr>
+      <tr><td>把两个事件根传成同一个父根</td>
+        <td>两批对象落进同一候选池，跨事件同字节视频可能互相误配；索引对象也从 80 涨到 412</td>
+        <td>默认就用两个事件根；脚本入口校验两个根相同或互相包含时直接退出 2</td>
+        <td>同根运行 EXIT 2；默认运行 5.4s，产物与冻结版 <code>diff</code> 为空</td></tr>
+    </table>
+  </div>
+  <p class="sub" style="margin:10px 0 0">关于早前出现过的 236s：那是 21:40 前的旧脚本
+  （单一公共根 + 全量 ffprobe）在多 agent 并发时的首轮数字，已被当前默认路径
+  （两个事件根 + 惰性探测，5.1s）取代，不再引用。</p>
+</section>
+
+<section>
+  <h2>文档与实测的差异</h2>
+  <div class="grid2">
+    <div class="note"><h3>整段命中</h3>
+      <p class="big">55 → 53 + 2</p>
+      <p>文档的 55 是补传后的目标值；当前实测 53 个整段命中，
+      另 2 段就是上面的缺口。</p></div>
+    <div class="note"><h3>裁尾体积</h3>
+      <p class="big">37.9 → 40.07 GB</p>
+      <p>27 个裁尾副本实测 40,069,546,585 字节（十进制 40.07 GB / 37.32 GiB），
+      比文档估算多 2.17 GB。</p></div>
+    <div class="note"><h3>0930 批次</h3>
+      <p class="big">54 → 51 个文件</p>
+      <p>OSS 实际 51 个文件、131,558,840,703 字节（122.52 GiB），
+      文档写的 54 个 / 133.4GB 偏大；51 个里 1 个是 0 字节百度云临时名，
+      可用索引 50。</p></div>
+  </div>
+  <p class="sub" style="margin:10px 0 0">以上数字与 <code>ingest.py</code> 命令已回写进
+  <code>oss-migration.html</code>（首屏实测横幅 + 资产表 + P0/P1 验收），
+  不再需要两处对照。</p>
+</section>
+
+<section>
+  <h2>怎么复现</h2>
+  <div class="card">
+<pre><b># 1. 离线自检（无网络、无 FUSE）</b>
+python3 -m livepipe.tools.oss_ingest --selftest
+自检 310 项全过 ✅
+
+<b># 2. 只读审计（不传 --oss-root，自动选真实根）</b>
+python3 -m livepipe oss audit 09-30_全球车的中国路_*.json \
+  10-0[12346]_全球车的中国路_*.json 10-19奇瑞创新大会_*.json --report-only
+OSS 根：/home/puyu/oss-bucket/直播data/录屏（自动选择）
+配置 22 份 | 引用 82 个视频 | 全片命中 53 | 裁尾 27 | 缺失 2 | 本地缺失 0
+（本次 5.1s；优化前约 4–5 分钟）
+
+<b># 3. 生成全部交付物（幂等）</b>
+python3 scripts/build_oss_inventory.py
+[6/6] 校验通过：configs=22 refs=82 full_mapped=53 trimmed=27 missing=2 ✓
+总耗时约 5s（热缓存；冷缓存约 2.5 分钟）
+
+<b># 4. （P1 补传后）同一命令自动切 P1 基线，再核 27 个副本是否落盘</b>
+python3 scripts/build_oss_inventory.py --verify-uploads
+[6/6] 校验通过：configs=22 refs=82 full_mapped=55 trimmed=27 missing=0 ✓
+P1 落盘校验：27 个目标 · 已落盘 27 · 缺失 0 · 字节不符 0
+</pre>
+    <p class="sub" style="margin:12px 0 0">产物在 <code>out/oss_inventory/2026-11-17/</code>：
+    22 份 manifest、<code>index.json</code>、<code>audit.json</code>、
+    <code>summary.json</code>、<code>p1-upload-list.csv</code>。</p>
+  </div>
+</section>
+
+<section id="review">
+  <h2>评审与使用逻辑审查：结论与回炉</h2>
+  <p class="sub">两个 agent 独立执行命令、各自出报告；报告里的问题直接回炉改代码，
+  改完重跑同一批验证。下面只保留可复核的数字与命令。</p>
+  <div class="grid2">
+    <div class="note">
+      <h3>代码评审 <span class="tag warn">有条件通过 → 已闭环</span></h3>
+      <p class="big">6 条 CONFIRMED，全部修复</p>
+      <p>1 条中危：<code>indexed_videos</code> 把 0 字节百度云临时文件算进索引，
+      统计 51、映射引擎实际 50。5 条低危：<code>verify-media</code> 无时长假 PASS、
+      根探测把 0 字节 / 临时名当视频、显式根不校验存在性、goofys 版本常量未使用、
+      兜底解析丢 <code>segment_names</code>。修复后自检 <strong>310</strong> 项全过，
+      P0 产物重跑 <code>diff</code> 为空。</p>
+    </div>
+    <div class="note">
+      <h3>使用逻辑 <span class="tag">合理，已闭环</span></h3>
+      <p class="big">2 处 P0 + 3 处 P1，全部处理</p>
+      <p>P0-1：补传后 55/0 反而 EXIT 1；P0-2：只有裁尾的配置遇空 OSS 根也 PASS。
+      P1-1/2/3：旧文档数字与 <code>ingest.py</code> 命令、CSV 交接信息、显式根报错。
+      单公共根 236s 被确认为旧脚本的非默认路径，结论已撤回。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <table>
+      <tr><th>问题</th><th>来源 / 判定</th><th>处理</th><th>复验（真实输出）</th></tr>
+      <tr><td><code>indexed_videos</code> 多算 1 个 0 字节临时文件</td>
+        <td>评审 · 中危</td>
+        <td><code>scan_oss_entries</code> 复用 <code>is_temp_name</code> 并跳过 0 字节</td>
+        <td>50 / 30，合计 <strong>80</strong>；53/27/2 与字节不变</td></tr>
+      <tr><td>补传后 P1 数字被判失败</td>
+        <td>使用逻辑 · P0-1</td>
+        <td>接受 P0 与 P1 两套基线，<code>phase/state</code> 自动切换</td>
+        <td>稀疏镜像实跑：<strong>55 / 0 / 27</strong>、27 行、40,069,546,585 B、EXIT 0</td></tr>
+      <tr><td>裁尾配置遇空 OSS 根也报 PASS</td>
+        <td>使用逻辑 · P0-2</td>
+        <td>PASS 文案限定“清单完成”；新增 <code>--verify-uploads</code> 按 dst 核字节</td>
+        <td>空根 + 2 裁尾：PASS 带范围说明；<code>--verify-uploads</code> 缺 27 个 → EXIT 1</td></tr>
+      <tr><td>CSV 缺 config/seg/note，<code>~</code> 未展开</td>
+        <td>使用逻辑 · P1-2</td>
+        <td>10 列：config/seg/kind/src/src_abs/dst/bytes/duration_s/trim_s/note</td>
+        <td>29 行；整段 note “补到旧存根，需重扫”，裁尾 note “直传新契约根”</td></tr>
+      <tr><td>旧文档数字与 <code>ingest.py</code> 命令误导</td>
+        <td>使用逻辑 · P1-1</td>
+        <td><code>oss-migration.html</code> 顶部加实测核对；命令改为 <code>python3 -m livepipe oss ingest</code></td>
+        <td>53+2、40.07GB、50/30 写在文档首屏；与 summary.json 一致</td></tr>
+      <tr><td>显式 <code>--oss-root</code> 写错只报缺失</td>
+        <td>评审低危 + 使用逻辑 P1-3</td>
+        <td>strict 模式要求目录存在并提示检查挂载</td>
+        <td><code>--oss-root /tmp/NO-SUCH-OSS</code> → “显式 OSS 根不存在”，EXIT 1</td></tr>
+      <tr><td><code>verify-media</code> 无时长假 PASS</td>
+        <td>评审 · 低危</td>
+        <td>默认 <code>UNKNOWN</code> + EXIT 1；新增 <code>--allow-unknown-duration</code></td>
+        <td>自检新增 2 项：无时长 1、加标志 0</td></tr>
+      <tr><td>JSONC 兜底丢自定义段名</td>
+        <td>评审 · 低危</td>
+        <td>兜底读取 <code>input.segment_names</code>，长度不符才退回 segN</td>
+        <td>JSONC 兜底用例：段名“开场”保留</td></tr>
+    </table>
+  </div>
+  <p class="sub" style="margin:10px 0 0">未阻塞但记在案的 PLAUSIBLE：
+  sync/ingest 的 fsync 窗口（断电极端场景）、本地与 OSS 同尺寸异构时的时长来源、
+  直接执行薄壳脚本时 usage 前缀差异。CSV 保留 UTF-8 BOM 是为了 Excel/WPS
+  直接打开中文不乱码，已写进 README；脚本读取请用 <code>utf-8-sig</code>。</p>
+</section>
+
+
+<section>
+  <h2>多 agent 怎么分工</h2>
+  <p class="sub">计划 → 并行开发 → 评审 + 使用逻辑审查 → 回炉修复，闭环后才写这份日志。</p>
+  <div class="roles">
+    <div class="note"><h3>计划</h3><p>先跑基线，确认“文档 55”与实测
+    “53 + 2”的差异，拆任务、定验收两行口径。</p></div>
+    <div class="note"><h3>开发 A · 核心工具</h3><p>统一 selftest 与 missing 语义、
+    默认根探测、裁尾区间回退、入口 usage。</p></div>
+    <div class="note"><h3>开发 B · 数据交付</h3><p>写可复现脚本，产出 22 份清单、
+    审计、汇总与 29 行上传清单，并做幂等校验。</p></div>
+    <div class="note"><h3>评审</h3><p>独立重跑自检与生成脚本，抽查映射、门禁、
+    原子写与文档一致性，按严重度报问题。</p></div>
+    <div class="note"><h3>使用逻辑审查</h3><p>按操作者旅程实际执行命令，检查默认值、
+    文案、CSV 能否直接驱动 P1；不合理就回炉。</p></div>
+  </div>
+</section>
+
+<footer>
+  数据源：<code>out/oss_inventory/2026-11-17/summary.json</code>（generated_at 固定为 2026-11-17T00:00:00Z，重跑字节一致）。
+  工具：<code>livepipe.tools.oss_ingest</code> · 入口 <code>python3 -m livepipe oss</code>。
+  本次只读盘点，未向 OSS 上传任何文件。
+  后续：P1 补传已于 2026-11-18 完成（29/29，55 整段 / 27 裁尾 / 0 缺失），
+  见 <a href="oss-p1-devlog.html">P1 补传日志</a>。
+</footer>
+</main>
+</html>

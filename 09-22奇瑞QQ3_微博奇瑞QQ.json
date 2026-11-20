@@ -1,0 +1,216 @@
+// ============================================================================
+// 奇瑞QQ3摩登版上市（渠道七七）2026-09-22 · 微博直播 · 账号「奇瑞QQ」
+// ============================================================================
+// 素材：/run/media/puyu/MyDisk/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/微博/奇瑞QQ/18：27-19：33.mp4（590×1280）。
+// 输出：/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/微博/奇瑞QQ/。
+//
+// 量到的版式（2026-11-11，10 帧 OCR，590×1280）——与征服8 那条微博线同族，但分辨率
+// 从 978×2176 换成 590×1280，所有像素量重测：
+//   · 行距 **39.2**（= 评论行距 78.5 的一半）。⚠ 不能写 78.5：续行只离首行 26px，
+//     低于「同一行碎片」的 0.4 行距闸 ⇒ 会被当成首行的兄弟块并进同一槽，assemble_row
+//     按 x 排序又把续行排到首行前面（实测 `沟里六块腹肌的奶茶：…` 这种倒序脏文本）。
+//     也不能写 52（单行评论间距）：两行评论与下一条差 1.51 个行距，跨帧去重会丢条。
+//     取 78.5/2 = 39.2：两行评论正好 2 槽、单行 1.32 槽、续行 0.66 槽（在 0.15~0.73 闸内）。
+//   · x_text 24：昵称 x1≈27~30；**没有左侧徽章列**，折行续行与昵称同左沿 ⇒
+//     wrap_at_text_left=true（形状判据失效，靠「与上一行间距 ≈0.66 行距」认续行）。
+//   · 等级标是昵称**右边**的「榜N」橙色药丸（`1qasx 榜四` / `小羊炒栗子turbo 榜一`）⇒
+//     rank_pill=true，否则会被并进用户名。
+//   · rect [0,645,590,1190]：视频底 ≈512，「更多直播」折叠条到 ≈585，顶部渐隐到 ≈640，
+//     首条评论顶 ≈650；输入栏 `一起聊聊` 上沿 ≈1202。
+//   · 底部「主题 / 全新QQ3摩登版上市发布会 / 1位主播 / 超值礼包」卡与「我也上榜」按钮
+//     压在评论列上 ⇒ overlay_cards 兜底。
+//   · 昵称不打码 ⇒ account_key=username（微博这一侧**不要**开 badge_reread：药丸在昵称
+//     右边，二次读数按正文框左侧裁药丸会白裁一次）。
+//   · 表情表 /run/media/puyu/C0DE6A4BDE6A39B4/out/weibo_emoji/weibo-emoji.json 本机已有；build 走 panel 模式，无法自动建。
+//
+// 跑法：$P -m livepipe run 09-22奇瑞QQ3_微博奇瑞QQ.json --only panels,parse
+//
+// 校验：python3 -m livepipe check 09-22奇瑞QQ3_微博奇瑞QQ.json
+// ============================================================================
+{
+  "base_dir": "/run/media/puyu/C0DE6A4BDE6A39B4",
+  "version": 1,
+  "name": "奇瑞QQ3摩登版上市（渠道七七）2026-09-22 · 微博直播手机 App · 奇瑞QQ",
+
+  "platforms": {
+    "weibo_app": {
+      "label": "微博直播（手机 App 竖屏 590×1280；等级标是昵称右边的「榜N」药丸）",
+      "emoji": "weibo",
+      "account_key": "username",
+      "row_pitch": 39.2,
+      "y_phase": 30,
+      "x_text": 24,
+      "badge_span": 44,
+      "x2_from": "content",
+      "rank_pill": true,
+      "wrap_at_text_left": true,
+      "wrap_gap_ratio": 0.73,
+      "username_alias": true,
+      "merge_emoji_continuation": true,
+      "emoji_gap_sweep": true,
+      "overlay_cards": "主题|全新QQ3摩登版上市发布会|1位主播|超值礼包|我也上榜|更多直播|恭喜.*助力榜|通过主播热度榜|一起聊聊"
+    }
+  },
+
+  "emoji": {
+    // 微博表在 /run/media/puyu/C0DE6A4BDE6A39B4/out/weibo_emoji/（本机已有，表 + img/）；build 走 panel 模式需要 DOM，不自动建。
+    "tables": {
+      "weibo": {"build": {"enabled": false}}
+    }
+  },
+
+  "input": {
+    "videos": [
+      "/run/media/puyu/MyDisk/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/微博/奇瑞QQ/18：27-19：33.mp4",   // seg1 66.0min（末帧仍有输入栏，无需裁尾）
+    ],
+    "segment_names": null,
+    "video": null,
+    "rows": null,
+    "text": null,
+    "start": 0.0,
+    "duration": null,
+    "interval": 2.0,
+    "max_frames": null,
+    "resume": true,
+    "sample": {
+      "mode": "adaptive",
+      "stride": 2,
+      "safety_rows": 5.0,
+      "settle_frames": 3,
+      "eps_px": 1.0,
+      "entry_thr": 8.0,
+      "max_gap_s": 5.0,
+      "min_interval": 0.2,
+      "max_interval": 6.0,
+      "min_score": 0.3
+    }
+  },
+
+  "panels": {
+    "mode": "manual",
+    "file": null,
+    "files": null,
+    "overwrite": false,
+    "auto": {
+      "method": "hybrid",
+      "at": 900,
+      "frames": 5,
+      "span": null,
+      "split_x": null,
+      "pad_x": 60,
+      "pad_top": 80,
+      "pad_y": 16,
+      "sub_width": 500,
+      "model": "nvidia/LocateAnything-3B",
+      "quant": "4bit",
+      "device": "cuda",
+      "platforms": {
+        "left": "weibo_app",
+        "right": null
+      },
+      "frame_width": 590
+    },
+    "manual": [
+      {"comments": {"rect": [0, 645, 590, 1190], "platform": "weibo_app"}}
+    ],
+    "batch": {
+      "count": 30,
+      "start": 0.0,
+      "span": 600.0,
+      "anchor": "panel"
+    }
+  },
+
+
+  "parse": {
+    "sep": " ",
+    "max_username_len": 24,
+    "merge_continuation": true,
+    "adjacency": true,
+    "dedup": true,
+    "calibrate": false,
+    "right_pad": 0,
+    "emoji_workers": 8
+  },
+
+  "output": {
+    "dir": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/微博/奇瑞QQ",
+    "write": true,
+    "rows": true,
+    "panels": true,
+    "frames": true,
+    "print": false
+  },
+
+  "filter": {
+    "enabled": true,
+    "source": null,
+    "out": null,
+    "cache": null,
+    "min_positive": 1,
+    "exclude_keywords": [
+      "奇瑞", "4s", "店", "qq3", "汽车",
+      "尹同跃", "张国忠", "鲍思语", "王津华", "王孝伟", "胡敬源", "尹祥领",
+      "王来春", "李晶", "商文江", "杨棉之", "叶盛基", "路风", "黎汝雄",
+      "李学用", "张贵兵", "代立宏", "章红玉", "高新华", "戚士龙", "王琅"
+    ],
+    "nlp": {
+      "api_key": null,
+      "api_key_env": "NLP_API_KEY",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "deepseek-v4.1-flash",
+      "batch_size": 20,
+      "concurrency": 4,
+      "timeout": 60.0,
+      "retries": 3,
+      "limit": null,
+      "prompt": null
+    }
+  },
+
+  "qualify": {
+    "enabled": true,
+    "min_positive": 3,
+    "stage_min": 1
+  },
+
+  "export": {
+    "enabled": true,
+    "base": "frame",
+    "labels": "正面",
+    "min_positive": null,
+    "min_scope": "platform",
+    "users": null,
+    "color": "0,255,0",
+    "width": 3,
+    "pad": 0,
+    "pad_ratio": 0.25,
+    "quality": 90,
+    "force": true
+  },
+
+  "collect": {
+    "enabled": true,
+    "stage_min": null,
+    "platform_dir": null,
+    "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/微博/奇瑞QQ/all_users_正面_3张以上",
+    "force": true
+  },
+
+  "draw": {
+    "enabled": false,
+    "source": null,
+    "at": 8.0,
+    "window": 5.0,
+    "out": null,
+    "width": 5,
+    "quality": 90,
+    "labels": true
+  },
+
+  "steps": {
+    "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
+              "export", "collect", "draw"],
+    "skip": ["emoji_tables", "draw"]
+  }
+}

@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OSS P1.5 切读开发日志</title>
+<style>
+:root{--bg:#f6f7f4;--card:#fff;--ink:#17201c;--muted:#5d6a63;--line:#dfe4df;
+--accent:#0f766e;--soft:#d8f0eb;--trim:#c2760a;--trimsoft:#fdf0d8;--bad:#c0392b;
+--codes:#eef1ee;--shadow:0 1px 2px rgba(20,40,30,.05),0 8px 24px rgba(20,40,30,.04)}
+@media(prefers-color-scheme:dark){:root{--bg:#101513;--card:#18201d;
+--ink:#e7ede9;--muted:#9fada6;--line:#2a3530;--accent:#57c7b8;--soft:#143630;
+--trim:#e2a33c;--trimsoft:#2f2413;--bad:#ef8074;--codes:#111815;--shadow:none}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);
+font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+"Microsoft YaHei",sans-serif;padding:0 18px 56px}
+main{max-width:1060px;margin:0 auto}header{padding:52px 0 24px}
+.eyebrow{font-size:12px;letter-spacing:.14em;color:var(--accent);font-weight:700}
+h1{font-size:clamp(28px,4vw,40px);margin:8px 0 10px;letter-spacing:-.01em}
+.lede{color:var(--muted);font-size:17px;max-width:780px;margin:0}
+.meta{color:var(--muted);font-size:13px;margin-top:12px}
+.verdict{margin:26px 0 28px;padding:20px 22px;background:var(--card);
+border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;
+box-shadow:var(--shadow)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+gap:12px;margin:0 0 36px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;
+padding:15px;box-shadow:var(--shadow)}
+.kpi b{display:block;font-size:25px;line-height:1.15}
+.kpi span{display:block;font-size:13px;margin-top:4px}
+.kpi em{display:block;font-size:11.5px;color:var(--muted);font-style:normal}
+section{margin:0 0 38px}h2{font-size:20px;margin:0 0 6px}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+padding:16px;box-shadow:var(--shadow);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;
+border-bottom:1px solid var(--line);padding:7px 8px;white-space:nowrap}
+td{border-bottom:1px solid var(--line);padding:7px 8px;vertical-align:top}
+tr:last-child td{border-bottom:0}.num{text-align:right;font-variant-numeric:tabular-nums}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+font-size:12px;word-break:break-all}
+.ok{color:var(--accent);font-weight:700}.bad{color:var(--bad);font-weight:700}
+.bar{display:flex;height:34px;border-radius:8px;overflow:hidden;margin:6px 0 8px}
+.bar i{display:block;font-style:normal;color:#fff;font-size:12px;white-space:nowrap;
+display:flex;align-items:center;justify-content:center;min-width:52px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted)}
+.legend b{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+pre{background:var(--codes);border-radius:8px;padding:13px 14px;overflow:auto;
+font-size:12.5px;line-height:1.55;margin:0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+background:var(--codes);padding:1px 5px;border-radius:4px;font-size:12.5px}
+.note{background:var(--soft);border-radius:10px;padding:14px 16px;font-size:13.5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}.card{overflow-x:auto}table{min-width:560px}}
+footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);
+padding-top:14px}
+ul{margin:8px 0 0;padding-left:22px}li{margin:5px 0}
+</style></head><body><main>
+<header>
+  <p class="eyebrow">开发日志 · 2026-11-18 · 直播看管</p>
+  <h1>OSS P1.5 切读：22 份配置、82 段改读 OSS</h1>
+  <p class="lede">把 22 份配置的 <code>input.videos</code> 从 MyDisk 本地路径改成 OSS
+  绝对路径：55 段整段读旧存根 <code>直播data/录屏</code>，27 段裁尾副本读新契约根
+  <code>奇瑞汽车/直播看管/直播录屏/&lt;事件&gt;/_live</code>；<code>base_dir</code>
+  仍指本地。切读后 <code>livepipe check</code> 22/22，两个样片从 OSS 实跑通过。</p>
+  <p class="meta">入口 <code>scripts/p15_repoint.py</code> · 映射
+  <code>out/oss_inventory/2026-11-17/</code> · 备份
+  <code>out/p1.5/backup/20261117T234234Z/</code></p>
+  <p class="meta"><b>2026-11-19 更正：</b>项目 OSS 根实际是 <code>~/oss-bucket/web/1/奇瑞汽车/直播看管/</code>；文中 <code>~/oss-bucket/奇瑞汽车/…</code> 是当时写错的桶根前缀。相关对象已用 <code>scripts/oss_relocate_prefix.py</code> 服务端复制到 <code>web/1/…</code>，配置与工具默认根已改指。</p>
+  <p class="meta"><b>运行前置：</b>livepipe 不会自动下载素材。跑 <code>run</code> 前，<code>input.videos</code> 指向的视频必须已经在 OSS：百度来源先用 <code>scripts/oss_download.py baidu</code> 直写（不落本地暂存），裁尾副本走 <code>cp → .part → python3 -m livepipe oss ingest</code>；<code>livepipe check</code> 通过后再跑。</p>
+</header>
+
+<div class="verdict">
+  <b>结论：P1.5 已完成。</b>82/82 段（215.37 GB）的配置路径都已指到 OSS，
+  目标逐个 stat 过且字节与清单一致；<code>livepipe check</code> 22/22 通过。
+  样片 A（裁尾副本 97MB / 164.7s）和样片 B（整段 3.2GB 的中段 60s，验证远端 seek）
+  都 rc=0，产出真实评论。回滚只需把配置指回
+  <code>out/p1.5/backup/20261117T234234Z/</code>。
+</div>
+
+<div class="kpis">
+  <div class="kpi"><b>22 / 22</b><span>配置通过 <code>livepipe check</code></span><em>EXIT 0</em></div>
+  <div class="kpi"><b>82 / 82</b><span>段指向 OSS</span><em>55 整段 + 27 裁尾</em></div>
+  <div class="kpi"><b>215.37 GB</b><span>82 段素材合计</span><em>整段 175.30 / 裁尾 40.07</em></div>
+  <div class="kpi"><b>2 / 2</b><span>样片实跑</span><em>裁尾 + 整段中段</em></div>
+  <div class="kpi"><b>1 条</b><span>回滚命令</span><em>--rollback 备份目录</em></div>
+</div>
+
+<section>
+  <h2>切读范围：两类目标根</h2>
+  <p class="sub">整段留在存量根（P1 只补传缺的 2 个），裁尾副本全部在 P1 落进的新契约根；
+  两类都换成 OSS 绝对路径。</p>
+  <div class="bar" role="img" aria-label="整段 175.30GB 占 81.4%，裁尾 40.07GB 占 18.6%">
+    <i style="width:81.4%;background:var(--accent)">整段</i>
+    <i style="width:18.6%;background:var(--trim)">裁尾</i>
+  </div>
+  <div class="legend">
+    <span><b style="background:var(--accent)"></b>整段 55 段 · 175,302,204,124 B</span>
+    <span><b style="background:var(--trim)"></b>裁尾 27 段 · 40,069,546,585 B</span>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <table>
+      <tr><th>类型</th><th class="num">段数</th><th>OSS 目标根</th><th>映射来源</th></tr>
+      <tr><td>整段</td><td class="num">55</td>
+      <td class="mono">~/oss-bucket/直播data/录屏/&lt;事件&gt;/…</td>
+      <td>inventory manifest <code>segments[].oss</code>（按字节 + 时长双闸门匹配）</td></tr>
+      <tr><td>裁尾副本</td><td class="num">27</td>
+      <td class="mono">~/oss-bucket/奇瑞汽车/直播看管/直播录屏/&lt;事件&gt;/_live/…</td>
+      <td><code>p1-upload-list.csv</code> 的 <code>src_abs → dst</code></td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>工具：只改路径字符串，可验收、可回滚</h2>
+  <p class="sub">配置是 JSONC，注释和排版都不动；改写只替换 <code>input.videos</code>
+  里那几个 JSON 字符串。</p>
+  <div class="card">
+    <table>
+      <tr><th>命令</th><th>作用</th></tr>
+      <tr><td><code>p15_repoint.py</code></td><td>dry-run：逐段打印 <code>pending</code> /
+      <code>OSS</code>，并核对目标存在、字节与清单一致</td></tr>
+      <tr><td><code>p15_repoint.py --verify</code></td><td>只验收：22 份配置 / 82 段必须全部
+      已是 OSS 目标，否则 EXIT 1（可重复跑）</td></tr>
+      <tr><td><code>p15_repoint.py --apply</code></td><td>写入；只备份/改写真正有变化的配置，
+      第二次跑显示“全部已是 OSS，无文件改动”</td></tr>
+      <tr><td><code>p15_repoint.py --rollback &lt;备份目录&gt;</code></td>
+      <td>把 22 份配置整体恢复成本地路径</td></tr>
+    </table>
+  </div>
+  <p class="sub" style="margin:10px 0 0">写前快照在
+  <code>out/p1.5/backup/20261117T234234Z/</code>；报告
+  <code>out/p1.5/repoint-report.json</code> 记录每份配置每段的目标与字节。</p>
+</section>
+
+<section>
+  <h2>验收：先核对全部目标，再跑真实任务</h2>
+  <div class="card">
+    <table>
+      <tr><th>层</th><th>命令 / 对象</th><th>结果</th></tr>
+      <tr><td>1. 映射</td><td><code>p15_repoint.py --verify</code></td>
+      <td><b class="ok">22 份配置 / 82 段全部指向 OSS</b>，EXIT 0</td></tr>
+      <tr><td>2. 目标字节</td><td>同一命令逐个 stat</td>
+      <td><b class="ok">82/82 存在，字节与清单一致</b>，0 失败</td></tr>
+      <tr><td>3. 配置合法性</td><td><code>python3 -m livepipe check &lt;cfg&gt;</code> × 22</td>
+      <td><b class="ok">22/22 通过</b>，EXIT 0</td></tr>
+      <tr><td>4. 实跑</td><td>两个样片 <code>--only panels,parse</code></td>
+      <td><b class="ok">2/2 rc=0</b>，真实评论见下表</td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>样片实跑：一个裁尾，一个整段中段</h2>
+  <p class="sub">样片 A 覆盖新契约根的裁尾副本；样片 B 故意从 3.2GB 整段的中段
+  （t=3000s）切 60s，验证 goofys 远端 seek 后还能正常解码和 OCR。</p>
+  <div class="card">
+    <table>
+      <tr><th>样片</th><th>配置 · 段</th><th>素材 / 切片</th><th class="num">帧</th>
+      <th class="num">rows</th><th class="num">唯一评论</th><th class="num">耗时</th><th>结果</th></tr>
+      <tr><td>A</td>
+      <td><code>10-02_全球车的中国路_抖音</code> · seg3<br>
+      <span class="mono">新契约根 _live</span></td>
+      <td>97,153,646 B / 164.7s<br>全段 0–164.7s</td>
+      <td class="num">59</td><td class="num">639</td><td class="num">48</td>
+      <td class="num">225s</td><td class="ok">rc=0</td></tr>
+      <tr><td>B</td>
+      <td><code>09-30_全球车的中国路_抖音</code> · seg1<br>
+      <span class="mono">旧根 直播data/录屏</span></td>
+      <td>3,225,543,521 B / 6192.1s<br>中段 t=3000–3060s</td>
+      <td class="num">29</td><td class="num">359</td>
+      <td class="num">26</td><td class="num">121s</td>
+      <td class="ok">rc=0</td></tr>
+    </table>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="note"><b>样片 A 质量</b><br>
+      48 条唯一评论，用户名识别 38 条（79.2%），多行合并 13 条（27.1%），
+      4 条带表情共 8 个；解析口径与原全量产物同一条代码路径。少量用户名带药丸前缀
+      （如 <code>12开心呦</code>），属既有已知残留，与切读无关。</div>
+    <div class="note"><b>读的不是缓存</b><br>
+      goofys 冷挂载后直接跑；A 把 97MB 文件读完，B 在 3.2GB 对象里跳到 3000s
+      再顺序读 60s（29 帧 / 359 行 / 26 条唯一评论，23 条有用户名）。两者都产出了
+      可读的用户名和正文。</div>
+  </div>
+</section>
+
+<section>
+  <h2>环境与运维：两件必须先处理的事</h2>
+  <ul>
+    <li><b>goofys 挂载是断的：</b>开始前 <code>~/oss-bucket</code> 只剩一个
+    <code>ENOTCONN</code> 的 fuse 挂载点、没有 goofys 进程。已
+    <code>fusermount3 -u</code> 后重新挂载（<code>setsid</code> 脱离终端）；生产仍建议用
+    <code>scripts/bootstrap_oss_env.sh --systemd</code> 托管。</li>
+    <li><b>外置 out 盘当前未挂载：</b><code>/run/media/puyu/C0DE6A4BDE6A39B4</code>
+    不在盘上，所以样片输出写到 <code>/tmp/p15_sample/</code>（配置的
+    <code>output.dir</code> 临时改到 /tmp，<code>base_dir</code> 临时指向
+    <code>livepipe_batches</code> 里带表情表的目录）。正式跑之前把盘挂回来即可，
+    22 份配置本身仍指原输出根。</li>
+    <li><b>base_dir 没动：</b>按计划保持本地；<code>input.videos</code> 用 OSS 绝对路径。</li>
+  </ul>
+</section>
+
+<section>
+  <h2>没有做什么</h2>
+  <ul>
+    <li><b>没有删本地：</b>MyDisk / 外置盘上的源文件原样保留；P4 影子期结束前不删。</li>
+    <li><b>没有跑 P2：</b>结果链路（本地产物 → OSS）不在本次范围。</li>
+    <li><b>没有提交 git：</b>22 份配置与脚本都留在工作区。</li>
+    <li><b>没有改裁切/几何：</b>切读只替换路径字符串，OCR 参数、panels.manual 未动。</li>
+  </ul>
+</section>
+
+<section>
+  <h2>怎么复现</h2>
+  <pre><b># 1. 验收：22 份配置 / 82 段都必须已指向 OSS</b>
+python3 scripts/p15_repoint.py --verify
+
+<b># 2. 配置合法性</b>
+for f in 09-30_全球车的中国路_*.json 10-0[1-6]_全球车的中国路_*.json \
+         10-19奇瑞创新大会_*.json; do python3 -m livepipe check "$f" || exit 1; done
+
+<b># 3. 回滚（只改配置文本）</b>
+python3 scripts/p15_repoint.py --rollback out/p1.5/backup/20261117T234234Z
+</pre>
+</section>
+
+<footer>
+映射源：<code>out/oss_inventory/2026-11-17/manifests/*.json</code>（整段）+
+<code>p1-upload-list.csv</code>（裁尾）；备份
+<code>out/p1.5/backup/20261117T234234Z/</code>；报告
+<code>out/p1.5/repoint-report.json</code>。样片产物在
+<code>/tmp/p15_sample/{A,B}/out/</code>（临时目录，未进仓库）。
+本次只切读，未删本地、未跑 P2、未提交 git。
+</footer>
+</main></body></html>

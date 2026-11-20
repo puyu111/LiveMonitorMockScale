@@ -3,9 +3,15 @@
 把原先散在 `scripts/` 下的 6 个脚本收进一个包，用**一个 JSON 文件**串成一条流水线。
 **从零跑一遍的完整步骤（命令 / 产物 / 耗时 / 排错）见 [`全流程说明.md`](全流程说明.md)。**
 
+> **跑 livepipe 之前：视频必须先到 OSS。** 本项目统一从 OSS 读素材：`input.videos`
+> 必须是 `~/oss-bucket/...`（goofs 挂载）路径（本地路径仅作离线兜底），**不接受
+> 百度/bypy 路径**——livepipe 用 `cv2.VideoCapture` 直接打开并反复 seek。新素材先用
+> `scripts/oss_download.py baidu` 直写 OSS（见下文 P3），`livepipe check` 通过后再跑；
+> 缺文件时 `check` / `run` 会直接报错，不会自动下载。
+
 ```
 livepipe/
-├── __main__.py                 python -m livepipe（run / panels / check / steps / example）
+├── __main__.py                 python -m livepipe（run / panels / check / verify / match / steps / example）
 ├── config/                     JSON → argparse.Namespace（不改管线，只喂管线）
 │   ├── __init__.py             全量 re-export（`from livepipe import config as C` 照旧）
 │   ├── defaults.py             DEFAULTS
@@ -28,7 +34,8 @@ livepipe/
 │   ├── remedy_badges/          按新口径重算已交付的树
 │   ├── dataset/                识别结果 → YOLO 数据集（复核图 + 八道闸）
 │   ├── merge_segments/         跨段 qualify / collect
-│   └── list_match/             撞库：名单 × 直播全量账号（命中/未命中/匹配度）
+│   ├── list_match/             撞库：名单 × 直播全量账号（命中/未命中/匹配度）
+│   └── verify_run/             从盘上核对一次 run 的产物是否完整（只读）
 ├── parse_live_comments.py      兼容 facade：re-export `parsing.*` + 旧命令行
 ├── export_user_images.py       薄壳 → tools/export_user_images/
 ├── dataset.py                  薄壳 → tools/dataset/（识别结果 → YOLO 数据集）
@@ -36,6 +43,7 @@ livepipe/
 ├── remedy_badges.py            薄壳 → tools/remedy_badges/
 ├── merge_segments.py           薄壳 → tools/merge_segments/
 ├── list_match.py               薄壳 → tools/list_match/（撞库）
+├── verify_run.py               薄壳 → tools/verify_run/（核对 run 产物）
 ├── douyin_emoji_table.py       薄壳 → tools/douyin_emoji/
 ├── wechat_emoji_table.py       薄壳 → tools/wechat_emoji/
 ├── weibo_emoji_table.py        薄壳 → tools/weibo_emoji/
@@ -154,6 +162,10 @@ python -m livepipe run livepipe/examples/pipeline.example.json
 python -m livepipe check livepipe/examples/pipeline.example.json
 python -m livepipe run cfg.json --print-config
 
+# 跑完核对产物是否完整（只读；--strict 连警告也当失败）
+python -m livepipe verify cfg.json
+python -m livepipe verify cfg.json --only parse --json
+
 # 列出可用步骤 / 导出样例配置
 python -m livepipe steps
 python -m livepipe example my.json
@@ -199,6 +211,189 @@ python -m livepipe run cfg.json --skip emoji_tables,draw
 > `--only` 也**拉不回** `steps.skip` 里的步骤（skip 先算）：想让某步「默认不跑、要点名才跑」，
 > 就把它的 `enabled` 留 `false`（别放进 `skip`），然后 `--only` 点名 —— 这也是「花钱的 `filter`
 > 默认关着，但要跑时一条命令就能带上」的做法。
+
+## OSS 入库（P0–P4）
+
+录屏/结果收敛到 OSS 的一组小工具，入口是 `python3 -m livepipe oss <子命令>`。
+背景、目录契约与迁移步骤见 [`docs/oss-migration.html`](docs/oss-migration.html)，
+命令细节与 schema 见 [`tools/oss_ingest/README.md`](tools/oss_ingest/README.md)。
+
+```bash
+python3 -m livepipe oss check-env                                  # 体检挂载 / goofys / bypy / ffprobe
+python3 -m livepipe oss audit <config.json...> --report-only       # 只读审计：引用 / 全片 / 裁尾 / 缺失
+python3 -m livepipe oss manifest <config.json...> --out-dir out/oss_manifest  # 每份配置一份映射清单
+python3 -m livepipe oss sync <本地结果目录> <OSS结果目录> --sha256 --dry-run  # 先看会复制什么
+```
+
+未传 `--oss-root` 时会自动选择第一个含可用视频文件的候选根（当前真实存量是
+`~/oss-bucket/直播data/录屏`），并在输出第一行打印实际根；`sync` 默认只比大小，
+加 `--sha256` 才比哈希。`manifest` 只是生成器，有缺失也返回 0；判定“是否全部
+映射”用 `audit`（默认缺失即返回 1），P0 交付用 `scripts/build_oss_inventory.py`
+的硬校验。
+
+### 5 分钟 P0 盘点（22 份配置）
+
+```bash
+# 1) 体检：OSS 挂载、goofys/bypy、ffprobe
+python3 -m livepipe oss check-env
+
+# 2) 只读审计：22 份配置 → 82 引用 / 53 全片 / 27 裁尾 / 2 缺失
+python3 -m livepipe oss audit \
+  09-30_全球车的中国路_*.json 10-0[1-6]_全球车的中国路_*.json \
+  10-19奇瑞创新大会_*.json --report-only
+
+# 3) 生成交付物（幂等；默认输出 out/oss_inventory/2026-11-17/）
+python3 scripts/build_oss_inventory.py
+```
+
+看 `out/oss_inventory/2026-11-17/`：22 份 manifest、`index.json` / `audit.json` /
+`summary.json`、`p1-upload-list.csv`（P0 时 29 行）。脚本按两个**事件根**分别建
+索引（global / 1019），两个根相同或互相包含会直接退出 2，避免跨事件同字节误配；
+`generated_at` 固定，重跑产物逐字节一致。`coverage.indexed_videos` 只数**可用**
+视频（字节 > 0、非 `*.p.mp4` / `*.baiduyun*` 临时名），因此 0930 是 50 而不是
+51 个文件。退出码：`0` 基线吻合；`1` 基线不一致 / 坏配置 / `--verify-uploads`
+发现缺失；`2` 参数或事件根冲突。补传 2 段后重跑会自动切到 P1 基线
+（55 全片 / 0 缺失 / 27 裁尾）并仍返回 0；再加 `--verify-uploads` 会按 CSV 的
+`dst` 核对 27 个裁尾副本是否已落盘且字节一致。CSV 是 UTF-8 with BOM（Excel/WPS
+直接打开中文不乱码）；脚本读取请用 `utf-8-sig`。
+
+### P1 补传（2026-11-18 已执行）
+
+```bash
+python3 scripts/p1_upload.py --dry-run        # 只打印 29 个对象的源/目标/现状
+python3 scripts/p1_upload.py --workers 3      # 正式补传，可重复跑
+python3 scripts/p1_upload.py --verify-only    # 只 stat 目标，不写
+python3 scripts/build_oss_inventory.py --verify-uploads   # 切 P1 基线并核副本字节
+```
+
+上传先写 `<名>.part`，close 后核对字节，再 `os.replace`；目标已存在且字节相符
+直接跳过，字节不同则拒绝覆盖。报告在 `out/oss_inventory/2026-11-17/p1-upload-report.json`，
+过程记录与实测速度见 [`docs/oss-p1-devlog.html`](docs/oss-p1-devlog.html)。本次只写
+OSS，22 份配置的 `input.videos` 仍指本地；切读见下一节。
+
+### P1.5 切读（2026-11-18 已执行）
+
+```bash
+python3 scripts/p15_repoint.py --verify      # 只核对 22 份配置 / 82 段是否都已指到 OSS
+python3 scripts/p15_repoint.py               # dry-run：打印每段的 pending / OSS 状态
+python3 scripts/p15_repoint.py --apply       # 写入（幂等；写前备份到 out/p1.5/backup/<UTC>/）
+python3 scripts/p15_repoint.py --rollback out/p1.5/backup/<UTC>   # 整体回滚到本地路径
+```
+
+映射：整段取 inventory manifest 的 `segments[].oss`（旧根 `直播data/录屏`），裁尾取
+`p1-upload-list.csv` 的 `src_abs → dst`（新契约根
+`web/1/奇瑞汽车/直播看管/直播录屏/<事件>/_live`）。只改配置文本里 `input.videos`
+的 JSON 字符串，`base_dir` 与其余字节原样保留。本次 55 段整段仍读旧根，27 段裁尾
+读新契约根；`livepipe check` 22/22 通过。实跑验收抽了两个样片：裁尾副本
+`10-02 抖音 seg3`（97MB / 164.7s，48 条评论）和整段 3.2GB 的中段 60s
+`09-30 抖音 seg1`（26 条评论），均 rc=0；过程与数字见
+[`docs/oss-p15-devlog.html`](docs/oss-p15-devlog.html)。
+
+> **2026-11-19 路径更正**：项目 OSS 根实际是 `~/oss-bucket/web/1/奇瑞汽车/直播看管`
+> （用户确认）。P1/P2 早期把 `_live` 副本和 `直播产生结果` 写到了桶根
+> `~/oss-bucket/奇瑞汽车/直播看管/...`；已用 `scripts/oss_relocate_prefix.py`
+> 服务端复制到 `web/1/...`，21 份配置的 27 个 `_live` 路径已改指新根，
+> 源前缀暂留待复核后删除。之后的 P2/P3 默认落点都已改到 `web/1`。
+
+### P2 结果链路（2026-11-18 已执行）
+
+> **2026-11-19 起：新配置可以把结果直接写 OSS。** `output.dir` / `collect.out`
+> 指到 `~/oss-bucket/web/1/奇瑞汽车/直播看管/直播产生结果/<事件>/<日期>/<平台>`，
+> 本地不留结果（`10-24/10-25奇瑞探秘局_视频号.json` 已切）。goofs 不支持 append，
+> `rows.jsonl` 续跑会自动重写已有行；大量小文件逐张写比本地慢。存量批次仍用下面的
+> `oss_sync.py` 把本地结果同步上去。
+
+结果先落本地，任务收尾后增量同步到 OSS；工具是 `scripts/oss_sync.py`：
+
+```bash
+python3 scripts/oss_sync.py --src <本地结果目录> --dst <OSS目录> --dry-run
+python3 scripts/oss_sync.py --src <本地结果目录> --dst <OSS目录> --sha256
+python3 scripts/oss_sync.py --src <本地结果目录> --dst <OSS目录> --verify-only
+```
+
+按大小跳过同尺寸文件（`--sha256` 再比内容）、跳过符号链接/隐藏文件/临时名；结果文件
+直接写正式名（goofys 的 rename 在含 `+` 的目录会 404），失败重试 3 次；默认 4 并发。
+`--include` 只同步匹配的文件（回填用它先传交付物）；结尾打印
+`OSS_SYNC_RESULT {json}`，供批处理解析；`--report` 另写报告。自检
+`python3 scripts/selftest_oss_sync.py` **33 项**。
+
+`batch_local.py` / `batch_remote.py`（`~/脚本/ssh/`）在「收 / 回传」核对通过后
+自动调用它：配置 `oss_results_root` 与 `oss_sync` 开关，任务级 `oss_result`
+指定相对落点（不写则按 `local_out` 相对 `local_out_root` 镜像）。OSS 同步失败
+不会把任务打回 `transfer_failed`，用 `--apply --oss-only` 只补同步。验收见
+[`docs/oss-p2-devlog.html`](docs/oss-p2-devlog.html)。
+
+**存量 out 回填**：`scripts/p2_backfill.py` 把外置/本地 out 的事件树同步到
+`直播产生结果`，分两阶段（先 json/all_users/撞库结果，再补帧图），可断点续传：
+
+```bash
+python3 scripts/p2_backfill.py plan
+python3 scripts/p2_backfill.py run --phase deliverables --workers 8 --yes
+python3 scripts/p2_backfill.py run --phase all          --workers 8 --yes
+```
+
+全球车的中国路统一落到 `2026-0930-1006《全球车的中国路》/<MM.DD>/…`；`media/`
+录屏副本、`dataset_*`、`*_emoji`、`_backup*` 不参与。状态
+`~/.livepipe_p2_backfill/state.json`。
+
+截至 2026-11-19 12:16：`deliverables` **174,068 文件 / 34.91GB** 已完成；`--phase all`
+正在补 seg 帧图（全量 505,983 文件 / 108.83GB）；09-09 的 1 个瞬时失败文件已单独补传，
+收尾后会重跑该任务清状态。后台日志 `~/.livepipe_p2_backfill/run-{deliverables,all}.log`。
+
+### P3 下载链路（2026-11-19 已执行）
+
+`scripts/oss_download.py` 负责「下载 → OSS `.part` → 校验 → 正式名 + manifest」：
+
+```bash
+# 直播：下载器把流写到 {part}（dypy 参数不写死，换下载器只改 --cmd）
+python3 scripts/oss_download.py live \
+  --event 2026-11-20XX --day 11.20 --platform 抖音 --account 奇瑞汽车 \
+  --name 10-00-11-16 --cmd 'dypy 直播 <参数> --out {part}'
+
+# 百度：bypy 只做授权/列目录，内容按 PCS 单请求流式直写 OSS（无本地暂存）
+python3 scripts/oss_download.py baidu \
+  --remote /直播录屏/10.20上午 \
+  --event 2026-10-20XX --day 10.20 --platform 抖音 --account 奇瑞集团
+```
+
+`live` 失败绝不留正式文件（下载器违约写了正式名也会删掉）；收尾默认要求
+ffprobe 能读到有效时长，写 `<final>.manifest.json`（字节/时长/事件/日期/平台/
+账号/来源）。`--expect-bytes` / `--expect-duration` 做完整性闸门；`--clean-part` /
+`--resume` / `--clean-part-on-fail` 控制 `.part`。`baidu` **不落本地暂存**：
+bypy 自带的 20MB 分块下载在 goofys 上大文件会失败，工具改为一次 HTTP
+`Range` 请求顺序写 `<final>.part`，失败保留 `.part`（`--resume` 续传），成功
+才校验改名。`baidu` 只处理视频扩展名，非视频跳过；`--dest-rel` 可直接指定
+OSS 根下相对目录。验收见
+[`docs/oss-p3-devlog.html`](docs/oss-p3-devlog.html)。
+
+**跑 livepipe 前的固定动作**：新素材先用 `baidu`（百度来源）或 `live`（直播录制）
+入库到 `~/oss-bucket/web/1/奇瑞汽车/直播看管/直播录屏/...`，再把配置里的
+`input.videos` 改成 OSS 路径；`livepipe check` / `run` 只读已存在的文件，**不会
+自动下载**，缺文件直接报错。
+
+### P4 影子期与清盘（2026-11-19 开始）
+
+```bash
+python3 scripts/p4_cleanup.py shadow-status       # 影子期还剩几天
+python3 scripts/p4_cleanup.py audit --targets staging --allow-metadata
+python3 scripts/p4_cleanup.py plan  --targets staging --allow-metadata
+python3 scripts/p4_cleanup.py apply --targets staging --allow-metadata --yes
+python3 scripts/p4_cleanup.py rollback-check      # P1.5 本地路径是否还能回滚
+python3 scripts/p4_cleanup.py migrate-emoji       # 表情表迁到 ~/livepipe_assets
+```
+
+`audit` 对每个本地文件在保留根（OSS + 未选中本地根）找同路径/同文件名同字节副本，
+视频额外允许同字节数；`--allow-metadata` 忽略 `run.sh`/`batch.log`/`.batch_runner.*`
+这类可再生成的元数据。`--policy inputs` 只要求 82 段引用的 OSS 录屏可读（结果靠
+重跑），默认 `--policy results` 要求每个本地文件都有副本。`apply` 必须影子期满且
+0 个不可删文件，再加 `--yes`。
+
+本次状态：影子期到 2026-11-26；staging（62.99GB）审计通过；外置/本地 out 正在做
+P2 回填（`deliverables` 已完成，`all` 进行中），回填结束后重跑 `audit` 复核严格口径；
+表情表默认在 `~/livepipe_assets`（22 份配置的 `base_dir`）；探秘局两份已把
+`base_dir` 改到 OSS `…/直播看管/素材`（表情表在 `<base_dir>/out/wechat_emoji/`，
+从 OSS 加载 109 个模板约 2.5s，进程内缓存）；MyDisk 未挂载导致本地回滚暂不可用。详见
+[`docs/oss-p4-devlog.html`](docs/oss-p4-devlog.html)。
 
 ## 表情表：四套资产，互不通用
 
@@ -393,13 +588,15 @@ python livepipe/list_match.py --selftest                              # 纯函�
   `撞库结果.xlsx`（装了 openpyxl 才写）· 生成的 `README.md`；**标记图**默认导出到
   `标记图/<平台>/<名单名>/<账号目录>/1.jpg …` —— 就是交付树里的图**原样**复制
   （整帧原图 + 该条评论一个绿框，不裁、不加字），按名单姓名重新归档，可直接发活动方核对。
+  未命中名单的**最近账号**同样导图，单独放在 `标记图/未命中/<平台>/<名单名>/<账号目录>/`，
+  看图就能复核是阈值卡掉还是确实没拍到；交付命中直接复制，仅直播的从视频现补。
   只要表格不要图：`--no-images`。**只在直播里、没进交付树**的命中没有现成图，
   会按同样的交付口径从视频原帧**现补**（整帧 + 绿框、顺序解码，见 bug-264），
   有正面评论的取正面、零正面的按中性/负面评论补（否则一张都挑不出来）；
   几个账号就要几十秒到几分钟；同一账号跨段出现加段名前缀，重跑会覆盖同段的图。
 - **HTML 交付清单**（默认写）：`撞库清单/<日期>_<场次>_<平台>.html` —— 一平台一页，
   顶部 5 个 KPI + 人数/图片两条占比条，中间是可搜索、可点表头排序的「撞库用户名单」，
-  下面附「未命中名单」与口径说明；多平台再写 `汇总.html`。场次/日期自动从
+  下面附「未命中名单」（最近账号可直接点图复核）与口径说明；多平台再写 `汇总.html`。场次/日期自动从
   `cwd` 里 `output.dir` 指向本平台的配置取 `name`（找不到就用直播目录名），
   `--title` / `--date` 可强制。清单不嵌图，只给「首图」链接指向 `../标记图/…`。
   不要清单：`--no-html`。
@@ -457,6 +654,35 @@ python livepipe/list_match.py --selftest                              # 纯函�
 开了 `parse.badge_reread`（`--badge-reread`）时唯一例外：parse 会按每行的**药丸带**回原帧把
 等级标重读一遍（只跑识别、跳过 det；**不重抽行**）—— 面板整屏那一遍读不出的药丸（实测只有
 三到四成读得出）靠它补；补上的是**等级数字**，直接决定「谁和谁是一个账号」。
+
+## 核对一次 run 的产物是否完整（`verify` 子命令）
+
+`run` 每一步只写自己的产物，中断或只跑了一半不会留下明显的「失败标记」。`verify` 从盘上
+按**配置实际要跑的步骤**逐项核对（只读，不重跑、不写盘）：
+
+```bash
+python -m livepipe verify cfg.json                 # 跑完一整条链后
+python -m livepipe verify cfg.json --only parse    # 本次只跑了 parse
+python -m livepipe verify cfg.json --strict        # 警告也当失败（交付前用）
+python -m livepipe verify cfg.json --json          # 机读结果
+```
+
+它看的是：表情表存在；面板文件与 `platform` 已填；`comments.jsonl` 行数与
+`summary.unique_comments` 一致、`rows.jsonl` 不是 0 字节、`frames/` 有图；
+`users.jsonl` 合法且不比 `comments.jsonl` 旧；`merged_users.json` 与各段
+`users_qualified.jsonl` 的账号集合完全一致；每个平台的 `all_users_*` manifest 计数、
+账号目录、图片齐全；交付树覆盖**所有**合计合格账号；以及上下游文件的时间戳
+（例：`users.jsonl` 比 `comments.jsonl` 旧 ⇒ parse 重跑后没重跑 filter）。
+
+默认还会用 `ffprobe` 核对**视频时间 × seg 时间**：读段视频文件名里的区间（`19：40-20：20`），
+与实际时长比较 —— 实际**短于**区间超过容差（`--time-tolerance`，默认 120s）⇒ 错误
+（少录一段 / 文件不是这一段），**长于**区间 ⇒ 警告（常见于录尾带推荐页/花絮）。
+`creation_time` 只作参考（可能是复制/转码时间）。素材盘挪了位置用
+`--video-map 旧前缀=新前缀`；不想查用 `--no-media-time`。
+
+退出码 `0` = 没有错误，`1` = 有错误，`2` = 配置读不了。素材盘没挂载也能核对
+（自动退回不校验 `input.videos` 是否存在的宽松模式）。自检：
+`python -m livepipe verify --selftest`。
 
 ## 直接跑单个脚本
 

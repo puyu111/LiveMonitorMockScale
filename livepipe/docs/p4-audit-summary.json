@@ -1,0 +1,86 @@
+{
+ "version": 1,
+ "generated_at": "2026-11-19T02:16:04Z",
+ "shadow": {
+  "version": 1,
+  "shadow_started_at": "2026-11-19T02:06:02Z",
+  "note": "P4 影子期：7 天内只审计，不删本地"
+ },
+ "audit_policy": "results（严格：每个本地文件在保留根有副本）；inputs 策略只要求 82 段 OSS 录屏可读",
+ "targets": {
+  "staging": {
+   "root": "/home/puyu/livepipe_batches",
+   "files": 41856,
+   "bytes": 62992650636,
+   "safe_files": 41801,
+   "safe_bytes": 62989772433,
+   "unsafe_files": 55,
+   "unsafe_bytes": 2878203,
+   "unsafe_real_files": 0,
+   "unsafe_real_bytes": 0,
+   "metadata_ignored_files": 55,
+   "metadata_ignored_bytes": 2878203,
+   "safe": true
+  },
+  "local_out": {
+   "root": "/home/puyu/github/LiveMonitorMockScale/out",
+   "files": 67068,
+   "bytes": 13294497465,
+   "safe_files": 17893,
+   "safe_bytes": 3736830104,
+   "unsafe_files": 49175,
+   "unsafe_bytes": 9557667361,
+   "unsafe_real_files": 49175,
+   "unsafe_real_bytes": 9557667361,
+   "metadata_ignored_files": 0,
+   "metadata_ignored_bytes": 0,
+   "safe": false
+  },
+  "external_out": {
+   "root": "/run/media/puyu/C0DE6A4BDE6A39B4/out",
+   "files": 474223,
+   "bytes": 170809467917,
+   "safe_files": 25779,
+   "safe_bytes": 34717704901,
+   "unsafe_files": 448444,
+   "unsafe_bytes": 136091763016,
+   "unsafe_real_files": 448095,
+   "unsafe_real_bytes": 136087007547,
+   "metadata_ignored_files": 349,
+   "metadata_ignored_bytes": 4755469,
+   "safe": false
+  }
+ },
+ "inputs_check": {
+  "oss_unique_segments": 55,
+  "unreadable": 0,
+  "p15_verify": "ok"
+ },
+ "emoji_migration": {
+  "assets": "/home/puyu/livepipe_assets",
+  "tables": 4,
+  "bytes": 18200771,
+  "configs_updated": 22,
+  "backup": "/home/puyu/.livepipe_p4_config_backup/20261119T021318Z"
+ },
+ "orphan_video": {
+  "src": "/home/puyu/livepipe_batches/09-22奇瑞QQ3_视频号奇瑞集团/videos/奇瑞集团/18：13-19：31.mp4",
+  "dst": "~/oss-bucket/奇瑞汽车/直播看管/直播录屏/2026-9-22奇瑞QQ3摩登版上市（渠道七七）/9.22/视频号/奇瑞集团/18-13-19-31.mp4",
+  "bytes": 2012027943,
+  "duration_s": 4723.410989
+ },
+ "rollback": {
+  "p15_backup": "out/p1.5/backup/20261117T234234Z",
+  "local_video_paths": 82,
+  "missing": 76,
+  "note": "MyDisk 未挂载，回滚到本地路径当前不可用"
+ },
+ "deleted": false,
+ "durable": {
+  "inventory": "livepipe/docs/oss_inventory/2026-11-17",
+  "p15_backup": "~/.livepipe_p4_audit/p1.5-backup-20261117T234234Z",
+  "audit_reports": "~/.livepipe_p4_audit",
+  "shadow_state": "~/.livepipe_p4_shadow.json",
+  "emoji_assets": "/home/puyu/livepipe_assets/out"
+ }
+}

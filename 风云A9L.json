@@ -29,7 +29,7 @@
 //   ✅ 浮层左界 460：卡片侧文字最小 x1 **477**、评论侧块 x1 都 <200 ⇒ 中间空带取 460
 //   ✅ rect y1=1000（评论列表顶；其上是直播画面/多机位小窗）· y2=1420（输入框上沿 ≈1430，
 //      `说点什么…` 占位文字在 1443~1476）
-//   ✅ 表情用抖音那套表（out/douyin_emoji/douyin-emoji.json，已建好）
+//   ✅ 表情用抖音那套表（/run/media/puyu/C0DE6A4BDE6A39B4/out/douyin_emoji/douyin-emoji.json，已建好）
 //   ⚠ 已知残留 / 风险（量的时候看见的，别当没发生）：
 //      ① 顶部渐隐带（约 y1000~1040）里的评论 OCR 常读不出昵称（只读到正文）——
 //         它们是往上滚之前的旧行，跨帧去重会用滚下来时的干净读数补上；y1 不再往上加，
@@ -58,13 +58,14 @@
 //        NLP_API_KEY=sk-xxxx $P -m livepipe run 风云A9L.json \
 //            --only filter,qualify,export,collect
 //   ③ 先看后交：产物在
-//        out/10-2026-08-07风云A9L年型车上市直播维护/抖音/all_users_正面_2张以上/
+//        /run/media/puyu/C0DE6A4BDE6A39B4/out/10-2026-08-07风云A9L年型车上市直播维护/抖音/all_users_正面_2张以上/
 //
 // 校验（不跑、安全）：
 //   python3 -m livepipe check 风云A9L.json
 //   python3 -m livepipe run   风云A9L.json --dry-run
 // ============================================================================
 {
+  "base_dir": "/run/media/puyu/C0DE6A4BDE6A39B4",
   "version": 1,
   "name": "风云A9L年型车上市维护 2026-08-07 · 抖音手机 App · 竖屏",
 
@@ -151,7 +152,7 @@
     }
   },
 
-  // 表情表用内置的 `douyin`（out/douyin_emoji/douyin-emoji.json）
+  // 表情表用内置的 `douyin`（/run/media/puyu/C0DE6A4BDE6A39B4/out/douyin_emoji/douyin-emoji.json）
   // ⇒ 这里一个字段都不用写：emoji.tables 的默认值就是它，emoji.enabled 默认 true。
 
   "input": {
@@ -253,7 +254,7 @@
     // 多段时这里是**段的父目录**：实际各写 <dir>/seg1、<dir>/seg2；
     // 跨段的两个产物落在这儿：merged_users.json（qualify）；collect 的交付树见 collect.out。
     // 按平台分目录：同素材另有「视频号/」，将来配视频号时各用各的 output.dir，段目录不会撞。
-    "dir": "out/10-2026-08-07风云A9L年型车上市直播维护/抖音",   // 输出根目录                    --out
+    "dir": "/run/media/puyu/C0DE6A4BDE6A39B4/out/10-2026-08-07风云A9L年型车上市直播维护/抖音",   // 输出根目录                    --out
     "write": true,                      // 是否写盘（comments.jsonl + summary.json 成对）
     "rows": true,                       // 另存 rows.jsonl（**可回喂复算**）             --dump-rows <段目录>/rows.jsonl
     "panels": true,                     // mode=auto 时把定位结果存成 panels.json         --dump-panels <段目录>/panels.json
@@ -335,7 +336,7 @@
     "enabled": true,
     "stage_min": null,                  // 各段导出目录名里的数字；null ⇒ qualify.stage_min
     "platform_dir": null,               // 交付树里的平台目录名；null ⇒ 自动认（douyin_app → 抖音）
-    "out": "out/10-2026-08-07风云A9L年型车上市直播维护/抖音/all_users_正面_2张以上",
+    "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/10-2026-08-07风云A9L年型车上市直播维护/抖音/all_users_正面_2张以上",
     "force": true                       // 目标非空时整棵重来（否则报错退出）
   },
 
@@ -355,7 +356,7 @@
     // 逐段步（panels/parse/filter/export/draw）两段各跑一遍；全局步（emoji_tables/qualify/collect）整批一次。
     "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
               "export", "collect", "draw"],
-    "skip": ["emoji_tables", "draw"]    // 表情表已建好（out/douyin_emoji/）；独立描框用不上
+    "skip": ["emoji_tables", "draw"]    // 表情表已建好（/run/media/puyu/C0DE6A4BDE6A39B4/out/douyin_emoji/）；独立描框用不上
   }
 }
 

@@ -1,0 +1,242 @@
+// ============================================================================
+// 奇瑞「全球车的中国路」2026-10-03 · 快手直播
+// （手机 App 竖屏 590/592×1280）→ 结构化评论
+//
+// 素材 = 「/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/」下
+// 按**画面实际平台**归到本配置的 2 段录屏（账号「奇瑞汽车」）:
+//   seg1  `10.03/快手/11：02-14：30.mp4`  208.5min（整段直播）
+//   seg2  `10.03/快手/14：31-15：40.mp4`  原片 68.9min，直播到 3581s 结束，其后是「直播已结束」推荐流 ⇒ 裁到 0–3576s
+//
+// 来源目录：「10.03/快手」。
+// ⚠ 本批素材目录名与实际平台**有错位**（例如 9.30「快手/」里是视频号录屏、
+//   「视频号/」里是快手录屏；10.02「快手/1」里是抖音录屏）。本配置已按画面
+//   实际平台重新归档；裁剪副本在 `_live/`（stream copy，不重编码）。
+//
+// 量到的几何（2026-11-16，手机 App）：行距见 platforms 段；
+//   每段 rect 见 panels.manual（OCR 在直播段内的多帧上量的）。
+//
+// 跑法（OCR 要带 rapidocr 的解释器）：
+//   P=/home/puyu/anaconda3/envs/vlx/bin/python
+//   export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+//   $P -m livepipe run 10-03_全球车的中国路_快手.json --only panels,parse
+//   # 中断后重跑同一条命令：<段目录>/rows.jsonl 已在 ⇒ 零 OCR 续跑
+//   NLP_API_KEY=sk-xxxx $P -m livepipe run 10-03_全球车的中国路_快手.json \
+//       --only filter,qualify,export,collect
+// 产物：/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-0930-1006全球车的中国路/10-03/快手/
+// 校验：python3 -m livepipe check <本文件>
+// ============================================================================
+{
+  "base_dir": "/home/puyu/livepipe_assets",
+  "version": 1,
+  "name": "全球车的中国路 2026-10-03 · 快手手机 App · 竖屏",
+
+  // -------------------------------------------------------------------------
+  // 平台档案：与 09-12 CTCC 快手同一版式（590×1280 手机 App）；数字按本素材复核。
+  // -------------------------------------------------------------------------
+  "platforms": {
+    "kuaishou": {
+      "label": "快手直播（手机 App 竖屏；行首药丸簇内联，无固定徽章列）",
+      "emoji": "kuaishou",              // → /run/media/puyu/C0DE6A4BDE6A39B4/out/kuaishou_emoji/kuaishou-emoji.json
+
+      // 本批昵称不打码 ⇒ 只看昵称。
+      "account_key": "username",
+      "username_alias": true,
+
+      // 行距 —— **实测**（2026-11-16，多帧）：独立评论首行中心差众数 40~42，
+      //   取 42.0（与 09-12 的 45 不同：本批气泡更紧）。
+      "row_pitch": 42.0,
+
+      // 首行中心距面板顶（裁剪内坐标）—— 逐帧重估，这里只兜底。
+      "y_phase": 10,
+
+      // 正文列左沿 —— **实测**：`榜N` 药丸 x∈[31,77]、真昵称 x1≈78~83、
+      //   无药丸昵称 x≈28~30。取 81：只丢无冒号的纯药丸碎片；带冒号的评论都保留。
+      "x_text": 81,
+
+      // ROI 左沿：徽章列宽（81−58 = 23，圈住药丸簇）。
+      "badge_span": 58,
+
+      // 裁切右沿：取窗口右沿（App 评论列表满宽）。
+      "x2_from": "window",
+
+      // 折行续行：快手续行贴左沿 / 微缩进，开形状入口，再由间距闸定去留。
+      "wrap_indent": true,
+      // 续行间距比上限 —— 续行约为 0.7~0.8 行距；独立行 ≈1.0 行距。
+      "wrap_gap_ratio": 0.85,
+
+      // 浮层卡 / 系统行（只作用于**没有冒号**的行）：观众榜 `榜N`、`粉丝团` 药丸、
+      //   送礼/任务卡（`打卡领亲密值` / `快币` / `倒计时`）、进房通知碎片等。
+      "overlay_cards": "加入\\s*$|点亮了|点亮粉丝团|送票助我上榜吧|去助力\\s*$|去点赞\\s*$|抓住机会|快币|免费票次日|^人气票$|^[xX×]\\s*\\d+$|成为在线|^CHERY|^榜\\s*\\d+$|^粉丝团$|送出\\d+个人气票|打卡|亲密值|倒计时|风云榜单|距离上日榜|加入[，,]?来|来自\\s*(关注|推广)|讲解中|预约同款好车|人已预约",
+
+      // 冒号像素检测：与同批配置同一口径。
+      "colon_bg_max_v": 255,
+      "colon_v_delta": 30,
+      "colon_text_fix": true
+    }
+  },
+
+  // 表情表用 `kuaishou`（/run/media/puyu/C0DE6A4BDE6A39B4/out/kuaishou_emoji/kuaishou-emoji.json，207 个官方表情）。
+  "emoji": {
+    "enabled": true,
+    "tables": {
+      "kuaishou": {
+        "path": "/run/media/puyu/C0DE6A4BDE6A39B4/out/kuaishou_emoji/kuaishou-emoji.json",
+        "build": {"enabled": true, "mode": "web", "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/kuaishou_emoji",
+                  "src": null, "no_download": false, "no_sheet": false}
+      }
+    }
+  },
+
+  "input": {
+    // 段顺序 = 时间顺序；每段在 output.dir 下开一个 segN 子目录。
+    "videos": [
+      "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/10.03/快手/11：02-14：30.mp4",
+      "/home/puyu/oss-bucket/web/1/奇瑞汽车/直播看管/直播录屏/2026-0930-1006《全球车的中国路》/_live/1003_kuaishou_14-31-15-40_0-3576.mp4"
+    ],
+    "segment_names": null,
+    "video": null,
+    "rows": null,
+    "text": null,
+    "start": 0.0,
+    "duration": null,
+    "interval": 2.0,
+    "max_frames": null,
+    "resume": true,
+
+    // 手机 App 平滑滚动 ⇒ adaptive（静止段几乎不拍、滚动段不漏条）。
+    "sample": {
+      "mode": "adaptive",
+      "stride": 2,
+      "safety_rows": 5.0,
+      "settle_frames": 3,
+      "eps_px": 1.0,
+      "entry_thr": 8.0,
+      "max_gap_s": 5.0,
+      "min_interval": 0.2,
+      "max_interval": 6.0,
+      "min_score": 0.3
+    }
+  },
+
+  // 面板：**手写**（评论区位置已逐段量好；同一设备同一 App 版式）。
+  // rect 是原图像素 [x1, y1, x2, y2]；mode=manual 下配置是唯一来源。
+  "panels": {
+    "mode": "manual",
+    "file": null,
+    "files": null,
+    "overwrite": false,
+    "auto": {
+      "method": "hybrid",
+      "at": 900,
+      "frames": 5,
+      "span": null,
+      "split_x": null,                  // null = 不切分（竖屏单直播间一列评论）
+      "pad_x": 60,
+      "pad_top": 80,
+      "pad_y": 16,
+      "sub_width": 500,
+      "model": "nvidia/LocateAnything-3B",
+      "quant": "4bit",
+      "device": "cuda",
+      "platforms": {"left": "kuaishou", "right": null},
+      "frame_width": 592
+    },
+    "manual": [
+      {  //   seg1  `11：02-14：30.mp4`  592×1280 · 整段直播
+        "comments": {"rect": [0, 588, 592, 1200], "platform": "kuaishou"}
+      },
+      {  //   seg2  `14：31-15：40.mp4`  592×1280 · 直播 0-3576s（裁后）
+        "comments": {"rect": [0, 604, 592, 1200], "platform": "kuaishou"}
+      }
+    ],
+    "batch": {"count": 30, "start": 0.0, "span": 600.0, "anchor": "panel"}
+  },
+
+  "parse": {
+    "sep": " ",
+    "max_username_len": 24,
+    "merge_continuation": true,
+    "adjacency": true,
+    "dedup": true,
+    // 自标定关掉：行距/相位/续行/浮层界已按本素材实测写死（同 10-31 / 09-12 口径）。
+    "calibrate": false,
+    "right_pad": 0,
+    "emoji_workers": 1
+  },
+
+  "output": {
+    // 多段时这是段的父目录：实际写 <dir>/seg1、seg2…；跨段产物也落在这里。
+    "dir": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-0930-1006全球车的中国路/10-03/快手",
+    "write": true,
+    "rows": true,
+    "panels": true,
+    "frames": true,
+    "print": false
+  },
+
+  // 评论 → 合格用户。**要花钱**；key 只走环境变量（项目铁律）。
+  // 多段素材先逐段出全量（min_positive=1），跨段合计交给 qualify。
+  "filter": {
+    "enabled": true,
+    "source": null,
+    "out": null,
+    "cache": null,
+    "min_positive": 1,
+    "exclude_keywords": [
+      "奇瑞", "4s", "店", "qq3", "汽车",
+      "尹同跃", "张国忠", "鲍思语", "王津华", "王孝伟", "胡敬源", "尹祥领",
+      "王来春", "李晶", "商文江", "杨棉之", "叶盛基", "路风", "黎汝雄",
+      "李学用", "张贵兵", "代立宏", "章红玉", "高新华", "戚士龙", "王琅"
+    ],
+    "nlp": {
+      "api_key": null,                  // 留 null：key 只走环境变量
+      "api_key_env": "NLP_API_KEY",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "deepseek-v4.1-flash",
+      "batch_size": 20,
+      "concurrency": 4,
+      "timeout": 60.0,
+      "retries": 3,
+      "limit": null,
+      "prompt": null
+    }
+  },
+
+  // 跨段判合格：按账号**合计**正面条数，≥3 条回写到每段 users_qualified.jsonl。
+  "qualify": {
+    "enabled": true,
+    "min_positive": 3,
+    "stage_min": 1
+  },
+
+  // 逐段出交付图：读 users_qualified.jsonl，按原帧画绿框，一人一个目录。
+  "export": {
+    "enabled": true,
+    "base": "frame",
+    "labels": "正面",
+    "min_positive": null,
+    "min_scope": "platform",
+    "users": null,
+    "color": "0,255,0", "width": 3,
+    "pad": 0, "pad_ratio": 0.25, "quality": 90,
+    "force": true
+  },
+
+  // 拼最终交付树：同名账号合并、图号跨段连续。
+  "collect": {
+    "enabled": true,
+    "stage_min": null,
+    "platform_dir": null,
+    "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-0930-1006全球车的中国路/10-03/快手/all_users_正面_3张以上",
+    "force": true
+  },
+
+  "draw": {"enabled": true, "source": null, "at": 8.0, "window": 5.0,
+           "out": null, "width": 5, "quality": 90, "labels": true},
+
+  "steps": {
+    "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
+              "export", "collect", "draw"],
+    "skip": ["emoji_tables", "draw"]
+  }
+}

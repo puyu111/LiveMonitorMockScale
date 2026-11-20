@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "config": "/home/puyu/github/LiveMonitorMockScale/09-30_全球车的中国路_视频号.json",
+  "generated_from": {
+    "config": "/home/puyu/github/LiveMonitorMockScale/09-30_全球车的中国路_视频号.json",
+    "oss_root": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》",
+    "disk_root": null,
+    "generated_at": "2026-11-17T00:00:00Z"
+  },
+  "segments": [
+    {
+      "seg": "seg1",
+      "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/9.30/快手/9：29-10：52.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/9.30/快手/9：29-10：52.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3225761736,
+      "duration_s": 5024.800667,
+      "trim_s": null
+    },
+    {
+      "seg": "seg2",
+      "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/9.30/快手/10：52-12：08.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/9.30/快手/10：52-12：08.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3225840116,
+      "duration_s": 4563.462333,
+      "trim_s": null
+    },
+    {
+      "seg": "seg3",
+      "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/9.30/快手/12：08-13：41.mp4",
+      "oss": "/home/puyu/oss-bucket/直播data/录屏/2026-0930-1006《全球车的中国路》/9.30/快手/12：08-13：41.mp4",
+      "trimmed": false,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3226455631,
+      "duration_s": 5547.482667,
+      "trim_s": null
+    },
+    {
+      "seg": "seg4",
+      "disk": "/run/media/puyu/MyDisk/2026-0930-1006《全球车的中国路》/_live/930_wechat_13-41-15-04_0-4827.mp4",
+      "oss": null,
+      "trimmed": true,
+      "source_oss": null,
+      "oss_missing": false,
+      "bytes": 3110035513,
+      "duration_s": 4827.607933,
+      "trim_s": [
+        0.0,
+        4827.607933
+      ]
+    }
+  ]
+}

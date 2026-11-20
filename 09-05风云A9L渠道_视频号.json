@@ -2,7 +2,7 @@
 // 风云A9L + OTA升级直播（渠道）2026-09-05 · 视频号直播（内部录屏）
 // （手机 App 竖屏 1206×2622）→ 结构化评论
 //
-// 素材 = 「/home/puyu/work/data/2026-09-05风云A9L+OTA升级直播（渠道）」视频号（内部录屏）/
+// 素材 = 「/run/media/puyu/MyDisk/2026-09-05风云A9L+OTA升级直播（渠道）」视频号（内部录屏）/
 // 下的**四段**录屏（同一场直播、时间**不重叠**，账号「风云新能源」）：
 //   seg1  `16：00-16：02.mp4`  1.0min   1206×2622  60fps  （开场，只有卡片/通知）
 //   seg2  `16：04-17：00.mp4`  55.7min
@@ -35,7 +35,7 @@
 //      圆角条上沿 2374、占位文字 2410~2461 ⇒ rect y2=2372
 //   ✅ 评论文字右沿最大 848 ⇒ x2_from=window（rect x2=1206 超集）
 //   ✅ 本目录 12 帧里**没有**商品/预约浮层卡 ⇒ 不设 x_ignore_from
-//   ✅ 表情用内置 wechat 表（out/wechat_emoji/wechat-emoji.json，已建好）
+//   ✅ 表情用内置 wechat 表（/run/media/puyu/C0DE6A4BDE6A39B4/out/wechat_emoji/wechat-emoji.json，已建好）
 //   ⚠ 开场 seg1 几乎全是卡片（`主题` / `公众号` / `通知 欢迎来到直播间…`），
 //     短语兜底后这一段可能一条评论都没有 —— 这是素材本身如此，不是漏扫。
 //
@@ -49,13 +49,14 @@
 //        NLP_API_KEY=sk-xxxx $P -m livepipe run 09-05风云A9L渠道_视频号.json \
 //            --only filter,qualify,export,collect
 //   ③ 先看后交：产物在
-//        out/2026-09-05风云A9L+OTA升级直播（渠道）/视频号/all_users_正面_3张以上/
+//        /run/media/puyu/C0DE6A4BDE6A39B4/out/2026-09-05风云A9L+OTA升级直播（渠道）/视频号/all_users_正面_3张以上/
 //
 // 校验（不跑、安全）：
 //   python3 -m livepipe check 09-05风云A9L渠道_视频号.json
 //   python3 -m livepipe run   09-05风云A9L渠道_视频号.json --dry-run
 // ============================================================================
 {
+  "base_dir": "/run/media/puyu/C0DE6A4BDE6A39B4",
   "version": 1,
   "name": "风云A9L+OTA升级直播（渠道）2026-09-05 · 视频号手机 App · 竖屏",
 
@@ -142,17 +143,17 @@
     }
   },
 
-  // 表情表用内置的 `wechat`（out/wechat_emoji/wechat-emoji.json）
+  // 表情表用内置的 `wechat`（/run/media/puyu/C0DE6A4BDE6A39B4/out/wechat_emoji/wechat-emoji.json）
   // ⇒ 这里一个字段都不用写：emoji.tables 的默认值就是它，emoji.enabled 默认 true。
 
   "input": {
     // 四段素材：**显式数组**（段顺序 = 时间顺序；文件名里的 `16：00` / `17：13` 字典序
     // 恰好也对，但不依赖它）。
     "videos": [
-      "/home/puyu/work/data/2026-09-05风云A9L+OTA升级直播（渠道）/视频号（内部录屏）/16：00-16：02.mp4",
-      "/home/puyu/work/data/2026-09-05风云A9L+OTA升级直播（渠道）/视频号（内部录屏）/16：04-17：00.mp4",
-      "/home/puyu/work/data/2026-09-05风云A9L+OTA升级直播（渠道）/视频号（内部录屏）/17：00-17：03.mp4",
-      "/home/puyu/work/data/2026-09-05风云A9L+OTA升级直播（渠道）/视频号（内部录屏）/17：13-17：44.mp4"
+      "/run/media/puyu/MyDisk/2026-09-05风云A9L+OTA升级直播（渠道）/视频号（内部录屏）/16：00-16：02.mp4",
+      "/run/media/puyu/MyDisk/2026-09-05风云A9L+OTA升级直播（渠道）/视频号（内部录屏）/16：04-17：00.mp4",
+      "/run/media/puyu/MyDisk/2026-09-05风云A9L+OTA升级直播（渠道）/视频号（内部录屏）/17：00-17：03.mp4",
+      "/run/media/puyu/MyDisk/2026-09-05风云A9L+OTA升级直播（渠道）/视频号（内部录屏）/17：13-17：44.mp4"
     ],
     "segment_names": null,              // 段名（= 子目录名）；null ⇒ seg1..seg4
     "video": null,                      // 单段写法（与 videos 互斥，本件用不到）              --video
@@ -250,7 +251,7 @@
   "output": {
     // 多段时这里是**段的父目录**：实际各写 <dir>/seg1..seg4；
     // 跨段产物落在这儿：merged_users.json（qualify）；交付树见 collect.out。
-    "dir": "out/2026-09-05风云A9L+OTA升级直播（渠道）/视频号",
+    "dir": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-09-05风云A9L+OTA升级直播（渠道）/视频号",
     "write": true,                      // 是否写盘（comments.jsonl + summary.json 成对）
     "rows": true,                       // 另存 rows.jsonl（**可回喂复算**）
     "panels": true,                     // mode=auto 时把定位结果存成 panels.json
@@ -326,7 +327,7 @@
     "enabled": true,
     "stage_min": null,                  // 各段导出目录名里的数字；null ⇒ qualify.stage_min
     "platform_dir": null,               // 交付树里的平台目录名；null ⇒ 从各段导出目录自动认（视频号）
-    "out": "out/2026-09-05风云A9L+OTA升级直播（渠道）/视频号/all_users_正面_3张以上",
+    "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-09-05风云A9L+OTA升级直播（渠道）/视频号/all_users_正面_3张以上",
     "force": true                       // 目标非空时整棵重来（否则报错退出）
   },
 
@@ -346,6 +347,6 @@
     // 逐段步（panels/parse/filter/export/draw）四段各跑一遍；全局步（emoji_tables/qualify/collect）整批一次。
     "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
               "export", "collect", "draw"],
-    "skip": ["emoji_tables", "draw"]    // 表情表已建好（out/wechat_emoji/）；独立描框用不上
+    "skip": ["emoji_tables", "draw"]    // 表情表已建好（/run/media/puyu/C0DE6A4BDE6A39B4/out/wechat_emoji/）；独立描框用不上
   }
 }

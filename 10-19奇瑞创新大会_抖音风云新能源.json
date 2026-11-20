@@ -1,0 +1,217 @@
+// ============================================================================
+// 奇瑞「2026 全球创新大会（CGIC 2026 · 芜湖）」2026-10-19 · 抖音 · 账号「风云新能源」
+// （手机 App 竖屏 590×1280，**大字号评论版式**）→ 结构化评论
+//
+// 素材 = 「/run/media/puyu/MyDisk/10.19/抖音/风云新能源/」下 6 段录屏（9:02-17:00）：
+//   `SVID_20261019_090202_1..6.mp4`（同一录制会话的连续分段）：
+//     1 82.5min · 2 92.5min · 3 97.1min · 4 98.0min · 5 85.5min · 6 原 81.6min
+//   第 6 段直播在 **1369.97s** 结束（≈17:00），之后是「直播已结束」页
+//   ⇒ 无损裁到 1369.7s，副本
+//   `/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/media/dy_fy_16-38-17-00_live.mp4`。
+//   本目录其余 5 条流实测也都在 17:00 结束直播。
+//
+// 版式（2026-11-16 实测，与本目录另外两个抖音账号**不同**）：
+//   · 行距 **58.5**（大字号版式；另外两个账号 43.8）
+//   · x_text **98** / badge_span 50（ROI 左沿 48；◆N 药丸块 x∈[49,93]、
+//     打码昵称 x1≈99~121、续行 x1≈36~37）
+//   · rect [0,635,590,1196]（视频画面下沿 ≈627、输入栏 `聊一聊` 上沿 1215）；y_phase 56
+//   · 续行间距 38px = 0.65 行距，独立行 58~59 ⇒ wrap_gap_ratio **0.75**
+//   · 昵称几乎全部打码（`最***` / `黄***`）⇒ account_key=nickname_level_if_masked
+//   · 右侧无商品卡；x_ignore_from=380 兜底。
+//
+// 跑法：
+//   P=/home/puyu/anaconda3/envs/vlx/bin/python
+//   export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+//   $P -m livepipe run 10-19奇瑞创新大会_抖音风云新能源.json --only panels,parse
+//   NLP_API_KEY=sk-xxxx $P -m livepipe run 10-19奇瑞创新大会_抖音风云新能源.json \
+//       --only filter,qualify,export,collect
+//   产物：/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/抖音/风云新能源/all_users_正面_3张以上/
+// 校验：python3 -m livepipe check 10-19奇瑞创新大会_抖音风云新能源.json
+// ============================================================================
+{
+  "base_dir": "/home/puyu/livepipe_assets",
+  "version": 1,
+  "name": "奇瑞2026全球创新大会 2026-10-19 · 抖音手机 App · 竖屏 · 风云新能源",
+
+  "platforms": {
+    "douyin_app": {
+      "label": "抖音直播（手机 App 竖屏 590×1280；大字号评论，行首 ◆N 药丸在昵称左边）",
+      "emoji": "douyin",
+      "account_key": "nickname_level_if_masked",
+
+      "row_pitch": 58.5,
+      "y_phase": 56,
+      "x_text": 98,
+      "badge_span": 50,
+      "x2_from": "content",
+
+      "badge_alias": true,
+      "username_alias": true,
+      "badge_name_recover": true,
+      "wrap_gap_ratio": 0.75,
+      "x_ignore_from": 380,
+
+      // 反诈卡 + 大会「抢先看」卡 + 系统通知（只作用于没有冒号的行）。
+      "overlay_cards": "欢迎来到直播间|直播或礼物消费|严禁出现违法违|低俗色情|吸烟酗酒|人身伤害|理性消费|诱导打赏|私下交易|人身财产损|网络诈骗|明示信息为准|实际下载应用|抢先看|本直播间已接入|三方管理工具|工作人员高效回应|关注了主|赞了直播|加入了直播|分享了直播|推荐了直播|为主播点赞|订阅了本场直播回放|来了$|^康家车米了$|^CHANGE改变$|^CHERY$|^FULWIN$",
+      "skip_phrases": [
+        "2026奇瑞全球创新大会抢先看",
+        "2026奇瑞全球创新大会",
+        "风云新能源",
+        "FULWIN",
+        "CHANGE改变"
+      ],
+
+      "colon_bg_max_v": 255,
+      "colon_v_delta": 30,
+      "colon_text_fix": true,
+      "merge_emoji_continuation": true,
+      "emoji_gap_sweep": true
+    }
+  },
+
+  "emoji": {
+    "enabled": true,
+    "tables": {"douyin": {"build": {"enabled": true}}}
+  },
+
+  "input": {
+    "videos": [
+      "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/风云新能源/SVID_20261019_090202_1.mp4",
+      "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/风云新能源/SVID_20261019_090202_2.mp4",
+      "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/风云新能源/SVID_20261019_090202_3.mp4",
+      "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/风云新能源/SVID_20261019_090202_4.mp4",
+      "/home/puyu/oss-bucket/直播data/录屏/10.19/抖音/风云新能源/SVID_20261019_090202_5.mp4",
+      "/home/puyu/oss-bucket/web/1/奇瑞汽车/直播看管/直播录屏/2026-10-19奇瑞全球创新大会/_live/dy_fy_16-38-17-00_live.mp4"
+    ],
+    "segment_names": null,
+    "video": null,
+    "rows": null,
+    "text": null,
+    "start": 0.0,
+    "duration": null,
+    "interval": 2.0,
+    "max_frames": null,
+    "resume": true,
+    "sample": {
+      "mode": "adaptive",
+      "stride": 2,
+      "safety_rows": 5.0,
+      "settle_frames": 3,
+      "eps_px": 1.0,
+      "entry_thr": 8.0,
+      "max_gap_s": 5.0,
+      "min_interval": 0.2,
+      "max_interval": 6.0,
+      "min_score": 0.3
+    }
+  },
+
+  "panels": {
+    "mode": "manual",
+    "file": null,
+    "files": null,
+    "overwrite": false,
+    "auto": {
+      "method": "hybrid",
+      "at": 900,
+      "frames": 5,
+      "span": null,
+      "split_x": null,
+      "pad_x": 60,
+      "pad_top": 80,
+      "pad_y": 16,
+      "sub_width": 500,
+      "model": "nvidia/LocateAnything-3B",
+      "quant": "4bit",
+      "device": "cuda",
+      "platforms": {"left": "douyin_app", "right": null},
+      "frame_width": 590
+    },
+    "manual": [
+      {"comments": {"rect": [0, 635, 590, 1196], "platform": "douyin_app"}},
+      {"comments": {"rect": [0, 635, 590, 1196], "platform": "douyin_app"}},
+      {"comments": {"rect": [0, 635, 590, 1196], "platform": "douyin_app"}},
+      {"comments": {"rect": [0, 635, 590, 1196], "platform": "douyin_app"}},
+      {"comments": {"rect": [0, 635, 590, 1196], "platform": "douyin_app"}},
+      {"comments": {"rect": [0, 635, 590, 1196], "platform": "douyin_app"}}
+    ],
+    "batch": {"count": 30, "start": 0.0, "span": 600.0, "anchor": "panel"}
+  },
+
+  "parse": {
+    "sep": " ",
+    "max_username_len": 24,
+    "merge_continuation": true,
+    "adjacency": true,
+    "dedup": true,
+    "calibrate": false,
+    "right_pad": 0,
+    "emoji_workers": 8
+  },
+
+  "output": {
+    "dir": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/抖音/风云新能源",
+    "write": true,
+    "rows": true,
+    "panels": true,
+    "frames": true,
+    "print": false
+  },
+
+  "filter": {
+    "enabled": true,
+    "source": null,
+    "out": null,
+    "cache": null,
+    "min_positive": 1,
+    "exclude_keywords": [
+      "奇瑞", "4s", "店", "qq3", "汽车",
+      "尹同跃", "张国忠", "鲍思语", "王津华", "王孝伟", "胡敬源", "尹祥领",
+      "王来春", "李晶", "商文江", "杨棉之", "叶盛基", "路风", "黎汝雄",
+      "李学用", "张贵兵", "代立宏", "章红玉", "高新华", "戚士龙", "王琅"
+    ],
+    "nlp": {
+      "api_key": null,
+      "api_key_env": "NLP_API_KEY",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "deepseek-v4.1-flash",
+      "batch_size": 20,
+      "concurrency": 4,
+      "timeout": 60.0,
+      "retries": 3,
+      "limit": null,
+      "prompt": null
+    }
+  },
+
+  "qualify": {"enabled": true, "min_positive": 3, "stage_min": 1},
+
+  "export": {
+    "enabled": true,
+    "base": "frame",
+    "labels": "正面",
+    "min_positive": null,
+    "min_scope": "platform",
+    "users": null,
+    "color": "0,255,0", "width": 3,
+    "pad": 0, "pad_ratio": 0.25, "quality": 90,
+    "force": true
+  },
+
+  "collect": {
+    "enabled": true,
+    "stage_min": null,
+    "platform_dir": null,
+    "out": "/run/media/puyu/C0DE6A4BDE6A39B4/out/2026-10-19奇瑞全球创新大会/抖音/风云新能源/all_users_正面_3张以上",
+    "force": true
+  },
+
+  "draw": {"enabled": true, "source": null, "at": 8.0, "window": 5.0,
+           "out": null, "width": 5, "quality": 90, "labels": true},
+
+  "steps": {
+    "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
+              "export", "collect", "draw"],
+    "skip": ["emoji_tables", "draw"]
+  }
+}

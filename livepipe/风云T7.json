@@ -33,7 +33,7 @@
 //      · 药丸并进正文的几何闸（badge_alias）· 公告横幅的素材短语（overlay_cards）
 //      · 商品讲解卡的浮层左界（x_ignore_from 400，seg7 360 —— 用「评论簇/浮层簇」之间
 //        的空带取值，见档案里该键的说明）
-//      · 表情用抖音那套表（out/douyin_emoji/douyin-emoji.json，2026-10-06 已建好）
+//      · 表情用抖音那套表（/run/media/puyu/C0DE6A4BDE6A39B4/out/douyin_emoji/douyin-emoji.json，2026-10-06 已建好）
 //   ⚠ 已知残留（都在下面标了原因，量的时候看见的，别当没发生）：
 //      ① `X***分享了直播` 这类**系统行**会漏成匿名评论 —— 内置 `_NOTICE_RE` 认的是
 //         `赞了直播/为主播点赞/入了直播间/关注了主播`，没有 `分享了直播`。它不是本素材
@@ -56,7 +56,7 @@
 //   ② 筛 + 判合格 + 出图 + 拼交付树（**要 key**，只走环境变量）：
 //        NLP_API_KEY=sk-xxxx $P -m livepipe run livepipe/风云T7.json \
 //            --only filter,qualify,export,collect
-//   ③ 先看后交：产物在 out/风云T7_20260826_01/抖音/all_users_正面_2张以上/，
+//   ③ 先看后交：产物在 /run/media/puyu/C0DE6A4BDE6A39B4/out/风云T7_20260826_01/抖音/all_users_正面_2张以上/，
 //      核对完再整个目录拷到 work/data/20-2026-08-26风云T7上市/抖音/。
 //
 // 校验（不跑、安全）：
@@ -64,6 +64,7 @@
 //   python3 -m livepipe run  livepipe/风云T7.json --dry-run
 // ============================================================================
 {
+  "base_dir": "/run/media/puyu/C0DE6A4BDE6A39B4",
   "version": 1,                        // 配置格式版本，必须是 1
   "name": "风云T7上市 2026-08-26 · 抖音手机 App · 竖屏",   // 只出现在日志里
 
@@ -199,7 +200,7 @@
     }
   },
 
-  // 表情表用内置的 `douyin`（out/douyin_emoji/douyin-emoji.json，2026-10-06 建好）
+  // 表情表用内置的 `douyin`（/run/media/puyu/C0DE6A4BDE6A39B4/out/douyin_emoji/douyin-emoji.json，2026-10-06 建好）
   // ⇒ 这里一个字段都不用写：emoji.tables 的默认值就是它，emoji.enabled 默认 true。
 
   "input": {
@@ -283,7 +284,7 @@
     },
     // mode=manual：手写面板，**一段一项**（顺序与 input.videos 展开的段顺序一致）。
     // 段目录里的 panels.json 已经在了 ⇒ 本步不动它（overwrite=false）；这一段的作用是
-    // 「白纸重来/删掉某个 segN/panels.json 时，靠它就能把矩形恢复出来」，别让数字只活在 out/ 里。
+    // 「白纸重来/删掉某个 segN/panels.json 时，靠它就能把矩形恢复出来」，别让数字只活在 /run/media/puyu/C0DE6A4BDE6A39B4/out/ 里。
     "manual": [
       {                                //   seg1  12：01-13：00.mp4  720×1600
         "comments": {"rect": [10, 800, 700, 1500], "platform": "douyin_app"}
@@ -361,7 +362,7 @@
   "output": {
     // 多段时这里是**段的父目录**：实际各写 <dir>/seg1..seg7；
     // 跨段的两个产物也落在这儿：merged_users.json（qualify）+ 抖音/all_users_正面_2张以上/（collect）。
-    "dir": "out/风云T7_20260826_11",       // 输出根目录                                            --out
+    "dir": "/run/media/puyu/C0DE6A4BDE6A39B4/out/风云T7_20260826_11",       // 输出根目录                                            --out
     "write": true,                      // 是否写盘（comments.jsonl + summary.json 成对）
     "rows": true,                       // 另存 rows.jsonl（**可回喂复算**）             --dump-rows <段目录>/rows.jsonl
     "panels": true,                     // mode=auto 时把定位结果存成 panels.json         --dump-panels <段目录>/panels.json
@@ -470,7 +471,7 @@
     // 逐段步（panels/parse/filter/export/draw）七段各跑一遍；全局步（emoji_tables/qualify/collect）整批一次。
     "order": ["emoji_tables", "panels", "parse", "filter", "qualify",
               "export", "collect", "draw"],
-    "skip": ["emoji_tables", "draw"]    // 表情表已建好（out/douyin_emoji/）；独立描框用不上
+    "skip": ["emoji_tables", "draw"]    // 表情表已建好（/run/media/puyu/C0DE6A4BDE6A39B4/out/douyin_emoji/）；独立描框用不上
   }
 }
 

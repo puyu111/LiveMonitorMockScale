@@ -55,6 +55,8 @@
   },
 
   "input": {
+    // ⚠ 跑 livepipe 之前视频必须已经在 OSS：本项目统一写 ~/oss-bucket/...（goofs 挂载）；
+    //   不接受百度/bypy 路径。新素材先用 scripts/oss_download.py baidu 直写 OSS，再 livepipe check。
     "video": "/home/puyu/work/data/抖音奇瑞汽车/抖音视频号.mp4",  // 录屏 mp4：OCR 抽行 + 解析      --video
     "rows": null,                       // 已有 rows.jsonl：复算（省一次 OCR）；与 text 互斥   --rows
     "text": null,                       // 纯文本行文件，每行一条；"-" 读 stdin；与 rows 互斥   --text

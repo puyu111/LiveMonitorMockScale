@@ -31,10 +31,12 @@ def _auto_out_dir(cfg: dict) -> str:
     return f"out/{safe or 'livepipe_run'}"
 
 
-def _expand_videos(spec: Any, base: Path) -> list[str]:
+def _expand_videos(spec: Any, base: Path, *, check: bool = True) -> list[str]:
     """``input.videos`` → **绝对路径**列表（目录 / 通配符 / 数组都吃，一律按文件名排序）。
 
     排序 = 时间顺序（录屏文件名普遍带时间前缀），段名与它一一对应。
+    ``check=False`` 时不要求文件/目录存在（只核对产物时，素材盘没挂载也能读配置）——
+    显式文件照原样收，目录/通配符没命中就是空。
     """
     if spec is None:
         return []
@@ -49,17 +51,17 @@ def _expand_videos(spec: Any, base: Path) -> list[str]:
         s = str(p)
         if any(ch in s for ch in "*?["):
             hits = sorted(_glob.glob(s))
-            if not hits:
+            if not hits and check:
                 raise ConfigError(f"input.videos 的匹配式没命中任何文件：{s}")
             out += [str(Path(h).resolve()) for h in hits]
         elif p.is_dir():
             hits = sorted(q for q in p.iterdir()
                           if q.is_file() and q.suffix.lower() in _VIDEO_EXTS)
-            if not hits:
+            if not hits and check:
                 raise ConfigError(f"input.videos 指向的目录里没有视频文件：{p}")
             out += [str(q.resolve()) for q in hits]
         else:
-            if not p.exists():
+            if check and not p.exists():
                 raise ConfigError(f"input.videos 里的文件不存在：{p}")
             out.append(str(p.resolve()))
     return out
@@ -96,14 +98,17 @@ def segments(cfg: dict) -> list[dict]:
             d = Path(out["dir"]) / nm
             pf = (files[i] if (files and i < len(files)) else str(d / "panels.json"))
             rw = d / "rows.jsonl"
+            # 0 字节的 rows.jsonl 是上次跑到一半崩掉的残留：当成「没有」重新 OCR，
+            # 否则会从空文件复算出 0 条评论。
+            has_rows = rw.exists() and rw.stat().st_size > 0
             segs.append({"i": i, "name": nm, "video": v, "out": str(d), "panels_file": pf,
-                         "rows": str(rw) if rw.exists() else None,
+                         "rows": str(rw) if has_rows else None,
                          "start": inp["start"], "duration": inp["duration"]})
     cfg["_segments"] = segs
     return segs
 
 
-def _resolve_paths(cfg: dict) -> dict:
+def _resolve_paths(cfg: dict, *, check_videos: bool = True) -> dict:
     base = Path(cfg["base_dir"]).expanduser() if cfg.get("base_dir") else Path.cwd()
     cfg["base_dir"] = str(base)
     inp = cfg["input"]
@@ -111,7 +116,7 @@ def _resolve_paths(cfg: dict) -> dict:
         raise ConfigError("input.video 与 input.videos 只能给一个"
                           "（多段用 videos，单段用 video）")
     # 展开成绝对路径，缓存到 _videos（后续 segments() 只认它）
-    cfg["_videos"] = _expand_videos(inp.get("videos"), base)
+    cfg["_videos"] = _expand_videos(inp.get("videos"), base, check=check_videos)
     multi = bool(cfg["_videos"])
     if inp.get("videos") is not None:
         inp["videos"] = cfg["_videos"] or None
