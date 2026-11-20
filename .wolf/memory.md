@@ -1348,3 +1348,17 @@
   （逐对象大小+ETag 相同）；only_new 16,481 对象 / 256.85GB 是迁移后新写数据。
   `--fill` 补 0 个 —— 正确位置不缺任何东西，旧前缀是严格子集，可安全删除。
   两棵 42 万对象的树全量 list 一轮约 117s。
+
+## 2026-11-20 · 推送 GitHub + 更新 work1/2/3 三台服务器
+
+- 188 个文件提交为 `5746867` 并推到 origin/main（OSS 化脚本、直写下载、
+  新场次配置、P0–P4 devlog）。
+- 服务器 `work1/2/3`（root@47.93.88.128 / 123.56.9.172 / 47.94.102.251，
+  `~/.ssh/config` 已配好）的仓库在 `/root/LiveMonitorMockScale`，SSH 用密码认证
+  （本机密码在 `~/.bashrc` 的 `ssh_key`，密钥登录被服务器拒绝）。
+- 三台都有同一处本地改动：`09-07猎鹰智驾_抖音.json` 的 6 条视频路径指向
+  `~/LiveMonitorMockScale/data/`（服务器素材位置，5.7G，未跟踪）。更新做法：
+  `git stash push -- <该文件>` → `git pull --ff-only` → `git checkout stash@{0} -- <该文件>`；
+  拉后该文件 md5 与拉前逐字节相同（c97451cb…），`data/` 未动。stash 保留作备份。
+- 其余配置在服务器上仍指工作站路径（旧 /home/puyu/work/data → 新 /run/media/puyu/MyDisk），
+  服务器跑批前要按批次实际素材位置替换路径或走 `--video-map`。

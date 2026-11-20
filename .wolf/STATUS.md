@@ -1,3 +1,14 @@
+## 2026-11-20 · 推送 GitHub + 更新 work1/2/3 — 完成
+
+✅ 188 文件提交 `5746867` 推到 origin/main；work1/2/3 的 `/root/LiveMonitorMockScale`
+均快进到 `5746867`。三台的本地改动（`09-07猎鹰智驾_抖音.json` 视频路径 →
+`~/LiveMonitorMockScale/data/`）先 stash、拉完原样恢复（md5 不变），`data/` 未动。
+
+🚀 下一步
+- 服务器跑批前按批次素材实际位置改配置路径，或 `export --video-map 旧=新`。
+- 旧 stash 条目可 `git stash drop` 清理（内容已回到工作区）。
+- 待授权：两条 `oss_purge_prefix.py --delete`（见上一节）。
+
 ## 2026-11-19 · 复核桶根旧前缀 + 清空脚本 — 复制已核对，删除待授权
 
 ✅ 用户指出 `~/oss-bucket/奇瑞汽车/直播看管/` 位置不对，正确位置是
